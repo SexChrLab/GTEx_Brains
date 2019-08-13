@@ -84,36 +84,18 @@ DGE_Func <- function(df, lst){
 y <- Map(DGE_Func, cts, Groups)
 
 # Create design matrix: Step 2
-# OG
-# design <- model.matrix(~0+group, data=y$samples) # No intercept
-# colnames(design) <- levels(y$samples$group)
-
 Model_Func <- function(fc, df){
   res <- model.matrix(~0 + fc, data = df$samples)
   return(res)
 }
 Design <- Map(Model_Func, Groups, y)
 
-### idk why this doesn't work; temp hardcode 
-# Remove 'fc' from colnames
-# Colname_Func <- function(x){
-#   colnames(x) <- gsub("fc", "", colnames(x))
-# }
-# Design <- lapply(Design, Colname_Func)
-
-colnames(Design$Amygdala) <- gsub("fc","",colnames(Design$Amygdala))
-colnames(Design$Anterior) <- gsub("fc","",colnames(Design$Anterior))
-colnames(Design$Caudate) <- gsub("fc","",colnames(Design$Caudate))
-colnames(Design$Cerebellar) <- gsub("fc","",colnames(Design$Cerebellar))
-colnames(Design$Cerebellum) <- gsub("fc","",colnames(Design$Cerebellum))
-colnames(Design$Cortex) <- gsub("fc","",colnames(Design$Cortex))
-colnames(Design$Frontal_Cortex) <- gsub("fc","",colnames(Design$Frontal_Cortex))
-colnames(Design$Hippocampus) <- gsub("fc","",colnames(Design$Hippocampus))
-colnames(Design$Hypothalamus) <- gsub("fc","",colnames(Design$Hypothalamus))
-colnames(Design$Nucleus_Accumbens) <- gsub("fc","",colnames(Design$Nucleus_Accumbens))
-colnames(Design$Putamen) <- gsub("fc","",colnames(Design$Putamen))
-colnames(Design$Spinal_Cord) <- gsub("fc","",colnames(Design$Spinal_Cord))
-colnames(Design$Substantia_Nigra) <- gsub("fc","",colnames(Design$Substantia_Nigra))
+# Remove "fc" from colnames
+Rename_Cols <- function(x){
+  colnames(x) <- gsub("fc", "", colnames(x))
+  return(x)
+}
+Design <- lapply(Design, Rename_Cols)
 
 # Filter out lowly expressed genes.
 # Remove genes w/ <7 counts.
@@ -142,25 +124,6 @@ y <- Map(Dispersion_Func, y, Design)
 # Plot
 #pdf(FILE_NAME)
 
-# Example of original method
-# Amygdala Female vs Male
-et.Am.F.vs.M <- exactTest(y, c("Amygdala.Male", "Amygdala.Female"))
-df_Am <- summary(decideTests(et.Am.F.vs.M))
-grid.newpage() # To keep summary table from plotting on top of other plots
-grid.table(df_Am)
-plotMD(et.Am.F.vs.M)
-
-# Volcano plot
-volcanoData <- cbind(et.Am.F.vs.M$table$logFC, -log10(et.Am.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Amygdala.Female-1*Amygdala.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-# Plot unadjusted p-values
-hist(et.Am.F.vs.M$table[,"PValue"], breaks=50, main="Amygdala p-value frequency histogram")
-
-# ____________________________________________________________________________
 # Comaprisons to test
 Pairs <- list(c("Amygdala.Male", "Amygdala.Female"), 
               c("Anterior.Male", "Anterior.Female"), 
@@ -191,23 +154,27 @@ Results_df <- lapply(Exact_Res, Summary_Func)
 
 Tables <- lapply(Results_df, grid.table)
 
-# Plot summaries of results and MD plots
+# Plots
+Titles <- list('Amygdala', 'Anterior', 'Caudate', 'Cerbellum', 'Cerebellar', 'Cortex', 'Frontal Cortex',
+               'Hippocampus', 'Hypothalamus', 'Nucleus Accumbens', 'Putamen', 'Spinal Cord', 'Substantia Nigra')
+
+# Temporary: Prints plots followed by summary
 Plot_Func <- function(a, b){
   print(a)
   grid.newpage()
   grid.table(a)
   plotMD(b)
 }
-Res_Plots <- Map(Plot_Func, Results_df, Exact_Res) 
+TEMP_Res_Plots <- Map(Plot_Func, Results_df, Exact_Res)
 
-# Volcano plot
-volcanoData <- cbind(et.Am.F.vs.M$table$logFC, -log10(et.Am.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Amygdala.Female-1*Amygdala.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-test <- cbind(Exact_Res$Amygdala$table$logFC, -log10(Exact_Res$Amygdala$table[,"PValue"]))
+# Plot MD plots on one page
+par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 2, 2), oma =c(6, 6, 2, 2)) # margins: c(bottom, left, top, right)
+MD_Plot_Func <- function(x){
+  plotMD(x)
+  mtext('Average log CPM', side = 1, outer = TRUE,  cex=0.8, line=1)
+  mtext('log-fold-change', side = 2, outer = TRUE, line=2)
+}
+Res_Plots <- lapply(Exact_Res, MD_Plot_Func)
 
 # Make df of values for axis
 Volcano_Func <- function(x){
@@ -226,11 +193,30 @@ Rename_Cols_Func <- function(x){
 }
 Volcano_Res <- lapply(Volcano_Res, Rename_Cols_Func)
 
-# Plot
+# Volcano plots
+# Subset pos and neg sig values
+Subset_Func <- function(x){
+  significant <- list()
+  up <- subset(x,  negLogPval >= -log10(0.05) & logFC > 0)
+  down <- subset(x, negLogPval >= -log10(0.05) & logFC < 0)
+  significant <- append(significant, list(up))
+  significant <- append(significant, list(down))
+  return(significant)
+}
+Subset_Res <- lapply(Volcano_Res, Subset_Func)
 
-
-# ____________________________________________________________________________
-
+# Add colored points for sig genes
+par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 2, 2), oma =c(6, 6, 2, 2)) # margins: c(bottom, left, top, right) 
+Plot_Func <- function(a, b, c){
+  plot(a, pch=19, main=b, xlab = '', ylab = '', las = 1)
+  with(inner_join(a, c[[1]]), points(logFC, negLogPval, pch=19, col="green"))
+  with(inner_join(a, c[[2]]), points(logFC, negLogPval, pch=19, col="blue"))
+  abline(a=-log10(0.05), b=0, col="blue") 
+  abline(v=0, col="red")
+  mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
+  mtext('negLogPval', side = 2, outer = TRUE, line=2)
+}
+Map(Plot_Func, Volcano_Res, Titles, Subset_Res)
 
 #dev.off()
 
