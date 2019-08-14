@@ -84,7 +84,7 @@ DGE_lst <- lapply(Tissue_Count, function(x){
 }) 
 
 # MDS plots on seperate pages
-setwd(PLOT_DIR)
+#setwd(PLOT_DIR)
 
 # Plot constants 
 colors <- c("blue", "darkgreen")
@@ -167,6 +167,52 @@ MDS_FUN_k4 <- function(DGE, NAME, META, TOP) {
 }
 k4_MDS <- Map(MDS_FUN_k4, DGE = DGE_Without_Reps, NAME = names(DGE_Without_Reps), META = Meta_Without_Reps, TOP = 100)
 legend(2.0, 1.5, inset=0, legend=levels(Meta$Amygdala$Sex), pch=16, cex=2.0, col=colors, xpd=NA) 
+dev.off()
+
+# Dim 1 & 2
+# Replicates only
+DGE_Reps <- DGE_lst[c(4:7)]
+Meta_Reps <- Meta[c(4:7)]
+
+pdf('Reps_Salmon_MDS_k2_One_Page.pdf')
+par(mfrow = c(2, 2), cex=0.4, mar = c(3, 2, 2, 6), oma =c(5, 5, 6, 6), xpd=TRUE) # margins: c(bottom, left, top, right)
+MDS_FUN_k2 <- function(DGE, NAME, META, TOP) {
+  k2_MDS <- plotMDS(DGE,
+                    gene.selection = "common",
+                    top = TOP, 
+                    pch = 16, 
+                    cex = 1, 
+                    dim.plot = c(1,2), 
+                    col = colors[META$Sex],
+                    main = NAME)
+  mtext('Salmon MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes', side=3, outer=TRUE, line=3)
+  mtext('Principle Component 1', side = 1, outer = TRUE, line=1)
+  mtext('Principle Component 2', side = 2, outer = TRUE, line=2)
+  return(k2_MDS)
+}
+k2_MDS <- Map(MDS_FUN_k2, DGE = DGE_Reps, NAME = names(DGE_Reps), META = Meta_Reps, TOP = 100)
+legend(3.0, 4.0, inset=0, legend=levels(Meta$Cortex$Sex), pch=16, cex=2.0, col=colors, xpd=NA)
+dev.off()
+
+# Dim 3 & 4
+pdf('Reps_Salmon_MDS_k4_One_Page.pdf')
+par(mfrow = c(2, 2), cex=0.4, mar = c(3, 2, 2, 6), oma =c(5, 5, 6, 6), xpd=TRUE) # margins: c(bottom, left, top, right)
+MDS_FUN_k4 <- function(DGE, NAME, META, TOP) {
+  k4_MDS <- plotMDS(DGE,
+                    gene.selection = "common",
+                    top = TOP, 
+                    pch = 16, 
+                    cex = 1, 
+                    dim.plot = c(3,4), 
+                    col = colors[META$Sex],
+                    main = NAME)
+  mtext('Salmon MDS Plots: Dimensions 3 and 4; Top 100 Most Variable Genes', side=3, outer=TRUE, line=3)
+  mtext('Principle Component 3', side = 1, outer = TRUE, line=1)
+  mtext('Principle Component 4', side = 2, outer = TRUE, line=2)
+  return(k2_MDS)
+}
+k4_MDS <- Map(MDS_FUN_k4, DGE = DGE_Reps, NAME = names(DGE_Reps), META = Meta_Reps, TOP = 100)
+legend(1.5, 2.5, inset=0, legend=levels(Meta$Cortex$Sex), pch=16, cex=2.0, col=colors, xpd=NA)
 dev.off()
 
 # Eigenvector table
