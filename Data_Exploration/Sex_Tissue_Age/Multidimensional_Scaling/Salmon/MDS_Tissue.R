@@ -27,7 +27,6 @@ cts <- read.table(COUNTS, sep="\t")
 colnames(cts) <- str_replace_all(colnames(cts),pattern = "\\.","-")
 
 # Create DGEList object
-#y <- DGEList(cts)
 
 # Create every combination of tissue matrices
 # Make list of lists of samples for each tissue
@@ -60,6 +59,7 @@ which(!rownames(Meta$Substantia_Nigra) %in% colnames(Tissue_Count$Substantia_Nig
 ### Temporary ###
 Meta$Substantia_Nigra <- Meta$Substantia_Nigra[-c(16),]
 
+# Check that rownames equals colnames 
 Check_Func <- function(a, b){
   Check <- all(rownames(a) %in% colnames(b))
 }
@@ -83,9 +83,8 @@ DGE_lst <- lapply(Tissue_Count, function(x){
   DGEList(x)
 }) 
 
-# MDS plots
+# MDS plots on seperate pages
 setwd(PLOT_DIR)
-pdf(PLOT_FILE)
 
 # Plot constants 
 colors <- c("blue", "darkgreen")
@@ -121,6 +120,53 @@ MDS_FUN <- function(DGE, NAME, META, TOP, NUM_GENES) {
 }
 k4_MDS <- Map(MDS_FUN, DGE = DGE_lst, NAME = names(DGE_lst), META = Meta, TOP = 100, NUM_GENES='Top 100')
 
+
+# Plot MDS plots on one page
+
+# Dim 1 & 2
+# Titles and counts without replicates
+DGE_Without_Reps <- DGE_lst[-c(4,6)]
+Meta_Without_Reps <- Meta[-c(4,6)]
+
+pdf('Salmon_MDS_k2_One_Page.pdf')
+par(mfrow = c(4, 3), cex=0.4, mar = c(3, 2, 2, 2), oma =c(5, 5, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
+MDS_FUN_k2 <- function(DGE, NAME, META, TOP) {
+  k2_MDS <- plotMDS(DGE,
+                    gene.selection = "common",
+                    top = TOP, 
+                    pch = 16, 
+                    cex = 1, 
+                    dim.plot = c(1,2), 
+                    col = colors[META$Sex],
+                    main = NAME)
+            mtext('Salmon MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes', side=3, outer=TRUE, line=3)
+            mtext('Principle Component 1', side = 1, outer = TRUE, line=1)
+            mtext('Principle Component 2', side = 2, outer = TRUE, line=2)
+  return(k2_MDS)
+}
+k2_MDS <- Map(MDS_FUN_k2, DGE = DGE_Without_Reps, NAME = names(DGE_Without_Reps), META = Meta_Without_Reps, TOP = 100)
+legend(5.0, 2.5, inset=0, legend=levels(Meta$Amygdala$Sex), pch=16, cex=2.0, col=colors, xpd=NA)
+dev.off()
+
+# Dim 3 & 4
+pdf('Salmon_MDS_k4_One_Page.pdf')
+par(mfrow = c(4, 3), cex=0.4, mar = c(3, 2, 2, 2), oma =c(5, 5, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
+MDS_FUN_k4 <- function(DGE, NAME, META, TOP) {
+  k4_MDS <- plotMDS(DGE,
+                    gene.selection = "common",
+                    top = TOP, 
+                    pch = 16, 
+                    cex = 1, 
+                    dim.plot = c(3,4), 
+                    col = colors[META$Sex],
+                    main = NAME)
+  mtext('Salmon MDS Plots: Dimensions 3 and 4; Top 100 Most Variable Genes', side=3, outer=TRUE, line=3)
+  mtext('Principle Component 3', side = 1, outer = TRUE, line=1)
+  mtext('Principle Component 4', side = 2, outer = TRUE, line=2)
+  return(k2_MDS)
+}
+k4_MDS <- Map(MDS_FUN_k4, DGE = DGE_Without_Reps, NAME = names(DGE_Without_Reps), META = Meta_Without_Reps, TOP = 100)
+legend(2.0, 1.5, inset=0, legend=levels(Meta$Amygdala$Sex), pch=16, cex=2.0, col=colors, xpd=NA) 
 dev.off()
 
 # Eigenvector table
