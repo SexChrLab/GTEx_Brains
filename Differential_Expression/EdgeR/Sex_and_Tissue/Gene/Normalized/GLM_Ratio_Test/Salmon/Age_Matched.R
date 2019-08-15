@@ -2,7 +2,6 @@
 
 METADATA <- "/scratch/mjpete11/GTEx/Metadata/Age_Matched_Metadata.csv"
 COUNT_MATRIX <- "/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Count_Matrix.tsv"
-FILE_NAME <-  "/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Gene/Normalized/GLM_Ratio_Test/Salmon/Sex_Tissue_GLMR_AgeMatched.pdf"
 
 # Load packages                                                                 
 library(tximport)                                                               
@@ -51,9 +50,9 @@ y <- calcNormFactors(y)
 # Estimate common dispersion and tagwise dispersions in one run (recommended)
 y <- estimateDisp(y, design, robust=TRUE)
 
-# Test for DGX using liklihood ratio test.
-fit <- glmFit(y, design, robust=TRUE)
-
+#------------------------------------------------------------------------------------------------------------------
+# Test for DGX with GLM Ratio Test
+#------------------------------------------------------------------------------------------------------------------
 # Make contrasts: Sex by Tissue
 my.contrasts <- makeContrasts(Am.F.vs.M = Amygdala.Female - Amygdala.Male,
                               At.F.vs.M = Anterior.Female - Anterior.Male,
@@ -70,212 +69,90 @@ my.contrasts <- makeContrasts(Am.F.vs.M = Amygdala.Female - Amygdala.Male,
                               Sn.F.vs.M = Substantia_Nigra.Female - Substantia_Nigra.Male,
                               levels=design)
 
-# Plot
-pdf(FILE_NAME)
+# Fit glm model
+fit <- glmFit(y, design, robust=TRUE)
 
-# Amygdala Female vs Male Ratio Test
-lrt.Am.F.vs.M <- glmLRT(fit, contrast=my.contrasts[,"Am.F.vs.M"])
-df_Am <- summary(decideTests(lrt.Am.F.vs.M))
-grid.newpage()
-grid.table(df_Am)
-plotMD(lrt.Am.F.vs.M)
+# Apply GLM Ratio test
+Contrasts <- c('Am.F.vs.M', 'At.F.vs.M', 'Ca.F.vs.M', 'Ce.F.vs.M', 'Co.F.vs.M', 'Fc.F.vs.M', 'Cm.F.vs.M', 
+               'Hp.F.vs.M', 'Hy.F.vs.M', 'Na.F.vs.M', 'Pu.F.vs.M', 'Sp.F.vs.M', 'Sn.F.vs.M')
 
-# Volcano plot
-volcanoData <- cbind(lrt.Am.F.vs.M$table$logFC, -log10(lrt.Am.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Amygdala.Female-1*Amygdala.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
+GLM_Ratio_Func <- function(x){
+  glmLRT(fit, contrast=my.contrasts[,x])
+}
+GLM_Res <- lapply(Contrasts, GLM_Ratio_Func)
+names(GLM_Res) <- c('Amygdala', 'Anterior', 'Caudate', 'Cerebellar', 'Cerebellum', 'Cortex', 'Frontal_Cortex',
+                    'Hippocampus', 'Hypothalamus', 'Nucleus_Accumbens', 'Putamen', 'Spinal_Cord', 'Substantia_Nigra')
 
-# Histogram of unadjusted p-values
-hist(lrt.Am.F.vs.M$table[,"PValue"], breaks=50, main="Amygdala p-value frequency histogram")
+# Get summary of results
+Summary_Func <- function(x){
+  res <- summary(decideTests(x))
+  return(res)
+}
+Results_df <- lapply(GLM_Res, Summary_Func)
 
-# Anterior Female vs Male
-lrt.At.F.vs.M <- glmLRT(fit, contrast=my.contrasts[,"At.F.vs.M"])
-df_At <- summary(decideTests(lrt.At.F.vs.M))
-grid.newpage()
-grid.table(df_At)
-plotMD(lrt.At.F.vs.M)
+#---------------------------------------------------------------------------------------------------------------------
+# Plots
+#---------------------------------------------------------------------------------------------------------------------
+Titles <- list('Amygdala', 'Anterior', 'Caudate', 'Cerbellum', 'Cerebellar', 'Cortex', 'Frontal Cortex',
+               'Hippocampus', 'Hypothalamus', 'Nucleus Accumbens', 'Putamen', 'Spinal Cord', 'Substantia Nigra')
 
-# Volcano plot
-volcanoData <- cbind(lrt.At.F.vs.M$table$logFC, -log10(lrt.At.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Anterior.Female-1*Anterior.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
+# To reset par
+opar <- par(no.readonly = TRUE) 
 
-# Histogram of unadjusted p-values
-hist(lrt.At.F.vs.M$table[,"PValue"], breaks=50, main="Anterior p-value frequency histogram")
+# Plot Mean-Difference  plots on one page
+par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
+MD_Plot_Func <- function(x, w){
+  plotMD(x, main=w, legend=FALSE, hl.col=c("green", "blue"), cex=1.4)
+  mtext('Salmon: Mean-Difference Plots; GLM Ratio Test', side = 3, outer = TRUE, cex=1.2, line=3)
+  mtext('Average log CPM', side = 1, outer = TRUE, line=1)
+  mtext('Log-fold-change', side = 2, outer = TRUE, line=2)
+}
+Res_Plots <- Map(MD_Plot_Func, x=GLM_Res, w=Titles)
+legend(26.0, 10.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
+#par(opar) 
 
-# Cortex Female vs Male
-lrt.Co.F.vs.M <- glmLRT(fit, contrast=my.contrasts[,"Co.F.vs.M"])
-df_Co <- summary(decideTests(lrt.Co.F.vs.M))
-grid.newpage()
-grid.table(df_Co)
-plotMD(lrt.Co.F.vs.M)
+# Make df of values for axis
+Volcano_Func <- function(x){
+  cbind(x$table$logFC, -log10(x$table[,"PValue"]))
+}
+Volcano_Res <- lapply(GLM_Res, Volcano_Func)
 
-# Volcano plot
-volcanoData <- cbind(lrt.Co.F.vs.M$table$logFC, -log10(lrt.Co.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Cortex.Female-1*Cortex.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
+# Coerce to df
+Volcano_Res <- lapply(Volcano_Res, as.data.frame)
 
-# Histogram of unadjusted p-values
-hist(lrt.Co.F.vs.M$table[,"PValue"], breaks=50, main="Cortex p-value frequency histogram")
+# Rename columns
+colnames <- c("logFC", "negLogPval")
 
-# Cerebellum Female vs Male
-lrt.Cm.F.vs.M <- glmLRT(fit, contrast=my.contrasts[,"Cm.F.vs.M"])
-df_Cm <- summary(decideTests(lrt.Cm.F.vs.M))
-grid.newpage()
-grid.table(df_Cm)
-plotMD(lrt.Cm.F.vs.M)
+Rename_Cols_Func <- function(x){
+  setNames(x, colnames)
+}
+Volcano_Res <- lapply(Volcano_Res, Rename_Cols_Func)
 
-# Volcano plot
-volcanoData <- cbind(lrt.Cm.F.vs.M$table$logFC, -log10(lrt.Cm.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Cerebellum.Female-1*Cerebellum.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
+# Volcano plots
+# Subset pos and neg sig values
+Subset_Func <- function(x){
+  significant <- list()
+  up <- subset(x,  negLogPval >= -log10(0.05) & logFC > 0)
+  down <- subset(x, negLogPval >= -log10(0.05) & logFC < 0)
+  significant <- append(significant, list(up))
+  significant <- append(significant, list(down))
+  return(significant)
+}
+Subset_Res <- lapply(Volcano_Res, Subset_Func)
 
-# Histogram of unadjusted p-values
-hist(lrt.Cm.F.vs.M$table[,"PValue"], breaks=50, main="Cerebellum p-value frequency histogram")
-
-# Cerebellar Female vs Male
-lrt.Ce.F.vs.M <- glmLRT(fit, contrast=my.contrasts[,"Ce.F.vs.M"])
-df_Ce <- summary(decideTests(lrt.Ce.F.vs.M))
-grid.newpage()
-grid.table(df_Ce)
-plotMD(lrt.Ce.F.vs.M)
-
-# Volcano plot
-volcanoData <- cbind(lrt.Ce.F.vs.M$table$logFC, -log10(lrt.Ce.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Cerebellar.Female-1*Cerebellar.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-# Histogram of unadjusted p-values
-hist(lrt.Ce.F.vs.M$table[,"PValue"], breaks=50, main="Cerebellar p-value frequency histogram")
-
-# Hippocampus Female vs Male
-lrt.Hp.F.vs.M <- glmLRT(fit, contrast=my.contrasts[,"Hp.F.vs.M"])
-df_Hp <- summary(decideTests(lrt.Hp.F.vs.M))
-grid.newpage()
-grid.table(df_Hp)
-plotMD(lrt.Hp.F.vs.M)
-
-# Volcano plot
-volcanoData <- cbind(lrt.Hp.F.vs.M$table$logFC, -log10(lrt.Hp.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Hippocampus.Female-1*Hippocampus.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-# Histogram of unadjusted p-values
-hist(lrt.Hp.F.vs.M$table[,"PValue"], breaks=50, main="Hippocampus p-value frequency histogram")
-
-# Hypothalamus Female vs Male
-lrt.Hy.F.vs.M <- glmLRT(fit, contrast=my.contrasts[,"Hy.F.vs.M"])
-df_Hy <- summary(decideTests(lrt.Hy.F.vs.M))
-grid.newpage()
-grid.table(df_Hy)
-plotMD(lrt.Hy.F.vs.M)
-
-# Volcano plot
-volcanoData <- cbind(lrt.Hy.F.vs.M$table$logFC, -log10(lrt.Hy.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Hypothalamus.Female-1*Hypothalamus.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-# Histogram of unadjusted p-values
-hist(lrt.Hy.F.vs.M$table[,"PValue"], breaks=50, main="Hypothalamus p-value frequency histogram")
-
-# Frontal Cortex Female vs Male
-lrt.Fc.F.vs.M <- glmLRT(fit, contrast=my.contrasts[,"Fc.F.vs.M"])
-df_Fc <- summary(decideTests(lrt.Fc.F.vs.M))
-grid.newpage()
-grid.table(df_Fc)
-plotMD(lrt.Fc.F.vs.M)
-
-# Volcano plot
-volcanoData <- cbind(lrt.Fc.F.vs.M$table$logFC, -log10(lrt.Fc.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Frontal_Cortex.Female-1*Frontal_Cortex.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-# Histogram of unadjusted p-values
-hist(lrt.Fc.F.vs.M$table[,"PValue"], breaks=50, main="Frontal cortex p-value frequency histogram")
-
-# Nucleus Accumbens Female vs Male
-lrt.Na.F.vs.M <- glmLRT(fit, contrast=my.contrasts[,"Na.F.vs.M"])
-df_Na <- summary(decideTests(lrt.Na.F.vs.M))
-grid.newpage()
-grid.table(df_Na)
-plotMD(lrt.Na.F.vs.M)
-
-# Volcano plot
-volcanoData <- cbind(lrt.Na.F.vs.M$table$logFC, -log10(lrt.Na.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Nucleus_Accumbens.Female-1*Nucleus_Accumbens.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-# Histogram of unadjusted p-values
-hist(lrt.Na.F.vs.M$table[,"PValue"], breaks=50, main="Nucleus accumbens p-value frequency histogram")
-
-# Putamen Female vs Male
-lrt.Pu.F.vs.M <- glmLRT(fit, contrast=my.contrasts[,"Pu.F.vs.M"])
-df_Pu <- summary(decideTests(lrt.Pu.F.vs.M))
-grid.newpage()
-grid.table(df_Pu)
-plotMD(lrt.Pu.F.vs.M)
-
-# Volcano plot
-volcanoData <- cbind(lrt.Pu.F.vs.M$table$logFC, -log10(lrt.Pu.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Putamen.Female-1*Putamen.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-# Histogram of unadjusted p-values
-hist(lrt.Pu.F.vs.M$table[,"PValue"], breaks=50, main="Putamen p-value frequency histogram")
-
-# Spinal Cord Female vs Male
-lrt.Sp.F.vs.M <- glmLRT(fit, contrast=my.contrasts[,"Sp.F.vs.M"])
-df_Sp <- summary(decideTests(lrt.Sp.F.vs.M))
-grid.newpage()
-grid.table(df_Sp)
-plotMD(lrt.Sp.F.vs.M)
-
-# Volcano plot
-volcanoData <- cbind(lrt.Sp.F.vs.M$table$logFC, -log10(lrt.Sp.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Spinal_Cord.Female-1*Spinal_Cord.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-# Histogram of unadjusted p-values
-hist(lrt.Sp.F.vs.M$table[,"PValue"], breaks=50, main="Spinal cord p-value frequency histogram")
-
-# Substantiaa Nigra Female vs Male
-lrt.Sn.F.vs.M <- glmLRT(fit, contrast=my.contrasts[,"Sn.F.vs.M"])
-df_Sn <- summary(decideTests(lrt.Sn.F.vs.M))
-grid.newpage()
-grid.table(df_Sn)
-plotMD(lrt.Sn.F.vs.M)
-
-# Volcano plot
-volcanoData <- cbind(lrt.Sn.F.vs.M$table$logFC, -log10(lrt.Sn.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Substantia_Nigra.Female-1*Substantia_Nigra.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-# Histogram of unadjusted p-values
-hist(lrt.Sn.F.vs.M$table[,"PValue"], breaks=50, main="Substantia nigra p-value frequency histogram")
-
-dev.off()
+# Add colored points for sig genes
+par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE) # margins: c(bottom, left, top, right) 
+Plot_Func <- function(a, b, c){
+  plot(a, pch=19, main=b, xlab = '', ylab = '', las = 1)
+  with(inner_join(a, c[[1]]), points(logFC, negLogPval, pch=19, col="green"))
+  with(inner_join(a, c[[2]]), points(logFC, negLogPval, pch=19, col="blue"))
+  abline(a=-log10(0.05), b=0, col="blue") 
+  abline(v=0, col="red")
+  mtext('Salmon: Volcano Plots; GLM Ratio Test', side = 3, outer = TRUE,  cex=1.2, line=3)
+  mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
+  mtext('negLogPval', side = 2, outer = TRUE, line=2)
+}
+Map(Plot_Func, a=Volcano_Res, b=Titles, c=Subset_Res)
+legend(16.0, 9.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
+       pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
 
