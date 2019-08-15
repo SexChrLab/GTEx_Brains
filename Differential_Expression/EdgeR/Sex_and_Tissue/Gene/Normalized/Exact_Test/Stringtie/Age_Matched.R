@@ -107,17 +107,21 @@ summary(Keep$Amygdala) # example
 Filter_Func <- function(x, k){
   x <- x[k, , keep.lib.sizes=FALSE]
 }
-y <- Map(Filter_Func, y, Keep)
+y_Filtered <- Map(Filter_Func, y, Keep)
 
 # TMM Normalization
 y <- lapply(y, calcNormFactors)
-y$Amygdala$samples
+View(y$Amygdala$samples)
+
+y_Filtered <- lapply(y_Filtered, calcNormFactors)
+View(y_Filtered$Amygdala$samples)
 
 # Estimate common dispersion and tagwise dispersions in one run (recommended)
 Dispersion_Func <- function(a, b){
   estimateDisp(a, b, robust=TRUE)
 }
 y <- Map(Dispersion_Func, y, Design)
+y_Filtered <- Map(Dispersion_Func, y, Design)
 
 # Test for DGX with Exact Test
 
@@ -144,6 +148,7 @@ Exact_Func <- function(x, comp){
   exactTest(x, comp)
 }
 Exact_Res <- Map(Exact_Func, y, Pairs)
+Exact_Res_Filtered <-  Map(Exact_Func, y_Filtered, Pairs)
 
 # Get summary of results
 Summary_Func <- function(x){
@@ -151,8 +156,13 @@ Summary_Func <- function(x){
   return(res)
 }
 Results_df <- lapply(Exact_Res, Summary_Func)
+Results_df_Filtered <- lapply(Exact_Res_Filtered, Summary_Func)
 
-Tables <- lapply(Results_df, grid.table)
+# Add column to DGX results w/ and w/out filtering CPM < 1
+# Does not make a difference...
+# library(data.table)
+# l <- list(Results_df, Results_df_Filtered)
+# test <- rbindlist(l)
 
 # Plots
 Titles <- list('Amygdala', 'Anterior', 'Caudate', 'Cerbellum', 'Cerebellar', 'Cortex', 'Frontal Cortex',
@@ -168,13 +178,19 @@ Plot_Func <- function(a, b){
 TEMP_Res_Plots <- Map(Plot_Func, Results_df, Exact_Res)
 
 # Plot MD plots on one page
-par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 2, 2), oma =c(6, 6, 2, 2)) # margins: c(bottom, left, top, right)
+opar <- par(no.readonly = TRUE) 
+par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
 MD_Plot_Func <- function(x){
   plotMD(x)
+  mtext('Mean-Difference Plots', side = 3, outer = TRUE, cex=1.2, line=3)
   mtext('Average log CPM', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('log-fold-change', side = 2, outer = TRUE, line=2)
 }
 Res_Plots <- lapply(Exact_Res, MD_Plot_Func)
+legend(legend=c("Up","Not Sig", "Down"), pch = 16, col = c("blue","black", "green"), bty = "n", xpd=NA)
+#par(opar) # reset par
+
+legend(1.75, 5.5, inset=0, legend=levels(Meta$Cortex$Sex), pch=16, cex=2.0, col=colors, xpd=NA)
 
 # Make df of values for axis
 Volcano_Func <- function(x){
@@ -206,18 +222,21 @@ Subset_Func <- function(x){
 Subset_Res <- lapply(Volcano_Res, Subset_Func)
 
 # Add colored points for sig genes
-par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 2, 2), oma =c(6, 6, 2, 2)) # margins: c(bottom, left, top, right) 
+par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE) # margins: c(bottom, left, top, right) 
 Plot_Func <- function(a, b, c){
   plot(a, pch=19, main=b, xlab = '', ylab = '', las = 1)
   with(inner_join(a, c[[1]]), points(logFC, negLogPval, pch=19, col="green"))
   with(inner_join(a, c[[2]]), points(logFC, negLogPval, pch=19, col="blue"))
   abline(a=-log10(0.05), b=0, col="blue") 
   abline(v=0, col="red")
+  mtext('Hisat: Volcano Plots', side = 3, outer = TRUE,  cex=1.2, line=3)
   mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('negLogPval', side = 2, outer = TRUE, line=2)
 }
 Map(Plot_Func, Volcano_Res, Titles, Subset_Res)
+legend(16.0, 9.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
+       pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
 
-#dev.off()
+
 
 
