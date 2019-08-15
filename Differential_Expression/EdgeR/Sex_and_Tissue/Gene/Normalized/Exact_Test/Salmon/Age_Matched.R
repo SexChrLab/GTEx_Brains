@@ -53,10 +53,6 @@ y <- estimateDisp(y, design, robust=TRUE)
 #------------------------------------------------------------------------------------------------------------------
 # Test for DGX with Exact Test
 #------------------------------------------------------------------------------------------------------------------
-et.Am.F.vs.M <- exactTest(y, c("Amygdala.Male", "Amygdala.Female"))
-et.At.F.vs.M <- exactTest(y, c("Anterior.Male", "Anterior.Female"))
-
-
 # Comparisons to test
 Pairs <- list(c("Amygdala.Male", "Amygdala.Female"), 
               c("Anterior.Male", "Anterior.Female"), 
