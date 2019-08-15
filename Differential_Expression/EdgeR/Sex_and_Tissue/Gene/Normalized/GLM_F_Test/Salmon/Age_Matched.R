@@ -72,17 +72,10 @@ my.contrasts <- makeContrasts(Am.F.vs.M = Amygdala.Female - Amygdala.Male,
 # Fit glm model
 fit <- glmQLFit(y, design, robust=TRUE)
 
-# Amygdala Female vs Male F Test
-qlf.Am.F.vs.M <- glmQLFTest(fit, contrast=my.contrasts[,"Am.F.vs.M"])
-df_Am <- summary(decideTests(qlf.Am.F.vs.M))
-grid.newpage() # To keep summary table from plotting on top of other plots
-grid.table(df_Am)
-plotMD(qlf.Am.F.vs.M)
-
 Contrasts <- c('Am.F.vs.M', 'At.F.vs.M', 'Ca.F.vs.M', 'Ce.F.vs.M', 'Co.F.vs.M', 'Fc.F.vs.M', 'Cm.F.vs.M', 
                'Hp.F.vs.M', 'Hy.F.vs.M', 'Na.F.vs.M', 'Pu.F.vs.M', 'Sp.F.vs.M', 'Sn.F.vs.M')
 
-# Apply exact test
+# Apply GLM F test
 GLM_Func <- function(x){
   glmQLFTest(fit, contrast=my.contrasts[,x])
 }
