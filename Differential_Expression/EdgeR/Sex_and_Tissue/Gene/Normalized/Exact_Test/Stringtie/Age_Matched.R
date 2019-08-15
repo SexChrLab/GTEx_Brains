@@ -102,32 +102,24 @@ Design <- lapply(Design, Rename_Cols)
 Keep <- lapply(y, function(x){
   rowSums(cpm(x)>1)>=2
 })
-summary(Keep$Amygdala) # example
+#summary(Keep$Amygdala) # example
 
 Filter_Func <- function(x, k){
   x <- x[k, , keep.lib.sizes=FALSE]
 }
-y_Filtered <- Map(Filter_Func, y, Keep)
+y  <- Map(Filter_Func, y, Keep)
 
 # TMM Normalization
 y <- lapply(y, calcNormFactors)
-View(y$Amygdala$samples)
-
-y_Filtered <- lapply(y_Filtered, calcNormFactors)
-View(y_Filtered$Amygdala$samples)
+#View(y$Amygdala$samples)
 
 # Estimate common dispersion and tagwise dispersions in one run (recommended)
 Dispersion_Func <- function(a, b){
   estimateDisp(a, b, robust=TRUE)
 }
 y <- Map(Dispersion_Func, y, Design)
-y_Filtered <- Map(Dispersion_Func, y, Design)
 
 # Test for DGX with Exact Test
-
-# Plot
-#pdf(FILE_NAME)
-
 # Comaprisons to test
 Pairs <- list(c("Amygdala.Male", "Amygdala.Female"), 
               c("Anterior.Male", "Anterior.Female"), 
@@ -148,7 +140,7 @@ Exact_Func <- function(x, comp){
   exactTest(x, comp)
 }
 Exact_Res <- Map(Exact_Func, y, Pairs)
-Exact_Res_Filtered <-  Map(Exact_Func, y_Filtered, Pairs)
+#Exact_Res_Filtered <-  Map(Exact_Func, y_Filtered, Pairs)
 
 # Get summary of results
 Summary_Func <- function(x){
@@ -156,41 +148,27 @@ Summary_Func <- function(x){
   return(res)
 }
 Results_df <- lapply(Exact_Res, Summary_Func)
-Results_df_Filtered <- lapply(Exact_Res_Filtered, Summary_Func)
 
-# Add column to DGX results w/ and w/out filtering CPM < 1
-# Does not make a difference...
-# library(data.table)
-# l <- list(Results_df, Results_df_Filtered)
-# test <- rbindlist(l)
-
+#---------------------------------------------------------------------------------------------------------------------
 # Plots
+#---------------------------------------------------------------------------------------------------------------------
 Titles <- list('Amygdala', 'Anterior', 'Caudate', 'Cerbellum', 'Cerebellar', 'Cortex', 'Frontal Cortex',
                'Hippocampus', 'Hypothalamus', 'Nucleus Accumbens', 'Putamen', 'Spinal Cord', 'Substantia Nigra')
 
-# Temporary: Prints plots followed by summary
-Plot_Func <- function(a, b){
-  print(a)
-  grid.newpage()
-  grid.table(a)
-  plotMD(b)
-}
-TEMP_Res_Plots <- Map(Plot_Func, Results_df, Exact_Res)
-
-# Plot MD plots on one page
+# To reset par
 opar <- par(no.readonly = TRUE) 
-par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
-MD_Plot_Func <- function(x){
-  plotMD(x)
-  mtext('Mean-Difference Plots', side = 3, outer = TRUE, cex=1.2, line=3)
-  mtext('Average log CPM', side = 1, outer = TRUE,  cex=0.8, line=1)
-  mtext('log-fold-change', side = 2, outer = TRUE, line=2)
-}
-Res_Plots <- lapply(Exact_Res, MD_Plot_Func)
-legend(legend=c("Up","Not Sig", "Down"), pch = 16, col = c("blue","black", "green"), bty = "n", xpd=NA)
-#par(opar) # reset par
 
-legend(1.75, 5.5, inset=0, legend=levels(Meta$Cortex$Sex), pch=16, cex=2.0, col=colors, xpd=NA)
+# Plot Mean-Difference  plots on one page
+par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
+MD_Plot_Func <- function(x, w){
+  plotMD(x, main=w, legend=FALSE, hl.col=c("green", "blue"), cex=1.4)
+  mtext('Mean-Difference Plots', side = 3, outer = TRUE, cex=1.2, line=3)
+  mtext('Average log CPM', side = 1, outer = TRUE, line=1)
+  mtext('Log-fold-change', side = 2, outer = TRUE, line=2)
+}
+Res_Plots <- Map(MD_Plot_Func, x=Exact_Res, w=Titles)
+legend(26.0, 10.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
+#par(opar) 
 
 # Make df of values for axis
 Volcano_Func <- function(x){
@@ -233,10 +211,27 @@ Plot_Func <- function(a, b, c){
   mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('negLogPval', side = 2, outer = TRUE, line=2)
 }
-Map(Plot_Func, Volcano_Res, Titles, Subset_Res)
+Map(Plot_Func, a=Volcano_Res, b=Titles, c=Subset_Res)
 legend(16.0, 9.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
        pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
 
 
+#---------------------------------------------------------------------------------------------------------------------
+# Scratch
+#---------------------------------------------------------------------------------------------------------------------
+# Add column to DGX results w/ and w/out filtering CPM < 1
+# Does not make a difference...
+# library(data.table)
+# l <- list(Results_df, Results_df_Filtered)
+# test <- rbindlist(l)
+
+# Temporary: Prints plots followed by summary
+# Plot_Func <- function(a, b){
+#   print(a)
+#   grid.newpage()
+#   grid.table(a)
+#   plotMD(b)
+# }
+# TEMP_Res_Plots <- Map(Plot_Func, Results_df, Exact_Res)
 
 
