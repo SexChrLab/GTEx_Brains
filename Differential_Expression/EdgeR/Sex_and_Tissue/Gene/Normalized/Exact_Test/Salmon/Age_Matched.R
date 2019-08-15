@@ -2,7 +2,6 @@
 
 METADATA <- "/scratch/mjpete11/GTEx/Metadata/Age_Matched_Metadata.csv"
 COUNT_MATRIX <- "/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Count_Matrix.tsv"
-FILE_NAME =  "/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Gene/Normalized/Exact_Test/Salmon/Sex_Tissue_Exact_AgeMatched.pdf"
 
 # Load packages                                                                 
 library(tximport)                                                               
@@ -51,231 +50,107 @@ y <- calcNormFactors(y)
 # Estimate common dispersion and tagwise dispersions in one run (recommended)
 y <- estimateDisp(y, design, robust=TRUE)
 
-# Make contrasts: Sex by Tissue
-my.contrasts <- makeContrasts(Am.F.vs.M = Amygdala.Female - Amygdala.Male,
-                              At.F.vs.M = Anterior.Female - Anterior.Male,
-                              Ca.F.vs.M = Caudate.Female - Caudate.Male,
-                              Ce.F.vs.M = Cerebellar.Female - Cerebellar.Male,
-                              Co.F.vs.M = Cortex.Female - Cortex.Male,
-                              Fc.F.vs.M = Frontal_Cortex.Female - Frontal_Cortex.Male,
-                              Cm.F.vs.M = Cerebellum.Female - Cerebellum.Male,
-                              Hp.F.vs.M = Hippocampus.Female - Hippocampus.Male,
-                              Hy.F.vs.M = Hypothalamus.Female - Hypothalamus.Male,
-                              Na.F.vs.M = Nucleus_Accumbens.Female - Nucleus_Accumbens.Male,
-                              Pu.F.vs.M = Putamen.Female - Putamen.Male,
-                              Sp.F.vs.M = Spinal_Cord.Female - Spinal_Cord.Male,
-                              Sn.F.vs.M = Substantia_Nigra.Female - Substantia_Nigra.Male,
-                              levels=design)
-
+#------------------------------------------------------------------------------------------------------------------
 # Test for DGX with Exact Test
-
-# Plot
-pdf(FILE_NAME)
-
-# Amygdala Female vs Male
+#------------------------------------------------------------------------------------------------------------------
 et.Am.F.vs.M <- exactTest(y, c("Amygdala.Male", "Amygdala.Female"))
-df_Am <- summary(decideTests(et.Am.F.vs.M))
-grid.newpage() # To keep summary table from plotting on top of other plots
-grid.table(df_Am)
-plotMD(et.Am.F.vs.M)
-
-# Volcano plot
-volcanoData <- cbind(et.Am.F.vs.M$table$logFC, -log10(et.Am.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Amygdala.Female-1*Amygdala.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-# Plot unadjusted p-values
-hist(et.Am.F.vs.M$table[,"PValue"], breaks=50, main="Amygdala p-value frequency histogram")
-
-# Anterior Female vs Male
 et.At.F.vs.M <- exactTest(y, c("Anterior.Male", "Anterior.Female"))
-df_At <- summary(decideTests(et.At.F.vs.M))
-grid.newpage()
-grid.table(df_At)
-plotMD(et.At.F.vs.M)
 
-# Volcano plot
-volcanoData <- cbind(et.At.F.vs.M$table$logFC, -log10(et.At.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Anterior.Female-1*Anterior.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
 
-# Plot unadjusted p-values
-hist(et.At.F.vs.M$table[,"PValue"], breaks=50, main="Anterior p-value frequency histogram")
+# Comparisons to test
+Pairs <- list(c("Amygdala.Male", "Amygdala.Female"), 
+              c("Anterior.Male", "Anterior.Female"), 
+              c("Caudate.Male", "Caudate.Female"),
+              c("Cerebellar.Male", "Cerebellar.Female"),
+              c("Cerebellum.Male", "Cerebellum.Female"),
+              c("Cortex.Male", "Cortex.Female"),
+              c("Frontal_Cortex.Male", "Frontal_Cortex.Female"),
+              c("Hippocampus.Male", "Hippocampus.Female"), 
+              c("Hypothalamus.Male", "Hypothalamus.Female"), 
+              c("Nucleus_Accumbens.Male", "Nucleus_Accumbens.Female"), 
+              c("Putamen.Male", "Putamen.Female"),  
+              c("Spinal_Cord.Male", "Spinal_Cord.Female"), 
+              c("Substantia_Nigra.Male", "Substantia_Nigra.Female"))
 
-# Cortex Female vs Male
-et.Co.F.vs.M <- exactTest(y, c("Cortex.Male", "Cortex.Female"))
-df_Co <- summary(decideTests(et.Co.F.vs.M))
-grid.newpage()
-grid.table(df_Co)
-plotMD(et.Co.F.vs.M)
+# Apply exact test
+Exact_Func <- function(x){
+  exactTest(y, x)
+}
+Exact_Res <- lapply(Pairs, Exact_Func)
+names(Exact_Res) <- c('Amygdala', 'Anterior', 'Caudate', 'Cerebellar', 'Cerebellum', 'Cortex', 'Frontal_Cortex',
+                      'Hippocampus', 'Hypothalamus', 'Nucleus_Accumbens', 'Putamen', 'Spinal_Cord', 'Substantia_Nigra')
 
-# Volcano plot
-volcanoData <- cbind(et.Co.F.vs.M$table$logFC, -log10(et.Co.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Cortex.Female-1*Cortex.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
+# Get summary of results
+Summary_Func <- function(x){
+  res <- summary(decideTests(x))
+  return(res)
+}
+Results_df <- lapply(Exact_Res, Summary_Func)
 
-# Plot unadjusted p-values
-hist(et.Co.F.vs.M$table[,"PValue"], breaks=50, main="Cortex p-value frequency histogram")
 
-# Cerebellum Female vs Male
-et.Cm.F.vs.M <- exactTest(y, c("Cerebellum.Male", "Cerebellum.Female"))
-df_Cm <- summary(decideTests(et.Cm.F.vs.M))
-grid.newpage()
-grid.table(df_Cm)
-plotMD(et.Cm.F.vs.M)
+#---------------------------------------------------------------------------------------------------------------------
+# Plots
+#---------------------------------------------------------------------------------------------------------------------
+Titles <- list('Amygdala', 'Anterior', 'Caudate', 'Cerbellum', 'Cerebellar', 'Cortex', 'Frontal Cortex',
+               'Hippocampus', 'Hypothalamus', 'Nucleus Accumbens', 'Putamen', 'Spinal Cord', 'Substantia Nigra')
 
-# Volcano plot
-volcanoData <- cbind(et.Cm.F.vs.M$table$logFC, -log10(et.Cm.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Cerebellum.Female-1*Cerebellum.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
+# To reset par
+opar <- par(no.readonly = TRUE) 
 
-# Plot unadjusted p-values
-hist(et.Cm.F.vs.M$table[,"PValue"], breaks=50, main="Cerebellum p-value frequency histogram")
+# Plot Mean-Difference  plots on one page
+par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
+MD_Plot_Func <- function(x, w){
+  plotMD(x, main=w, legend=FALSE, hl.col=c("green", "blue"), cex=1.4)
+  mtext('Salmon: Mean-Difference Plots; Exact Test', side = 3, outer = TRUE, cex=1.2, line=3)
+  mtext('Average log CPM', side = 1, outer = TRUE, line=1)
+  mtext('Log-fold-change', side = 2, outer = TRUE, line=2)
+}
+Res_Plots <- Map(MD_Plot_Func, x=Exact_Res, w=Titles)
+legend(26.0, 10.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
+#par(opar) 
 
-# Cerebellar Female vs Male
-et.Ce.F.vs.M <- exactTest(y, c("Cerebellar.Male", "Cerebellar.Female"))
-df_Ce <- summary(decideTests(et.Ce.F.vs.M))
-grid.newpage()
-grid.table(df_Ce)
-plotMD(et.Ce.F.vs.M)
+# Make df of values for axis
+Volcano_Func <- function(x){
+  cbind(x$table$logFC, -log10(x$table[,"PValue"]))
+}
+Volcano_Res <- lapply(Exact_Res, Volcano_Func)
 
-# Volcano plot
-volcanoData <- cbind(et.Ce.F.vs.M$table$logFC, -log10(et.Ce.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Cerebellar.Female-1*Cerebellar.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
+# Coerce to df
+Volcano_Res <- lapply(Volcano_Res, as.data.frame)
 
-# Plot unadjusted p-values
-hist(et.Ce.F.vs.M$table[,"PValue"], breaks=50, main="Cerebellar p-value frequency histogram")
+# Rename columns
+colnames <- c("logFC", "negLogPval")
 
-# Hippocampus Female vs Male
-et.Hp.F.vs.M <- exactTest(y, c("Hippocampus.Male", "Hippocampus.Female"))
-df_Hp <- summary(decideTests(et.Hp.F.vs.M))
-grid.newpage()
-grid.table(df_Hp)
-plotMD(et.Hp.F.vs.M)
+Rename_Cols_Func <- function(x){
+  setNames(x, colnames)
+}
+Volcano_Res <- lapply(Volcano_Res, Rename_Cols_Func)
 
-# Volcano plot
-volcanoData <- cbind(et.Hp.F.vs.M$table$logFC, -log10(et.Hp.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Hippocampus.Female-1*Hippocampus.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
+# Volcano plots
+# Subset pos and neg sig values
+Subset_Func <- function(x){
+  significant <- list()
+  up <- subset(x,  negLogPval >= -log10(0.05) & logFC > 0)
+  down <- subset(x, negLogPval >= -log10(0.05) & logFC < 0)
+  significant <- append(significant, list(up))
+  significant <- append(significant, list(down))
+  return(significant)
+}
+Subset_Res <- lapply(Volcano_Res, Subset_Func)
 
-# Plot unadjusted p-values
-hist(et.Hp.F.vs.M$table[,"PValue"], breaks=50, main="Hippocampus p-value frequency histogram")
-
-# Hypothalamus Female vs Male
-et.Hy.F.vs.M <- exactTest(y, c("Hypothalamus.Male", "Hypothalamus.Female"))
-df_Hy <- summary(decideTests(et.Hy.F.vs.M))
-grid.newpage()
-grid.table(df_Hy)
-plotMD(et.Hy.F.vs.M)
-
-# Volcano plot
-volcanoData <- cbind(et.Hy.F.vs.M$table$logFC, -log10(et.Hy.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Hypothalamus.Female-1*Hypothalamus.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-# Plot unadjusted p-values
-hist(et.Hy.F.vs.M$table[,"PValue"], breaks=50, main="Hypothalamus p-value frequency histogram")
-
-# Frontal Cortex Female vs Male
-et.Fc.F.vs.M <- exactTest(y, c("Frontal_Cortex.Male", "Frontal_Cortex.Female"))
-df_Fc <- summary(decideTests(et.Fc.F.vs.M))
-grid.newpage()
-grid.table(df_Fc)
-plotMD(et.Fc.F.vs.M)
-
-# Volcano plot
-volcanoData <- cbind(et.Fc.F.vs.M$table$logFC, -log10(et.Fc.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Frontal_Cortex.Female-1*Frontal_Cortex.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-# Plot unadjusted p-values
-hist(et.Fc.F.vs.M$table[,"PValue"], breaks=50, main="Frontal cortex p-value frequency histogram")
-
-# Nucleus Accumbens Female vs Male
-et.Na.F.vs.M <- exactTest(y, c("Nucleus_Accumbens.Male", "Nucleus_Accumbens.Female"))
-df_Na <- summary(decideTests(et.Na.F.vs.M))
-grid.newpage()
-grid.table(df_Na)
-plotMD(et.Na.F.vs.M)
-
-# Volcano plot
-volcanoData <- cbind(et.Na.F.vs.M$table$logFC, -log10(et.Na.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Nucleus_Accumbens.Female-1*Nucleus_Accumbens.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-# Plot unadjusted p-values
-hist(et.Na.F.vs.M$table[,"PValue"], breaks=50, main="Nucleus accumbens p-value frequency histogram")
-
-# Putamen Female vs Male
-et.Pu.F.vs.M <- exactTest(y, c("Putamen.Male", "Putamen.Female"))
-df_Pu <- summary(decideTests(et.Pu.F.vs.M))
-grid.newpage()
-grid.table(df_Pu)
-plotMD(et.Pu.F.vs.M)
-
-# Volcano plot
-volcanoData <- cbind(et.Pu.F.vs.M$table$logFC, -log10(et.Pu.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Putamen.Female-1*Putamen.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-# Plot unadjusted p-values
-hist(et.Pu.F.vs.M$table[,"PValue"], breaks=50, main="Putamen p-value frequency histogram")
-
-# Spinal Cord Female vs Male
-et.Sp.F.vs.M <- exactTest(y, c("Spinal_Cord.Male", "Spinal_Cord.Female"))
-df_Sp <- summary(decideTests(et.Sp.F.vs.M))
-grid.newpage()
-grid.table(df_Sp)
-plotMD(et.Sp.F.vs.M)
-
-# Volcano plot
-volcanoData <- cbind(et.Sp.F.vs.M$table$logFC, -log10(et.Sp.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Spinal_Cord.Female-1*Spinal_Cord.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-# Plot unadjusted p-values
-hist(et.Sp.F.vs.M$table[,"PValue"], breaks=50, main="Spinal cord p-value frequency histogram")
-
-# Substantiaa Nigra Female vs Male
-et.Sn.F.vs.M <- exactTest(y, c("Substantia_Nigra.Male", "Substantia_Nigra.Female"))
-df_Sn <- summary(decideTests(et.Sn.F.vs.M))
-grid.newpage()
-grid.table(df_Sn)
-plotMD(et.Sn.F.vs.M)
-
-# Volcano plot
-volcanoData <- cbind(et.Sn.F.vs.M$table$logFC, -log10(et.Sn.F.vs.M$table[,"PValue"]))
-colnames(volcanoData) <- c("logFC", "negLogPval")
-plot(volcanoData, pch=19, main='Volcano plot: 1*Substantia_Nigra.Female-1*Substantia_Nigra.Male')
-abline(a=1.30102999566, b=0, col="blue") # Set intercept equal to p = -log10(0.05)
-abline(v=0, col="red")
-
-# Plot unadjusted p-values
-hist(et.Sn.F.vs.M$table[,"PValue"], breaks=50, main="Substantia nigra p-value frequency histogram")
-
-dev.off()
-
+# Add colored points for sig genes
+par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE) # margins: c(bottom, left, top, right) 
+Plot_Func <- function(a, b, c){
+  plot(a, pch=19, main=b, xlab = '', ylab = '', las = 1)
+  with(inner_join(a, c[[1]]), points(logFC, negLogPval, pch=19, col="green"))
+  with(inner_join(a, c[[2]]), points(logFC, negLogPval, pch=19, col="blue"))
+  abline(a=-log10(0.05), b=0, col="blue") 
+  abline(v=0, col="red")
+  mtext('Salmon: Volcano Plots; Exact Test', side = 3, outer = TRUE,  cex=1.2, line=3)
+  mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
+  mtext('negLogPval', side = 2, outer = TRUE, line=2)
+}
+Map(Plot_Func, a=Volcano_Res, b=Titles, c=Subset_Res)
+legend(16.0, 9.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
+       pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
 
