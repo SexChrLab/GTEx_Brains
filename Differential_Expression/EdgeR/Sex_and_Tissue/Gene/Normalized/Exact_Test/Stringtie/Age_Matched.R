@@ -2,7 +2,6 @@
 
 METADATA <- "/scratch/mjpete11/GTEx/Metadata/Age_Matched_Metadata.csv"
 COUNT_MATRIX <- "/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Count_Matrix.tsv"
-FILE_NAME <-  "/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Gene/Normalized/Exact_Test/Stringtie/Tissue_Exact_AgeMatched.pdf"
 PATHS <- c('/scratch/mjpete11/GTEx/Amygdala/Hisat_Stringtie/gene_count_matrix.csv', 
            '/scratch/mjpete11/GTEx/Anterior/Hisat_Stringtie/gene_count_matrix.csv',
            '/scratch/mjpete11/GTEx/Caudate/Hisat_Stringtie/gene_count_matrix.csv',
@@ -162,7 +161,7 @@ opar <- par(no.readonly = TRUE)
 par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
 MD_Plot_Func <- function(x, w){
   plotMD(x, main=w, legend=FALSE, hl.col=c("green", "blue"), cex=1.4)
-  mtext('Mean-Difference Plots', side = 3, outer = TRUE, cex=1.2, line=3)
+  mtext('Hisat: Mean-Difference Plots; Exact Test', side = 3, outer = TRUE, cex=1.2, line=3)
   mtext('Average log CPM', side = 1, outer = TRUE, line=1)
   mtext('Log-fold-change', side = 2, outer = TRUE, line=2)
 }
@@ -207,7 +206,7 @@ Plot_Func <- function(a, b, c){
   with(inner_join(a, c[[2]]), points(logFC, negLogPval, pch=19, col="blue"))
   abline(a=-log10(0.05), b=0, col="blue") 
   abline(v=0, col="red")
-  mtext('Hisat: Volcano Plots', side = 3, outer = TRUE,  cex=1.2, line=3)
+  mtext('Hisat: Volcano Plots; Exact Test', side = 3, outer = TRUE,  cex=1.2, line=3)
   mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('negLogPval', side = 2, outer = TRUE, line=2)
 }
@@ -215,23 +214,5 @@ Map(Plot_Func, a=Volcano_Res, b=Titles, c=Subset_Res)
 legend(16.0, 9.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
        pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
 
-
-#---------------------------------------------------------------------------------------------------------------------
-# Scratch
-#---------------------------------------------------------------------------------------------------------------------
-# Add column to DGX results w/ and w/out filtering CPM < 1
-# Does not make a difference...
-# library(data.table)
-# l <- list(Results_df, Results_df_Filtered)
-# test <- rbindlist(l)
-
-# Temporary: Prints plots followed by summary
-# Plot_Func <- function(a, b){
-#   print(a)
-#   grid.newpage()
-#   grid.table(a)
-#   plotMD(b)
-# }
-# TEMP_Res_Plots <- Map(Plot_Func, Results_df, Exact_Res)
 
 
