@@ -11,6 +11,7 @@ library(readr)
 library(stringr)
 library(gridExtra)
 library(grid)
+library(rjson)
 
 # Read Metadata CSV.                                                            
 samples = read.csv(METADATA, header = TRUE)
@@ -76,13 +77,18 @@ fit <- glmFit(y, design, robust=TRUE)
 Contrasts <- c('Am.F.vs.M', 'At.F.vs.M', 'Ca.F.vs.M', 'Ce.F.vs.M', 'Co.F.vs.M', 'Fc.F.vs.M', 'Cm.F.vs.M', 
                'Hp.F.vs.M', 'Hy.F.vs.M', 'Na.F.vs.M', 'Pu.F.vs.M', 'Sp.F.vs.M', 'Sn.F.vs.M')
 
+Tissues <- list('Amygdala', 'Anterior', 'Caudate', 'Cerbellar', 'Cerebellum', 'Cortex', 'Frontal Cortex',
+                'Hippocampus', 'Hypothalamus', 'Nucleus Accumbens', 'Putamen', 'Spinal Cord', 'Substantia Nigra')
+
 GLM_Ratio_Func <- function(x){
   glmLRT(fit, contrast=my.contrasts[,x])
 }
 GLM_Res <- lapply(Contrasts, GLM_Ratio_Func)
-names(GLM_Res) <- c('Amygdala', 'Anterior', 'Caudate', 'Cerebellar', 'Cerebellum', 'Cortex', 'Frontal_Cortex',
-                    'Hippocampus', 'Hypothalamus', 'Nucleus_Accumbens', 'Putamen', 'Spinal_Cord', 'Substantia_Nigra')
+names(GLM_Res) <- Tissues
 
+#---------------------------------------------------------------------------------------------------------------------
+# Summary stats
+#---------------------------------------------------------------------------------------------------------------------
 # Get summary of results
 Summary_Func <- function(x){
   res <- summary(decideTests(x))
@@ -90,12 +96,39 @@ Summary_Func <- function(x){
 }
 Results_df <- lapply(GLM_Res, Summary_Func)
 
+# Report sig DGX genes
+Up_Reg <- function(x){
+  res <- topTags(x, n=Inf, p=0.05)$table
+  up <- res[res$logFC > 0, ]
+  return(up)
+}
+
+Down_Reg <- function(x){
+  res <- topTags(x, n=Inf, p=0.05)$table
+  down <- res[res$logFC < 0, ]
+  return(down)
+}
+Up_Top <- lapply(GLM_Res, Up_Reg)
+Down_Top <- lapply(GLM_Res, Down_Reg)
+
+# Make table of up and down regulated genes for each tissue
+Get_Vec <- function(x){
+  res <- rownames(x)
+  return(res)
+}
+Up_Genes <- lapply(Up_Top, Get_Vec)
+Down_Genes <- lapply(Down_Top, Get_Vec)
+
+# Write to file
+Up_Json <- toJSON(Up_Genes)
+Down_Json <- toJSON(Down_Genes)
+
+write(Up_Json, "Salmon_Upreg_Ratio.json")
+write(Down_Json, "Salmon_Downreg_Ratio.json")
+
 #---------------------------------------------------------------------------------------------------------------------
 # Plots
 #---------------------------------------------------------------------------------------------------------------------
-Titles <- list('Amygdala', 'Anterior', 'Caudate', 'Cerbellum', 'Cerebellar', 'Cortex', 'Frontal Cortex',
-               'Hippocampus', 'Hypothalamus', 'Nucleus Accumbens', 'Putamen', 'Spinal Cord', 'Substantia Nigra')
-
 # To reset par
 opar <- par(no.readonly = TRUE) 
 
@@ -107,7 +140,7 @@ MD_Plot_Func <- function(x, w){
   mtext('Average log CPM', side = 1, outer = TRUE, line=1)
   mtext('Log-fold-change', side = 2, outer = TRUE, line=2)
 }
-Res_Plots <- Map(MD_Plot_Func, x=GLM_Res, w=Titles)
+Res_Plots <- Map(MD_Plot_Func, x=GLM_Res, w=Tissues)
 legend(26.0, 10.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
 #par(opar) 
 
@@ -152,7 +185,7 @@ Plot_Func <- function(a, b, c){
   mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('negLogPval', side = 2, outer = TRUE, line=2)
 }
-Map(Plot_Func, a=Volcano_Res, b=Titles, c=Subset_Res)
+Map(Plot_Func, a=Volcano_Res, b=Tissues, c=Subset_Res)
 legend(16.0, 9.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
        pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
 
