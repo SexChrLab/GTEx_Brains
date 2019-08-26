@@ -54,19 +54,19 @@ y <- estimateDisp(y, design, robust=TRUE)
 # Test for DGX with Exact Test
 #------------------------------------------------------------------------------------------------------------------
 # Comparisons to test
-Pairs <- list(c("Amygdala.Male", "Amygdala.Female"), 
-              c("Anterior.Male", "Anterior.Female"), 
-              c("Caudate.Male", "Caudate.Female"),
-              c("Cerebellar.Male", "Cerebellar.Female"),
-              c("Cerebellum.Male", "Cerebellum.Female"),
-              c("Cortex.Male", "Cortex.Female"),
-              c("Frontal_Cortex.Male", "Frontal_Cortex.Female"),
-              c("Hippocampus.Male", "Hippocampus.Female"), 
-              c("Hypothalamus.Male", "Hypothalamus.Female"), 
-              c("Nucleus_Accumbens.Male", "Nucleus_Accumbens.Female"), 
-              c("Putamen.Male", "Putamen.Female"),  
-              c("Spinal_Cord.Male", "Spinal_Cord.Female"), 
-              c("Substantia_Nigra.Male", "Substantia_Nigra.Female"))
+Pairs <- list(c("Amygdala.Female", "Amygdala.Male"), 
+              c("Anterior.Female", "Anterior.Male"), 
+              c("Caudate.Female", "Caudate.Male"),
+              c("Cerebellar.Female", "Cerebellar.Male"),
+              c("Cerebellum.Female", "Cerebellum.Male"),
+              c("Cortex.Female", "Cortex.Male"),
+              c("Frontal_Cortex.Female", "Frontal_Cortex.Male"),
+              c("Hippocampus.Female", "Hippocampus.Male"), 
+              c("Hypothalamus.Female", "Hypothalamus.Male"), 
+              c("Nucleus_Accumbens.Female", "Nucleus_Accumbens.Male"), 
+              c("Putamen.Female", "Putamen.Male"),  
+              c("Spinal_Cord.Female", "Spinal_Cord.Male"), 
+              c("Substantia_Nigra.Female", "Substantia_Nigra.Male"))
 
 # Apply exact test
 Exact_Func <- function(x){
@@ -103,7 +103,7 @@ MD_Plot_Func <- function(x, w){
 }
 Res_Plots <- Map(MD_Plot_Func, x=Exact_Res, w=Titles)
 legend(26.0, 10.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
-#par(opar) 
+par(opar) 
 
 # Make df of values for axis
 Volcano_Func <- function(x){
@@ -149,4 +149,5 @@ Plot_Func <- function(a, b, c){
 Map(Plot_Func, a=Volcano_Res, b=Titles, c=Subset_Res)
 legend(16.0, 9.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
        pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
+
 
