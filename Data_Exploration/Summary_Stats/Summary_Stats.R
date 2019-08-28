@@ -3,6 +3,8 @@ setwd("/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats")
 
 library(VennDiagram)
 library(rjson)
+library(grDevices)
+library(grid)
 
 # Read in json objects
 Hisat_Up_Exact <- fromJSON(file='Hisat_Upreg_Exact.json')
@@ -44,38 +46,11 @@ Down_FTest <- Map(Aligner_Lst, H=Hisat_Down_FTest, S=Salmon_Down_FTest)
 Up_Ratio <- Map(Aligner_Lst, H=Hisat_Up_Ratio, S=Salmon_Up_Ratio)
 Down_Ratio <- Map(Aligner_Lst, H=Hisat_Down_Ratio, S=Salmon_Down_Ratio) 
 
-# Venn diagram plot function
-
-# example plot
-venn.plot <- venn.diagram(
-  x = list("Exact" = Hisat_Up$Amygdala$`Exact Test`, "F Test" = Hisat_Up$Amygdala$`F Test`, "Ratio" = Hisat_Up$Amygdala$`Ratio Test`),
-  filename = "venn.tiff",
-  scaled = TRUE,
-  col = "transparent",
-  fill = c("firebrick", "deepskyblue4", "azure3"),
-  main.pos = c(0.5, 1.0),
-  cex = 1.5,
-  cat.cex = 1.5,
-  main.cex = 2,
-  cat.default.pos = "outer",
-  cat.pos = c(-70,60,-90), # first=F test, middle=Ratio, last=Exact
-  cat.dist = c(0.05,0.05,0.05),
-  cat.fontfamily = "sans",
-  main = "Test plot",
-  fontfamily = "sans",
-  na = "remove",
-  inverted = FALSE)
-
-venn.plot
-
-# plot function
-Files_1 <- c("Amygdala.tiff", "Anterior.tiff", "Caudate.tiff", "Cerebellar.tiff", "Cerebellum.tiff", "Cortex.tiff", "Frontal_Cortex.tiff",
-           "Hippocampus.tiff", "Hypothalamus.tiff", "Nucleus_Accumbens.tiff", "Putamen.tiff", "Spinal_Cord.tiff", "Substantia_Nigra.tiff")
-
-Venn_3 <- function(x, FILES, TISSUE){
+# 3-way Venn diagram plot function
+Venn_3 <- function(x, TISSUE){
   venn.plot <- venn.diagram(
     x = list("Exact" = x$'Exact Test', "F Test" = x$'F Test', "Ratio" = x$'Ratio Test'),
-    filename = FILES,
+    filename = NULL,
     scaled = TRUE,
     col = "transparent",
     fill = c("firebrick", "deepskyblue4", "azure3"),
@@ -91,44 +66,59 @@ Venn_3 <- function(x, FILES, TISSUE){
     fontfamily = "sans",
     na = "remove",
     inverted = FALSE)
+  
+  venn.plot <- grid.draw(venn.plot)
+  grid.newpage()
 
-  venn.plot
+  return(venn.plot)
 }
+# write to one file
+pdf("Hisat_Up.pdf")
+Map(Venn_3, x=Hisat_Up, TISSUE=names(Hisat_Up))
+dev.off()
 
-# Three-way venn diagram of test results from same aligner
-Map(Venn_3, x=Hisat_Up, FILES=Files_1, TISSUE=names(Hisat_Up))
+pdf("Salmon_Up.pdf")
+Map(Venn_3, x=Salmon_Up, TISSUE=names(Salmon_Up))
+dev.off()
 
-# Two-way venn diagram of up/down regulated genes by different aligners; same test
-# test plot
-venn.plot <- venn.diagram(
-  x = list("Salmon" = Down_Ratio$Amygdala$Salmon, "Hisat" = Down_Ratio$Amygdala$Hisat),
-  filename = "venn.tiff",
-  scaled = TRUE,
-  col = "transparent",
-  fill = c("firebrick", "deepskyblue4"),
-  main.pos = c(0.5, 1.0),
-  cex = 1.5,
-  cat.cex = 1.5,
-  main.cex = 2,
-  cat.default.pos = "outer",
-  cat.pos = c(170,-170), 
-  cat.dist = c(0.05,0.05),
-  cat.fontfamily = "sans",
-  main = "Test plot",
-  fontfamily = "sans",
-  na = "remove",
-  inverted = FALSE)
+pdf("Hisat_Down.pdf")
+Map(Venn_3, x=Hisat_Down, TISSUE=names(Hisat_Down))
+dev.off()
 
-venn.plot
+pdf("Salmon_Down.pdf")
+Map(Venn_3, x=Salmon_Down, TISSUE=names(Salmon_Down))
+dev.off()
 
-# function
-## TO-DO: These should also include tissue; e.g. 'Amygdala_Up_Exact'
-Files_2 <- c("Up_Exact", "Up_Ratio", "Up_FTest", "Down_Exact", "Down_Ratio", "Down_FTest")
+# 2 way venn diagrams
+Files_UE <- c("Amygdala_Up_Exact", "Anterior_Up_Exact", "Caudate_Up_Exact", "Cerebellar_Up_Exact", "Cerebellum_Up_Exact", "Cortex_Up_Exact",
+             "Frontal_Cortex_Up_Exact", "Hippocampus_Up_Exact", "Hypothalamus_Up_Exact", "Nucleus_Accumbens_Up_Exact", "Putamen_Up_Exact",
+             "Spinal_Cord_Up_Exact", "Substantia_Nigra_Up_Exact")
 
-Venn_2 <- function(x, FILES, TISSUE){
+Files_DE <- c("Amygdala_Down_Exact", "Anterior_Down_Exact", "Caudate_Down_Exact", "Cerebellar_Down_Exact", "Cerebellum_Down_Exact", 
+              "Cortex_Down_Exact", "Frontal_Cortex_Down_Exact", "Hippocampus_Down_Exact", "Hypothalamus_Down_Exact", "Nucleus_Accumbens_Down_Exact",
+              "Putamen_Down_Exact", "Spinal_Cord_Down_Exact", "Substantia_Nigra_Down_Exact")
+
+Files_UR <- c("Amygdala_Up_Ratio", "Anterior_Up_Ratio", "Caudate_Up_Ratio","Cerebellar_Up_Ratio", "Cerebellum_Up_Ratio", "Cortex_Up_Ratio",
+              "Frontal_Cortex_Up_Ratio", "Hippocampus_Up_Ratio", "Hypothalamus_Up_Ratio", "Nucleus_Accumbens_Up_Ratio", "Putamen_Up_Ratio",
+              "Spinal_Cord_Up_Ratio", "Substantia_Nigra_Up_Ratio")
+
+Files_DR <- c("Amygdala_Down_Ratio", "Anterior_Down_Ratio", "Caudate_Down_Ratio","Cerebellar_Down_Ratio", "Cerebellum_Down_Ratio", 
+              "Cortex_Down_Ratio", "Frontal_Cortex_Down_Ratio", "Hippocampus_Down_Ratio", "Hypothalamus_Down_Ratio", 
+              "Nucleus_Accumbens_Down_Ratio", "Putamen_Down_Ratio", "Spinal_Cord_Down_Ratio", "Substantia_Nigra_Down_Ratio")
+
+Files_UF <- c("Amygdala_Up_FTest", "Anterior_Up_FTest", "Caudate_Up_FTest", "Cerebellar_Up_FTest", "Cerebellum_Up_FTest", "Cortex_Up_FTes",
+             "Frontal_Cortex_Up_FTest", "Hippocampus_Up_FTest", "Hypothalamus_Up_FTest", "Nucleus_Accumbens_Up_FTest", "Putamen_Up_FTest",
+             "Spinal_Cord_Up_FTest", "Substantia_Nigra_Up_FTest")
+
+Files_DF <- c("Amygdala_Down_FTest", "Anterior_Down_FTest", "Caudate_Down_FTest", "Cerebellar_Down_FTest", "Cerebellum_Down_FTest",
+              "Cortex_Down_FTest", "Frontal_Cortex_Down_FTest", "Hippocampus_Down_FTest", "Hypothalamus_Down_FTest",
+              "Nucleus_Accumbens_Down_FTest", "Putamen_Down_FTest", "Spinal_Cord_Down_FTest", "Substantia_Nigra_Down_FTest")
+
+# Function to plot two-way venn diagrams 
+Venn_2 <- function(x, FILES){
   venn.plot <- venn.diagram(
     x = list("Salmon" = x$Salmon, "Hisat" = x$Hisat),
-    filename = FILES,
+    filename = NULL,
     scaled = TRUE,
     col = "transparent",
     fill = c("firebrick", "deepskyblue4"),
@@ -137,17 +127,44 @@ Venn_2 <- function(x, FILES, TISSUE){
     cat.cex = 1.5,
     main.cex = 2,
     cat.default.pos = "outer",
-    cat.pos = c(170,-170), # first=F test, middle=Ratio, last=Exact
+    cat.pos = c(170,-170), 
     cat.dist = c(0.05,0.05),
     cat.fontfamily = "sans",
-    main = TISSUE,
+    main = FILES,
     fontfamily = "sans",
     na = "remove",
     inverted = FALSE)
   
-  venn.plot
+  venn.plot <- grid.draw(venn.plot)
+  grid.newpage()
+  
+  return(venn.plot)
 }
 
-# Two-way venn diagram of up/down reg genes for same test type
-Map(Venn_3, x=Up_Exact, FILES=Files_2, TISSUE=names(Up_Exact))
+# write to one file
+pdf(file="Up_Exact.pdf")
+Map(Venn_2, x=Up_Exact, FILES=Files_UE)
+dev.off()
+
+pdf(file="Up_FTest.pdf")
+Map(Venn_2, x=Up_FTest, FILES=Files_UF)
+dev.off()
+
+pdf(file="Up_Ratio.pdf")
+Map(Venn_2, x=Up_Ratio, FILES=Files_UR)
+dev.off()
+
+pdf(file="Down_Exact.pdf")
+Map(Venn_2, x=Down_Exact, FILES=Files_DE)
+dev.off()
+
+pdf(file="Down_FTest.pdf")
+Map(Venn_2, x=Down_FTest, FILES=Files_DF)
+dev.off()
+
+pdf(file="Down_Ratio.pdf")
+Map(Venn_2, x=Down_Ratio, FILES=Files_DR)
+dev.off()
+
+
 
