@@ -1,64 +1,81 @@
 # Histograms of sample phenotypes labelled by sex
+setwd("/scratch/mjpete11/GTEx/Data_Exploration/Phenotypes")
 
 library(dplyr)
 library(ggplot2)
+library(MatchIt)
 
 # Constants
-PLOT_DIR <- "/scratch/mjpete11/GTEx/Data_Exploration/Phenotypes/"
+PLOT_DIR <- "/scratch/mjpete11/GTEx/Data_Exploration/Phenotypes"
 AGE_HIST <- "Age_Histograms.pdf"
 RACE_HIST <- "Race_Histograms.pdf"
 ETH_HIST <- "Ethnicity_Histograms.pdf"
-AGE_MATCHED_HIST <- "Age_Matched_Histograms.pdf"
-AGE_DENS <- "Age_Density_Plots.pdf"
-AGE_MATCHED_DENS <- "Age_Matched_Density_Plots.pdf"
-
 
 # Read sample metadata.                                                            
-Samples <- read.csv(file.path("/scratch/mjpete11/GTEx/Metadata/", "Metadata.csv"), header = TRUE)
-Age_Matched <- read.csv(file.path("/scratch/mjpete11/GTEx/Metadata/", "Age_Matched_Metadata.csv"), header = TRUE)
+Samples <- read.csv(file.path("/scratch/mjpete11/GTEx/Metadata", "Metadata.csv"), header = TRUE)
 
-# Min and max of sample ages
-min(Samples$Age) # 20
-max(Samples$Age) # 70
+#-----------------------------------------------------------------------------------------------------
+# Create config with age-matched, equal sample sizes across tissues
+#-----------------------------------------------------------------------------------------------------
+# Subset only older individuals
+df.Samples <- subset(Samples, Age >= 55)
 
-min(Age_Matched$Age) # 51
-max(Age_Matched$Age) # 70
+# Find which tissue has smallest sample size before matching
+table(df.Samples$Tissue[which(df.Samples$Sex=='Female')]) # 18 females above 55 in Spinal_Cord/Substantia_Nigra
 
+# Add Group column with sex as logical
+df.Samples$Group <- as.logical(df.Samples$Sex == 'Female')
+
+# Match male and females exactly (i.e equal ratios of male and females) exactly for 
+# tissue and age; include race and ethincity for propensity score
+match.it <- matchit(Group ~ Tissue + Age + Race + Ethnicity, data = df.Samples, method = "nearest", exact = c("Age","Tissue"))
+df.Samples <- match.data(match.it)[1:ncol(df.Samples)]
+
+# Sort by sex and age
+df.Samples <- df.Samples[with(df.Samples, order(Tissue, Sex, Age)),]
+
+# Find which tissue has smallest sample size 
+table(df.Samples$Tissue[which(df.Samples$Sex=='Female')]) # 11 females spinal cord samples
+
+# For each df in list, subset 11 female/male samples; descending by age
+df.Samples <- do.call(rbind, lapply(unique(df.Samples$Tissue), function(w){
+  tmp <- df.Samples[which(df.Samples$Tissue==w), ]
+  tmp <- tmp[order(tmp$Age,decreasing = T), ]
+  rbind(tmp[which(tmp$Sex=="Male"),][1:11,], tmp[which(tmp$Sex=="Female"), ][1:11, ])
+}))
+
+# Check sample ages
+min(df.Samples$Age) # 55
+max(df.Samples$Age) # 69
+
+# Write to file
+write.csv(df.Samples, file='Matched_Metadata.csv', row.names=FALSE)
+
+# Organize samples by tissue type into list of dfs for plotting
+Meta_Samples <- list()
+for(i in 1:length(levels(df.Samples$Tissue))){
+  Meta_Samples[[i]] <- df.Samples[df.Samples$Tissue == levels(df.Samples$Tissue)[i],]
+}
+names(Meta_Samples) <- levels(df.Samples$Tissue)
+
+#-----------------------------------------------------------------------------------------------------
+# Density plots
+#-----------------------------------------------------------------------------------------------------
 # Overlaid density plots for all samples
-ggplot(Samples, aes(x=Samples$Age, fill=Samples$Sex)) +
- geom_density(alpha=.3) + ggtitle("Density Plot of Sample Age Distribution") +
- xlab("Age") + ylab("Density") + scale_fill_manual(name = "Sex", values=c("blue", "green"))
-
-# Same; age-matched
-ggplot(Age_Matched, aes(x=Age_Matched$Age, fill=Age_Matched$Sex)) +
-  geom_density(alpha=.3) + ggtitle("Density Plot of Age-Matched Sample Age Distribution") +
+ggplot(df.Samples, aes(x=df.Samples$Age, fill=df.Samples$Sex)) +
+  geom_density(alpha=.3) + ggtitle("Density Plot of Sample Age Distribution") +
   xlab("Age") + ylab("Density") + scale_fill_manual(name = "Sex", values=c("blue", "green"))
 
-# Organize samples by tissue type into list of dfs
-Meta_Samples <- list()
-for(i in 1:length(levels(Samples$Tissue))){
-  Meta_Samples[[i]] <- Samples[Samples$Tissue == levels(Samples$Tissue)[i],]
-}
-names(Meta_Samples) <- levels(Samples$Tissue)
-
-# Same for age-matched samples
-Meta_Age_Matched <- list()
-for(i in 1:length(levels(Age_Matched$Tissue))){
-  Meta_Age_Matched[[i]] <- Age_Matched[Age_Matched$Tissue == levels(Age_Matched$Tissue)[i],]
-}
-names(Meta_Age_Matched) <- levels(Age_Matched$Tissue)
-
-# Plots
-setwd(PLOT_DIR)
-
+#-----------------------------------------------------------------------------------------------------
+# Histograms
+#-----------------------------------------------------------------------------------------------------
 # Function to plot histograms on top of each other
-x_axis_labels <- seq(min(Samples[,'Age']), max(Samples[,'Age']), 5)
+x_axis_labels <- seq(min(df.Samples[,'Age']), max(df.Samples[,'Age']), 5)
 y_axis_labels <- seq(0, 30, 1)
 
 Hist_Func <- function(META, NAMES, TITLE){
-  Hist_Plots <- ggplot(META, aes(x=Age, fill=Sex)) +
-    geom_histogram(data=subset(META, Sex=='Female'), aes(fill=Sex), alpha=0.4, binwidth=1, colour='gray50') +
-    geom_histogram(data=subset(META, Sex=='Male'), aes(fill=Sex), alpha=0.4, binwidth=1, colour='gray50') + 
+  Hist_Plots <- ggplot(META, aes(x=Age, fill=Sex)) + 
+    geom_histogram(position = position_dodge(), alpha=0.4, binwidth=1, colour='gray50') +
     scale_x_continuous(labels=x_axis_labels, breaks=x_axis_labels) +
     scale_y_continuous(labels=y_axis_labels, breaks=y_axis_labels) +
     scale_fill_manual(name="Sex", values=c("blue", "green"), labels=c("Female", "Male")) +
@@ -69,11 +86,6 @@ Hist_Func <- function(META, NAMES, TITLE){
 # Plot sample histograms
 pdf(AGE_HIST)
 Map(Hist_Func, META = Meta_Samples, NAMES = names(Meta_Samples), TITLE = "Sample Age Histogram")
-dev.off()
-
-# Plot age-matched sample histogram
-pdf(AGE_MATCHED_HIST)
-Map(Hist_Func, META = Meta_Age_Matched, NAMES = names(Meta_Age_Matched), TITLE = "Age-Matched Sample Histogram")
 dev.off()
 
 # Density plots by tissue
@@ -90,11 +102,6 @@ pdf(AGE_DENS)
 Map(Density_Func, META = Meta_Samples, NAMES = names(Meta_Samples), TITLE = "Sample Age Density Plot")
 dev.off()
 
-# Plot age-matched
-pdf(AGE_MATCHED_DENS)
-Map(Density_Func, META = Meta_Age_Matched, NAMES = names(Meta_Age_Matched), TITLE = "Age-Matched Sample Density Plot")
-dev.off()
-
 # Race histogram plots
 y_axis_labels <- seq(0, 100, 2)
 
@@ -109,7 +116,7 @@ Hist_Func <- function(a, b){
 }
 
 pdf(RACE_HIST)
-Map(Hist_Func, a = Meta, b = names(Meta)) 
+Map(Hist_Func, a = Meta_Samples, b = names(Meta_Samples)) 
 dev.off()
 
 # Ethnicity histogram plots
@@ -126,6 +133,6 @@ Hist_Func <- function(a, b){
 }
 
 pdf(ETH_HIST)
-Map(Hist_Func, a = Meta, b = names(Meta))
+Map(Hist_Func, a = Meta_Samples, b = names(Meta_Samples))
 dev.off()
 
