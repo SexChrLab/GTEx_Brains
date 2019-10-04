@@ -7,9 +7,9 @@ library(MatchIt)
 
 # Constants
 PLOT_DIR <- "/scratch/mjpete11/GTEx/Data_Exploration/Phenotypes"
-AGE_HIST <- "Age_Histograms.pdf"
-RACE_HIST <- "Race_Histograms.pdf"
-ETH_HIST <- "Ethnicity_Histograms.pdf"
+AGE_HIST <- "/scratch/mjpete11/GTEx/Data_Exploration/Phenotypes/SexAgeRaceEth_Matched/Age_Histograms.pdf"
+RACE_HIST <- "/scratch/mjpete11/GTEx/Data_Exploration/Phenotypes/SexAgeRaceEth_Matched/Race_Histograms.pdf"
+ETH_HIST <- "/scratch/mjpete11/GTEx/Data_Exploration/Phenotypes/SexAgeRaceEth_Matched/Ethnicity_Histograms.pdf"
 
 # Read sample metadata.                                                            
 Samples <- read.csv(file.path("/scratch/mjpete11/GTEx/Metadata", "Metadata.csv"), header = TRUE)
@@ -49,7 +49,7 @@ min(df.Samples$Age) # 55
 max(df.Samples$Age) # 69
 
 # Write to file
-write.csv(df.Samples, file='Matched_Metadata.csv', row.names=FALSE)
+write.csv(df.Samples, file='/scratch/mjpete11/GTEx/Data_Exploration/Phenotypes/SexAgeRaceEth_Matched/Matched_Metadata.csv', row.names=FALSE)
 
 # Organize samples by tissue type into list of dfs for plotting
 Meta_Samples <- list()
@@ -76,7 +76,6 @@ y_axis_labels <- seq(0, 30, 1)
 Hist_Func <- function(META, NAMES, TITLE){
   Hist_Plots <- ggplot(META, aes(x=Age, fill=Sex)) + 
     geom_histogram(position = position_dodge(), alpha=0.4, binwidth=1, colour='gray50') +
-    scale_x_continuous(labels=x_axis_labels, breaks=x_axis_labels) +
     scale_y_continuous(labels=y_axis_labels, breaks=y_axis_labels) +
     scale_fill_manual(name="Sex", values=c("blue", "green"), labels=c("Female", "Male")) +
     ggtitle(paste(NAMES, TITLE)) +
@@ -98,9 +97,7 @@ Density_Func <- function(META, NAMES, TITLE){
 }
 
 # Plot samples
-pdf(AGE_DENS)
 Map(Density_Func, META = Meta_Samples, NAMES = names(Meta_Samples), TITLE = "Sample Age Density Plot")
-dev.off()
 
 # Race histogram plots
 y_axis_labels <- seq(0, 100, 2)
