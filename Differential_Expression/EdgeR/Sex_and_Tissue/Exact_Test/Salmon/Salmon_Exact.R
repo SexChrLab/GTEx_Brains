@@ -3,8 +3,8 @@ setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact
 
 METADATA <- "/scratch/mjpete11/GTEx/Metadata/Matched_Metadata.csv"
 COUNT_MATRIX <- "/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Count_Matrix.tsv"
-VOLCANO_FILE <- 'Matched_Salmon_Exact_Volcano.pdf'
-MD_FILE <- 'Matched_Salmon_Exact.pdf'
+MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Plots/Matched_Salmon_Exact_MD.pdf'
+VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Plots/Matched_Salmon_Exact_Volcano.pdf'
 
 # Load packages                                                                 
 library(tximport)                                                               
@@ -123,7 +123,7 @@ Summary_Func <- function(x){
 Results_df <- lapply(Exact_Res, Summary_Func)
 
 #---------------------------------------------------------------------------------------------------------------------
-# Plots
+# Mean-Difference plots
 #---------------------------------------------------------------------------------------------------------------------
 # To reset par
 opar <- par(no.readonly = TRUE) 
@@ -132,16 +132,20 @@ opar <- par(no.readonly = TRUE)
 par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
 MD_Plot_Func <- function(x, w){
   plotMD(x, main=w, legend=FALSE, hl.col=c("green", "blue"), cex=1.4)
-  mtext('Salmon: Mean-Difference Plots; Exact Test', side = 3, outer = TRUE, cex=1.2, line=3)
+  mtext('Salmon: Mean-Difference Plots; Exact  Test', side = 3, outer = TRUE, cex=1.2, line=3)
   mtext('Average log CPM', side = 1, outer = TRUE, line=1)
   mtext('Log-fold-change', side = 2, outer = TRUE, line=2)
 }
-pdf(MD_FILE)
+pdf(MD_PLOT)
+par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) 
 Res_Plots <- Map(MD_Plot_Func, x=Exact_Res, w=Tissues)
 legend(26.0, 10.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
 dev.off()
 par(opar) 
 
+#---------------------------------------------------------------------------------------------------------------------
+# Volcano Plots
+#---------------------------------------------------------------------------------------------------------------------
 # Make df of values for axis
 Volcano_Func <- function(x){
   cbind(x$table$logFC, -log10(x$table[,"PValue"]))
@@ -159,33 +163,31 @@ Rename_Cols_Func <- function(x){
 }
 Volcano_Res <- lapply(Volcano_Res, Rename_Cols_Func)
 
-# Volcano plots
-# Subset pos and neg sig values
-Subset_Func <- function(x){
-  significant <- list()
-  up <- subset(x,  negLogPval >= -log10(0.05) & logFC > 0)
-  down <- subset(x, negLogPval >= -log10(0.05) & logFC < 0)
-  significant <- append(significant, list(up))
-  significant <- append(significant, list(down))
-  return(significant)
+# Add values of zero for tissues that did not return significant results
+# None of the tissues returned significant DEGs
+Write_Zero <- function(x){
+  x <-  data.frame(logFC=c(0), PValue=c(0))
+  return(x)
 }
-Subset_Res <- lapply(Volcano_Res, Subset_Func)
+Up_Top <- lapply(Up_Top, Write_Zero)
+Down_Top <- lapply(Down_Top, Write_Zero)
 
-# Add colored points for sig genes
+# Plot
 par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE) # margins: c(bottom, left, top, right) 
-Plot_Func <- function(a, b, c){
+Plot_Func <- function(a, b, c, d){
   plot(a, pch=19, main=b, xlab = '', ylab = '', las = 1)
-  with(inner_join(a, c[[1]]), points(logFC, negLogPval, pch=19, col="green"))
-  with(inner_join(a, c[[2]]), points(logFC, negLogPval, pch=19, col="blue"))
+  with(inner_join(a, c), points(logFC, negLogPval, pch=19, col="green"))
+  with(inner_join(a, d), points(logFC, negLogPval, pch=19, col="blue"))
   abline(a=-log10(0.05), b=0, col="blue") 
-  abline(v=0, col="red")
-  mtext('Salmon: Volcano Plots; Exact Test', side = 3, outer = TRUE,  cex=1.2, line=3)
+  abline(v=2, col="red")
+  abline(v=-2, col="red")
+  mtext('Salmon: Volcano Plots; Exact Ratio Test', side = 3, outer = TRUE,  cex=1.2, line=3)
   mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('negLogPval', side = 2, outer = TRUE, line=2)
 }
-pdf(VOLCANO_FILE)
-Map(Plot_Func, a=Volcano_Res, b=Tissues, c=Subset_Res)
-legend(16.0, 9.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
+pdf(VOLCANO_PLOT)
+par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE)
+Map(Plot_Func, a=Volcano_Res.TEST, b=Tissues, c=Up_Top, d=Down_Top)
+legend(30.0, 2.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
        pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
 dev.off()
-
