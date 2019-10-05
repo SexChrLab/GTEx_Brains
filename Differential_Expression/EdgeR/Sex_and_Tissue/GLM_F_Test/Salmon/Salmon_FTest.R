@@ -133,9 +133,6 @@ Results_df <- lapply(GLM_Res, Summary_Func)
 #---------------------------------------------------------------------------------------------------------------------
 # Mean-Difference plots
 #---------------------------------------------------------------------------------------------------------------------
-# To reset par
-opar <- par(no.readonly = TRUE) 
-
 # Plot Mean-Difference  plots on one page
 par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
 MD_Plot_Func <- function(x, w){
@@ -149,7 +146,6 @@ par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)
 Res_Plots <- Map(MD_Plot_Func, x=GLM_Res, w=Tissues)
 legend(26.0, 10.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
 dev.off()
-par(opar) 
 
 #---------------------------------------------------------------------------------------------------------------------
 # Volcano Plots
@@ -170,13 +166,6 @@ Rename_Cols_Func <- function(x){
   setNames(x, colnames)
 }
 Volcano_Res <- lapply(Volcano_Res, Rename_Cols_Func)
-
-# Add values of zero for tissues that did not return significant results
-Write_Zero <- function(x){
-  x <-  data.frame(logFC=c(0), PValue=c(0))
-  return(x)
-}
-Up_Top$Putamen <- Write_Zero(Up_Top$Putamen)
 
 # Plot
 par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE) # margins: c(bottom, left, top, right) 
