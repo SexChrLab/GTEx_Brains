@@ -210,9 +210,6 @@ Results_df <- lapply(GLM_Res, Summary_Func)
 #---------------------------------------------------------------------------------------------------------------------
 # Mean-Difference Plots
 #---------------------------------------------------------------------------------------------------------------------
-# To reset par
-opar <- par(no.readonly = TRUE) 
-
 # Plot Mean-Difference  plots on one page
 par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
 MD_Plot_Func <- function(x, w){
@@ -228,7 +225,6 @@ par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)
 Res_Plots <- Map(MD_Plot_Func, x=GLM_Res, w=Tissues)
 legend(50.0, 15.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
 dev.off()
-par(opar)
 
 #---------------------------------------------------------------------------------------------------------------------
 # Volcano Plots
@@ -271,6 +267,6 @@ Plot_Func <- function(a, b, c, d){
 pdf(VOLCANO_PLOT)
 par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE)
 Map(Plot_Func, a=Volcano_Res, b=Tissues, c=Up_Top, d=Down_Top)
-legend(16.0, 9.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
+legend(25.0, 8.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
        pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
 dev.off()
