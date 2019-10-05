@@ -237,10 +237,10 @@ par(opar)
 Volcano_Func <- function(x){
   cbind(x$table$logFC, -log10(x$table[,"PValue"]))
 }
-Volcano_Res.TEST <- lapply(GLM_Res, Volcano_Func)
+Volcano_Res <- lapply(GLM_Res, Volcano_Func)
 
 # Coerce to df
-Volcano_Res.TEST <- lapply(Volcano_Res.TEST, as.data.frame)
+Volcano_Res <- lapply(Volcano_Res, as.data.frame)
 
 # Rename columns
 colnames <- c("logFC", "negLogPval")
@@ -248,7 +248,7 @@ colnames <- c("logFC", "negLogPval")
 Rename_Cols_Func <- function(x){
   setNames(x, colnames)
 }
-Volcano_Res.TEST <- lapply(Volcano_Res.TEST, Rename_Cols_Func)
+Volcano_Res <- lapply(Volcano_Res, Rename_Cols_Func)
 
 # Add values of zero for tissues that did not return significant results
 Up_Top$Amygdala <- data.frame(logFC=c(0), PValue=c(0))
@@ -270,7 +270,7 @@ Plot_Func <- function(a, b, c, d){
 }
 pdf(VOLCANO_PLOT)
 par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE)
-Map(Plot_Func, a=Volcano_Res.TEST, b=Tissues, c=Up_Top, d=Down_Top)
+Map(Plot_Func, a=Volcano_Res, b=Tissues, c=Up_Top, d=Down_Top)
 legend(16.0, 9.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
        pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
 dev.off()
