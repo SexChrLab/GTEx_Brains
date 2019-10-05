@@ -125,14 +125,11 @@ Results_df <- lapply(Exact_Res, Summary_Func)
 #---------------------------------------------------------------------------------------------------------------------
 # Mean-Difference plots
 #---------------------------------------------------------------------------------------------------------------------
-# To reset par
-opar <- par(no.readonly = TRUE) 
-
 # Plot Mean-Difference  plots on one page
 par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
 MD_Plot_Func <- function(x, w){
   plotMD(x, main=w, legend=FALSE, hl.col=c("green", "blue"), cex=1.4)
-  mtext('Salmon: Mean-Difference Plots; Exact  Test', side = 3, outer = TRUE, cex=1.2, line=3)
+  mtext('Salmon: Mean-Difference Plots; Exact Test', side = 3, outer = TRUE, cex=1.2, line=3)
   mtext('Average log CPM', side = 1, outer = TRUE, line=1)
   mtext('Log-fold-change', side = 2, outer = TRUE, line=2)
 }
@@ -141,7 +138,6 @@ par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)
 Res_Plots <- Map(MD_Plot_Func, x=Exact_Res, w=Tissues)
 legend(26.0, 10.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
 dev.off()
-par(opar) 
 
 #---------------------------------------------------------------------------------------------------------------------
 # Volcano Plots
@@ -163,15 +159,6 @@ Rename_Cols_Func <- function(x){
 }
 Volcano_Res <- lapply(Volcano_Res, Rename_Cols_Func)
 
-# Add values of zero for tissues that did not return significant results
-# None of the tissues returned significant DEGs
-Write_Zero <- function(x){
-  x <-  data.frame(logFC=c(0), PValue=c(0))
-  return(x)
-}
-Up_Top <- lapply(Up_Top, Write_Zero)
-Down_Top <- lapply(Down_Top, Write_Zero)
-
 # Plot
 par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE) # margins: c(bottom, left, top, right) 
 Plot_Func <- function(a, b, c, d){
@@ -181,13 +168,13 @@ Plot_Func <- function(a, b, c, d){
   abline(a=-log10(0.05), b=0, col="blue") 
   abline(v=2, col="red")
   abline(v=-2, col="red")
-  mtext('Salmon: Volcano Plots; Exact Ratio Test', side = 3, outer = TRUE,  cex=1.2, line=3)
+  mtext('Salmon: Volcano Plots; Exact Test', side = 3, outer = TRUE,  cex=1.2, line=3)
   mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('negLogPval', side = 2, outer = TRUE, line=2)
 }
 pdf(VOLCANO_PLOT)
 par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE)
-Map(Plot_Func, a=Volcano_Res.TEST, b=Tissues, c=Up_Top, d=Down_Top)
-legend(30.0, 2.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
+Map(Plot_Func, a=Volcano_Res, b=Tissues, c=Up_Top, d=Down_Top)
+legend(25.0, 8.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
        pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
 dev.off()
