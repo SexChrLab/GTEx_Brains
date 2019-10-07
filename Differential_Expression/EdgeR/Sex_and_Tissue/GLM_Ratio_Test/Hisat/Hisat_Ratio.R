@@ -78,6 +78,13 @@ Col_Bind <- function(df, fc){
 }
 Meta <- Map(Col_Bind, Meta, Groups)
 
+# Sort cols in cts in same order as rows in Meta$Samples
+Sort_Cols <- function(x, z){
+  x <- x[, match(rownames(z), colnames(x))]
+  return(x)
+}
+cts <- Map(Sort_Cols, x=cts, z=Meta)
+
 # Create list of DGEList objects
 DGE_Func <- function(df, lst){
   res <- DGEList(df, group=lst)
@@ -249,11 +256,6 @@ Rename_Cols_Func <- function(x){
   setNames(x, colnames)
 }
 Volcano_Res <- lapply(Volcano_Res, Rename_Cols_Func)
-
-# Add values of zero for tissues that did not return significant results
-Up_Top$Amygdala <- data.frame(logFC=c(0), PValue=c(0))
-Down_Top$Amygdala <- data.frame(logFC=c(0), PValue=c(0))
-Down_Top$Cortex <- data.frame(logFC=c(0), PValue=c(0))
 
 # Plot
 Plot_Func <- function(a, b, c, d){
