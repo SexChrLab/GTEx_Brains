@@ -78,6 +78,13 @@ Col_Bind <- function(df, fc){
 }
 Meta <- Map(Col_Bind, Meta, Groups)
 
+# Sort cols in cts in same order as rows in Meta$Samples
+Sort_Cols <- function(x, z){
+  x <- x[, match(rownames(z), colnames(x))]
+  return(x)
+}
+cts <- Map(Sort_Cols, x=cts, z=Meta)
+
 # Create list of DGEList objects
 DGE_Func <- function(df, lst){
   res <- DGEList(df, group=lst)
@@ -85,12 +92,12 @@ DGE_Func <- function(df, lst){
 }
 y <- Map(DGE_Func, cts, Groups)
 
-# Create design matrix: Step 2
+# Create design matrix: Step 2; Part 1
 Model_Func <- function(fc, df){
   res <- model.matrix(~0 + fc, data = df$samples)
   return(res)
 }
-Design <- Map(Model_Func, Groups, y)
+Design <- Map(Model_Func, fc=Groups, df=y)
 
 # Remove "fc" from colnames
 Rename_Cols <- function(x){
@@ -99,12 +106,18 @@ Rename_Cols <- function(x){
 }
 Design <- lapply(Design, Rename_Cols)
 
+# Create design matrix: Step 2; Part 2
+Set_Levels <- function(x, z){
+  colnames(x) <- levels(z$samples$group)
+  return(x)
+}
+Design <- Map(Set_Levels, x=Design, z=y)
+
 # Filter out lowly expressed genes.
 # Remove genes w/ <7 counts.
 Keep <- lapply(y, function(x){
   rowSums(cpm(x)>1)>=2
 })
-#summary(Keep$Amygdala) # example
 
 Filter_Func <- function(x, k){
   x <- x[k, , keep.lib.sizes=FALSE]
@@ -113,7 +126,6 @@ y <- Map(Filter_Func, y, Keep)
 
 # TMM Normalization
 y <- lapply(y, calcNormFactors)
-#View(y$Amygdala$samples)
 
 # Estimate common dispersion and tagwise dispersions in one run (recommended)
 Dispersion_Func <- function(a, b){
@@ -210,7 +222,6 @@ Results_df <- lapply(GLM_Res, Summary_Func)
 # Mean-Difference plots
 #---------------------------------------------------------------------------------------------------------------------
 # Plot Mean-Difference  plots on one page
-par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
 MD_Plot_Func <- function(x, w){
   plotMD(x, main=w, legend=FALSE, hl.col=c("green", "blue"), cex=1.4)
   mtext('Hisat: Mean-Difference Plots; GLM F Test', side = 3, outer = TRUE, cex=1.2, line=3)
@@ -218,7 +229,7 @@ MD_Plot_Func <- function(x, w){
   mtext('Log-fold-change', side = 2, outer = TRUE, line=2)
 }
 pdf(MD_PLOT)
-par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) 
+par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
 Res_Plots <- Map(MD_Plot_Func, x=GLM_Res, w=Tissues)
 legend(26.0, 10.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
 dev.off()
@@ -226,7 +237,7 @@ dev.off()
 #---------------------------------------------------------------------------------------------------------------------
 # Volcano Plots
 #---------------------------------------------------------------------------------------------------------------------
-# Make df of values for axis
+# Make df of values for axes
 Volcano_Func <- function(x){
   cbind(x$table$logFC, -log10(x$table[,"PValue"]))
 }
@@ -243,24 +254,13 @@ Rename_Cols_Func <- function(x){
 }
 Volcano_Res <- lapply(Volcano_Res, Rename_Cols_Func)
 
-# Add values of zero for tissues that did not return significant results
-# None of the tissues returned significant DEGs
-Write_Zero <- function(x){
-  x <-  data.frame(logFC=c(0), PValue=c(0))
-  return(x)
-}
-Up_Top <- lapply(Up_Top, Write_Zero)
-Down_Top <- lapply(Down_Top, Write_Zero)
-
 # Plot
-par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE) # margins: c(bottom, left, top, right) 
 Plot_Func <- function(a, b, c, d){
   plot(a, pch=19, main=b, xlab = '', ylab = '', las = 1)
   with(inner_join(a, c), points(logFC, negLogPval, pch=19, col="green"))
   with(inner_join(a, d), points(logFC, negLogPval, pch=19, col="blue"))
   abline(a=-log10(0.05), b=0, col="blue") 
-  abline(v=2, col="red")
-  abline(v=-2, col="red")
+  abline(v=c(2, -2), col="red")
   mtext('Hisat: Volcano Plots; GLM F Test', side = 3, outer = TRUE,  cex=1.2, line=3)
   mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('negLogPval', side = 2, outer = TRUE, line=2)
