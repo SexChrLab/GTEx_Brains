@@ -78,7 +78,7 @@ Col_Bind <- function(df, fc){
 }
 Meta <- Map(Col_Bind, Meta, Groups)
 
-# Sort cols in cts in same order as rows in Meta$Samples
+# Sort cols in cts in same order as rows in Meta
 Sort_Cols <- function(x, z){
   x <- x[, match(rownames(z), colnames(x))]
   return(x)
@@ -113,10 +113,9 @@ Set_Levels <- function(x, z){
 }
 Design <- Map(Set_Levels, x=Design, z=y)
 
-# Filter out lowly expressed genes.
-# Remove genes w/ <7 counts.
+# Keep only genes expressed in at least half the samples
 Keep <- lapply(y, function(x){
-  rowSums(cpm(x)>1)>=2
+  rowSums(cpm(x)>1)>=11
 })
 
 Filter_Func <- function(x, k){
