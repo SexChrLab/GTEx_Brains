@@ -108,10 +108,9 @@ Set_Levels <- function(x, z){
 }
 Design <- Map(Set_Levels, x=Design, z=y)
 
-# Filter out lowly expressed genes.
-# Remove genes w/ <7 counts.
+# Keep only genes expressed in at least half the samples
 Keep <- lapply(y, function(x){
-  rowSums(cpm(x)>1)>=2
+  rowSums(cpm(x)>1)>=11
 })
 
 Filter_Func <- function(x, k){
