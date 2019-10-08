@@ -16,10 +16,17 @@ library(gridExtra)
 library(grid)
 
 # Read Metadata CSV.                                                            
-samples = read.csv(METADATA, header = TRUE)
+Samples = read.csv(METADATA, header = TRUE)
 
 # Set rownames of metadata object equal to sample names.                        
-rownames(samples) <- samples$Sample                                             
+rownames(Samples) <- Samples$Sample   
+
+# Metadata split into list of dfs by tissue
+Meta <- list()
+for(i in 1:length(levels(Samples$Tissue))){
+  Meta[[i]] <- Samples[Samples$Tissue == levels(Samples$Tissue)[i],]
+}
+names(Meta) <- levels(Samples$Tissue)
 
 # Read in count matrix
 cts <- read.table(COUNT_MATRIX, sep="\t")
@@ -27,36 +34,103 @@ cts <- read.table(COUNT_MATRIX, sep="\t")
 # Replace . to - in colnames
 colnames(cts) <- str_replace_all(colnames(cts),pattern = "\\.","-")
 
-# Remove samples not present in metadata
-cts <- cts[intersect(colnames(cts), as.character(samples$Sample))]
+# Remove Samples not present in metadata
+cts <- cts[intersect(colnames(cts), as.character(Samples$Sample))]
+
+# Function to split count matrix into list of dfs
+Tissues <- names(Meta)
+
+Split_Cols <- function(w, z){
+  names <- which(colnames(w) %in% Samples[['Sample']] & Samples[['Tissue']] == z)
+  res <- cts[, names]
+  return(res)
+}
+
+# Split count matrix into list of dfs
+res <- list()
+for (i in Tissues){
+  res[[i]] <- Split_Cols(w=cts, z=i)
+}
+
+# Check if columns were subset correctly
+check <- list()
+for (i in 1:13){
+  check[[i]] <- colnames(res[[i]]) %in% subset(Samples$Sample, Samples$Tissue==Tissues[[i]])
+}
 
 # Create design matrix: Step 1
-# 26 combos of tissue and sex
-Group <- factor(paste(samples$Tissue, samples$Sex, sep="."))
-cbind(samples,group=Group)
+# Create sex and tissue factor
+Factor_Func <- function(x){
+  res <- factor(paste(x$Tissue, x$Sex, sep="."))
+  return(res)
+}
+Groups <- lapply(Meta, Factor_Func)
 
-# Create DGEList object: All combos
-y <- DGEList(cts, group=Group)
+# Add column with new factor
+Col_Bind <- function(df, fc){
+  cbind(df, fc)
+}
+Meta <- Map(Col_Bind, Meta, Groups)
 
-#Create deisgn matrix: Step 2
-design <- model.matrix(~0+group, data=y$samples) # No intercept
-colnames(design) <- levels(y$samples$group)
+# Sort cols in cts in same order as rows in Meta
+Sort_Cols <- function(x, z){
+  x <- x[, match(rownames(z), colnames(x))]
+  return(x)
+}
+cts <- Map(Sort_Cols, x=res, z=Meta)
+
+# Create list of DGEList objects
+DGE_Func <- function(df, lst){
+  res <- DGEList(df, group=lst)
+  return(res)
+}
+y <- Map(DGE_Func, cts, Groups)
+
+# Create design matrix: Step 2; Part 1
+Model_Func <- function(fc, df){
+  res <- model.matrix(~0 + fc, data = df$samples)
+  return(res)
+}
+Design <- Map(Model_Func, Groups, y)
+
+# Remove "fc" from colnames
+Rename_Cols <- function(x){
+  colnames(x) <- gsub("fc", "", colnames(x))
+  return(x)
+}
+Design <- lapply(Design, Rename_Cols)
+
+# Create design matrix: Step 2; Part 2
+Set_Levels <- function(x, z){
+  colnames(x) <- levels(z$samples$group)
+  return(x)
+}
+Design <- Map(Set_Levels, x=Design, z=y)
 
 # Filter out lowly expressed genes.
 # Remove genes w/ <7 counts.
-keep <- rowSums(cpm(y)>1) >= 2
-y <- y[keep, , keep.lib.sizes=FALSE]
+Keep <- lapply(y, function(x){
+  rowSums(cpm(x)>1)>=2
+})
+
+Filter_Func <- function(x, k){
+  x <- x[k, , keep.lib.sizes=FALSE]
+}
+y <- Map(Filter_Func, y, Keep)
 
 # TMM Normalization
-y <- calcNormFactors(y)
+y <- lapply(y, calcNormFactors)
 
 # Estimate common dispersion and tagwise dispersions in one run (recommended)
-y <- estimateDisp(y, design, robust=TRUE)
+Dispersion_Func <- function(a, b){
+  estimateDisp(a, b, robust=TRUE)
+}
+y <- Map(Dispersion_Func, y, Design)
 
-#------------------------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------------
 # Test for DGX with Exact Test
-#------------------------------------------------------------------------------------------------------------------
-# Comparisons to test
+#---------------------------------------------------------------------------------------------------------------------
+# Comaprisons to test
 Pairs <- list(c("Amygdala.Male", "Amygdala.Female"), 
               c("Anterior.Male", "Anterior.Female"), 
               c("Caudate.Male", "Caudate.Female"),
@@ -72,12 +146,10 @@ Pairs <- list(c("Amygdala.Male", "Amygdala.Female"),
               c("Substantia_Nigra.Male", "Substantia_Nigra.Female"))
 
 # Apply exact test
-Exact_Func <- function(x){
-  exactTest(y, x)
+Exact_Func <- function(x, comp){
+  exactTest(x, comp)
 }
-Exact_Res <- lapply(Pairs, Exact_Func)
-names(Exact_Res) <- c('Amygdala', 'Anterior', 'Caudate', 'Cerebellar', 'Cerebellum', 'Cortex', 'Frontal_Cortex',
-                      'Hippocampus', 'Hypothalamus', 'Nucleus_Accumbens', 'Putamen', 'Spinal_Cord', 'Substantia_Nigra')
+Exact_Res <- Map(Exact_Func, y, Pairs)
 
 #---------------------------------------------------------------------------------------------------------------------
 # Summarize results 
@@ -97,10 +169,7 @@ Down_Reg <- function(x){
 Up_Top <- lapply(Exact_Res, Up_Reg)
 Down_Top <- lapply(Exact_Res, Down_Reg)
 
-# Male table of up and down regulated genes for each tissue
-Tissues <- list('Amygdala', 'Anterior', 'Caudate', 'Cerbellar', 'Cerebellum', 'Cortex', 'Frontal Cortex',
-                'Hippocampus', 'Hypothalamus', 'Nucleus Accumbens', 'Putamen', 'Spinal Cord', 'Substantia Nigra')
-
+# Make table of up and down regulated genes for each tissue
 Get_Vec <- function(x){
   res <- rownames(x)
   return(res)
@@ -115,7 +184,7 @@ Down_Json <- toJSON(Down_Genes)
 write(Up_Json, "Salmon_Upreg_Exact.json")
 write(Down_Json, "Salmon_Downreg_Exact.json")
 
-# Get summary of results as tables
+# Get summary of results as table
 Summary_Func <- function(x){
   res <- summary(decideTests(x))
   return(res)
@@ -123,20 +192,21 @@ Summary_Func <- function(x){
 Results_df <- lapply(Exact_Res, Summary_Func)
 
 #---------------------------------------------------------------------------------------------------------------------
-# Mean-Difference plots
+# Mean-Difference Plots
 #---------------------------------------------------------------------------------------------------------------------
 # Plot Mean-Difference  plots on one page
-par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
 MD_Plot_Func <- function(x, w){
   plotMD(x, main=w, legend=FALSE, hl.col=c("green", "blue"), cex=1.4)
   mtext('Salmon: Mean-Difference Plots; Exact Test', side = 3, outer = TRUE, cex=1.2, line=3)
   mtext('Average log CPM', side = 1, outer = TRUE, line=1)
   mtext('Log-fold-change', side = 2, outer = TRUE, line=2)
 }
+
+# Write to file
 pdf(MD_PLOT)
-par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) 
+par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)  # margins: c(bottom, left, top, right)
 Res_Plots <- Map(MD_Plot_Func, x=Exact_Res, w=Tissues)
-legend(26.0, 10.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
+legend(50.0, 15.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
 dev.off()
 
 #---------------------------------------------------------------------------------------------------------------------
@@ -160,14 +230,12 @@ Rename_Cols_Func <- function(x){
 Volcano_Res <- lapply(Volcano_Res, Rename_Cols_Func)
 
 # Plot
-par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE) # margins: c(bottom, left, top, right) 
 Plot_Func <- function(a, b, c, d){
   plot(a, pch=19, main=b, xlab = '', ylab = '', las = 1)
   with(inner_join(a, c), points(logFC, negLogPval, pch=19, col="green"))
   with(inner_join(a, d), points(logFC, negLogPval, pch=19, col="blue"))
   abline(a=-log10(0.05), b=0, col="blue") 
-  abline(v=2, col="red")
-  abline(v=-2, col="red")
+  abline(v=c(2,-2), col="red")
   mtext('Salmon: Volcano Plots; Exact Test', side = 3, outer = TRUE,  cex=1.2, line=3)
   mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('negLogPval', side = 2, outer = TRUE, line=2)
