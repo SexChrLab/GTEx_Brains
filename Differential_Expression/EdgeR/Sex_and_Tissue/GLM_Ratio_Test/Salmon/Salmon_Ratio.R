@@ -17,10 +17,17 @@ library(grid)
 library(rjson)
 
 # Read Metadata CSV.                                                            
-samples = read.csv(METADATA, header = TRUE)
+Samples = read.csv(METADATA, header = TRUE)
 
 # Set rownames of metadata object equal to sample names.                        
-rownames(samples) <- samples$Sample      
+rownames(Samples) <- Samples$Sample      
+
+# Metadata split into list of dfs by tissue
+Meta <- list()
+for(i in 1:length(levels(Samples$Tissue))){
+  Meta[[i]] <- Samples[Samples$Tissue == levels(Samples$Tissue)[i],]
+}
+names(Meta) <- levels(Samples$Tissue)
 
 # Read in counts 
 cts <- read.csv(COUNT_MATRIX, sep = "\t")
@@ -28,66 +35,141 @@ cts <- read.csv(COUNT_MATRIX, sep = "\t")
 # Replace . to - in colnames
 colnames(cts) <- str_replace_all(colnames(cts),pattern = "\\.","-")
 
-# Remove samples not present in metadata
-cts <- cts[intersect(colnames(cts), as.character(samples$Sample))]
+# Remove Samples not present in metadata
+cts <- cts[intersect(colnames(cts), as.character(Samples$Sample))]
+
+# Function to split count matrix into list of dfs
+Tissues <- names(Meta)
+
+Split_Cols <- function(w, z){
+  names <- which(colnames(w) %in% Samples[['Sample']] & Samples[['Tissue']] == z)
+  res <- cts[, names]
+  return(res)
+}
+
+# Split count matrix into list of dfs
+res <- list()
+for (i in Tissues){
+  res[[i]] <- Split_Cols(w=cts, z=i)
+}
+
+# Check if columns were subset correctly
+check <- list()
+for (i in 1:13){
+  check[[i]] <- colnames(res[[i]]) %in% subset(Samples$Sample, Samples$Tissue==Tissues[[i]])
+}
 
 # Create design matrix: Step 1
-# 26 combos of tissue and sex
-Group <- factor(paste(samples$Tissue, samples$Sex, sep="."))
-cbind(samples,group=Group)
+# Create sex and tissue factor
+Factor_Func <- function(x){
+  res <- factor(paste(x$Tissue, x$Sex, sep="."))
+  return(res)
+}
+Groups <- lapply(Meta, Factor_Func)
 
-# Create DGEList object: All combos
-y <- DGEList(cts, group=Group)
+# Add column with new factor
+Col_Bind <- function(df, fc){
+  cbind(df, fc)
+}
+Meta <- Map(Col_Bind, Meta, Groups)
 
-#Create deisgn matrix: Step 2
-design <- model.matrix(~0+group, data=y$samples) # No intercept
-colnames(design) <- levels(y$samples$group)
+# Sort cols in cts in same order as rows in Meta
+Sort_Cols <- function(x, z){
+  x <- x[, match(rownames(z), colnames(x))]
+  return(x)
+}
+cts <- Map(Sort_Cols, x=res, z=Meta)
+
+# Create list of DGEList objects
+DGE_Func <- function(df, lst){
+  res <- DGEList(df, group=lst)
+  return(res)
+}
+y <- Map(DGE_Func, cts, Groups)
+
+# Create design matrix: Step 2; Part 1
+Model_Func <- function(fc, df){
+  res <- model.matrix(~0 + fc, data = df$Samples)
+  return(res)
+}
+Design <- Map(Model_Func, Groups, y)
+
+# Remove "fc" from colnames
+Rename_Cols <- function(x){
+  colnames(x) <- gsub("fc", "", colnames(x))
+  return(x)
+}
+Design <- lapply(Design, Rename_Cols)
+
+# Create design matrix: Step 2; Part 2
+Set_Levels <- function(x, z){
+  colnames(x) <- levels(z$samples$group)
+  return(x)
+}
+Design <- Map(Set_Levels, x=Design, z=y)
 
 # Filter out lowly expressed genes.
 # Remove genes w/ <7 counts.
-keep <- rowSums(cpm(y)>1) >= 2
-y <- y[keep, , keep.lib.sizes=FALSE]
+Keep <- lapply(y, function(x){
+  rowSums(cpm(x)>1)>=2
+})
+
+Filter_Func <- function(x, k){
+  x <- x[k, , keep.lib.sizes=FALSE]
+}
+y <- Map(Filter_Func, y, Keep)
 
 # TMM Normalization
-y <- calcNormFactors(y)
+y <- lapply(y, calcNormFactors)
 
 # Estimate common dispersion and tagwise dispersions in one run (recommended)
-y <- estimateDisp(y, design, robust=TRUE)
+Dispersion_Func <- function(a, b){
+  estimateDisp(a, b, robust=TRUE)
+}
+y <- Map(Dispersion_Func, y, Design)
 
 #------------------------------------------------------------------------------------------------------------------
 # Test for DGX with GLM Ratio Test
 #------------------------------------------------------------------------------------------------------------------
-# Make contrasts: Sex by Tissue
-my.contrasts <- makeContrasts(Am.F.vs.M = Amygdala.Female - Amygdala.Male,
-                              At.F.vs.M = Anterior.Female - Anterior.Male,
-                              Ca.F.vs.M = Caudate.Female - Caudate.Male,
-                              Ce.F.vs.M = Cerebellar.Female - Cerebellar.Male,
-                              Co.F.vs.M = Cortex.Female - Cortex.Male,
-                              Fc.F.vs.M = Frontal_Cortex.Female - Frontal_Cortex.Male,
-                              Cm.F.vs.M = Cerebellum.Female - Cerebellum.Male,
-                              Hp.F.vs.M = Hippocampus.Female - Hippocampus.Male,
-                              Hy.F.vs.M = Hypothalamus.Female - Hypothalamus.Male,
-                              Na.F.vs.M = Nucleus_Accumbens.Female - Nucleus_Accumbens.Male,
-                              Pu.F.vs.M = Putamen.Female - Putamen.Male,
-                              Sp.F.vs.M = Spinal_Cord.Female - Spinal_Cord.Male,
-                              Sn.F.vs.M = Substantia_Nigra.Female - Substantia_Nigra.Male,
-                              levels=design)
-
 # Fit glm model
-fit <- glmFit(y, design, robust=TRUE)
-
-# Apply GLM Ratio test
-Contrasts <- c('Am.F.vs.M', 'At.F.vs.M', 'Ca.F.vs.M', 'Ce.F.vs.M', 'Co.F.vs.M', 'Fc.F.vs.M', 'Cm.F.vs.M', 
-               'Hp.F.vs.M', 'Hy.F.vs.M', 'Na.F.vs.M', 'Pu.F.vs.M', 'Sp.F.vs.M', 'Sn.F.vs.M')
-
-Tissues <- list('Amygdala', 'Anterior', 'Caudate', 'Cerbellar', 'Cerebellum', 'Cortex', 'Frontal Cortex',
-                'Hippocampus', 'Hypothalamus', 'Nucleus Accumbens', 'Putamen', 'Spinal Cord', 'Substantia Nigra')
-
-GLM_Ratio_Func <- function(x){
-  glmLRT(fit, contrast=my.contrasts[,x])
+Fit_Func <- function(a, b){
+  fit <- glmFit(a, b, robust=TRUE)
+  return(fit)
 }
-GLM_Res <- lapply(Contrasts, GLM_Ratio_Func)
-names(GLM_Res) <- Tissues
+Fit <- Map(Fit_Func, a=y, b=Design)
+
+# Make contrasts: Sex by Tissue
+Contrasts <- c('Amygdala.Female - Amygdala.Male',
+               'Anterior.Female - Anterior.Male',
+               'Caudate.Female - Caudate.Male',
+               'Cerebellar.Female - Cerebellar.Male',
+               'Cerebellum.Female - Cerebellum.Male',
+               'Cortex.Female - Cortex.Male',
+               'Frontal_Cortex.Female - Frontal_Cortex.Male',
+               'Hippocampus.Female - Hippocampus.Male',
+               'Hypothalamus.Female - Hypothalamus.Male',
+               'Nucleus_Accumbens.Female - Nucleus_Accumbens.Male',
+               'Putamen.Female - Putamen.Male',
+               'Spinal_Cord.Female - Spinal_Cord.Male',
+               'Substantia_Nigra.Female - Substantia_Nigra.Male')
+
+Names <- c('Am.F.vs.M', 'At.F.vs.M', 'Ca.F.vs.M', 'Ce.F.vs.M', 'Co.F.vs.M', 'Fc.F.vs.M', 'Cm.F.vs.M', 
+           'Hp.F.vs.M', 'Hy.F.vs.M', 'Na.F.vs.M', 'Pu.F.vs.M', 'Sp.F.vs.M', 'Sn.F.vs.M')
+
+# Make contrasts
+Contrast_Func <- function(a, b){
+  res <- makeContrasts(contrasts = a, levels = colnames(b))
+  return(res)
+}
+my.contrasts <- Map(Contrast_Func, a=Contrasts, b=Design)
+names(my.contrasts) <- Names
+
+# Apply GLM F test
+# Resulting objects are of class DGELRT 
+GLM_Ratio_Func <- function(a, b){
+  glmLRT(a, contrast=b)
+}
+GLM_Res <- Map(GLM_Ratio_Func, a=Fit, b=my.contrasts)
 
 #---------------------------------------------------------------------------------------------------------------------
 # Summary stats
@@ -107,7 +189,10 @@ Down_Reg <- function(x){
 Up_Top <- lapply(GLM_Res, Up_Reg)
 Down_Top <- lapply(GLM_Res, Down_Reg)
 
-# Make table of up and down regulated genes for each tissue
+# Male table of up and down regulated genes for each tissue
+Tissues <- list('Amygdala', 'Anterior', 'Caudate', 'Cerbellar', 'Cerebellum', 'Cortex', 'Frontal Cortex',
+                'Hippocampus', 'Hypothalamus', 'Nucleus Accumbens', 'Putamen', 'Spinal Cord', 'Substantia Nigra')
+
 Get_Vec <- function(x){
   res <- rownames(x)
   return(res)
@@ -119,10 +204,10 @@ Down_Genes <- lapply(Down_Top, Get_Vec)
 Up_Json <- toJSON(Up_Genes)
 Down_Json <- toJSON(Down_Genes)
 
-write(Up_Json, "Salmon_Upreg_Ratio.json")
-write(Down_Json, "Salmon_Downreg_Ratio.json")
+write(Up_Json, "Hisat_Upreg_Ratio.json")
+write(Down_Json, "Hisat_Downreg_Ratio.json")
 
-# Get summary of results
+# Get summary of results as tables
 Summary_Func <- function(x){
   res <- summary(decideTests(x))
   return(res)
@@ -130,20 +215,21 @@ Summary_Func <- function(x){
 Results_df <- lapply(GLM_Res, Summary_Func)
 
 #---------------------------------------------------------------------------------------------------------------------
-# Mean-Difference plots
+# Mean-Difference Plots
 #---------------------------------------------------------------------------------------------------------------------
 # Plot Mean-Difference  plots on one page
-par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
 MD_Plot_Func <- function(x, w){
   plotMD(x, main=w, legend=FALSE, hl.col=c("green", "blue"), cex=1.4)
   mtext('Salmon: Mean-Difference Plots; GLM Ratio Test', side = 3, outer = TRUE, cex=1.2, line=3)
   mtext('Average log CPM', side = 1, outer = TRUE, line=1)
   mtext('Log-fold-change', side = 2, outer = TRUE, line=2)
 }
+
+# Write to file
 pdf(MD_PLOT)
-par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) 
+par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)  # margins: c(bottom, left, top, right)
 Res_Plots <- Map(MD_Plot_Func, x=GLM_Res, w=Tissues)
-legend(26.0, 10.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
+legend(50.0, 15.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
 dev.off()
 
 #---------------------------------------------------------------------------------------------------------------------
@@ -167,14 +253,12 @@ Rename_Cols_Func <- function(x){
 Volcano_Res <- lapply(Volcano_Res, Rename_Cols_Func)
 
 # Plot
-par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE) # margins: c(bottom, left, top, right) 
 Plot_Func <- function(a, b, c, d){
   plot(a, pch=19, main=b, xlab = '', ylab = '', las = 1)
   with(inner_join(a, c), points(logFC, negLogPval, pch=19, col="green"))
   with(inner_join(a, d), points(logFC, negLogPval, pch=19, col="blue"))
   abline(a=-log10(0.05), b=0, col="blue") 
-  abline(v=2, col="red")
-  abline(v=-2, col="red")
+  abline(v=c(2, -2), col="red")
   mtext('Salmon: Volcano Plots; GLM Ratio Test', side = 3, outer = TRUE,  cex=1.2, line=3)
   mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('negLogPval', side = 2, outer = TRUE, line=2)
@@ -185,3 +269,4 @@ Map(Plot_Func, a=Volcano_Res, b=Tissues, c=Up_Top, d=Down_Top)
 legend(25.0, 8.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
        pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
 dev.off()
+
