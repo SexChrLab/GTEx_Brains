@@ -120,7 +120,7 @@ dev.off()
 DGE_Reps <- DGE_lst[c(4:7)]
 Meta_Reps <- Meta[c(4:7)]
 
-pdf(MDS_K2)
+pdf(REPS_K2)
 par(mfrow = c(2, 2), cex=0.4, mar = c(3, 2, 2, 6), oma =c(5, 5, 6, 6), xpd=TRUE)
 k2_MDS <- Map(MDS_FUN_k2, DGE = DGE_Reps, NAME = names(DGE_Reps), META = Meta_Reps, TOP = 100)
 legend(5.0, 2.5, inset=0, legend=levels(Meta$Amygdala$Sex), pch=16, cex=2.0, col=colors, xpd=NA)
