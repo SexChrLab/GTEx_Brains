@@ -143,22 +143,22 @@ Fit_Func <- function(a, b){
 Fit <- Map(Fit_Func, a=y, b=Design)
 
 # Make contrasts: Sex by Tissue
-Contrasts <- c('Amygdala.Female - Amygdala.Male',
-               'Anterior.Female - Anterior.Male',
-               'Caudate.Female - Caudate.Male',
-               'Cerebellar.Female - Cerebellar.Male',
-               'Cerebellum.Female - Cerebellum.Male',
-               'Cortex.Female - Cortex.Male',
-               'Frontal_Cortex.Female - Frontal_Cortex.Male',
-               'Hippocampus.Female - Hippocampus.Male',
-               'Hypothalamus.Female - Hypothalamus.Male',
-               'Nucleus_Accumbens.Female - Nucleus_Accumbens.Male',
-               'Putamen.Female - Putamen.Male',
-               'Spinal_Cord.Female - Spinal_Cord.Male',
-               'Substantia_Nigra.Female - Substantia_Nigra.Male')
+Contrasts <- c('Amygdala.Male - Amygdala.Female',
+               'Anterior.Male - Anterior.Female',
+               'Caudate.Male - Caudate.Female',
+               'Cerebellar.Male - Cerebellar.Female',
+               'Cerebellum.Male - Cerebellum.Female',
+               'Cortex.Male - Cortex.Female',
+               'Frontal_Cortex.Male - Frontal_Cortex.Female',
+               'Hippocampus.Male - Hippocampus.Female',
+               'Hypothalamus.Male - Hypothalamus.Female',
+               'Nucleus_Accumbens.Male - Nucleus_Accumbens.Female',
+               'Putamen.Male - Putamen.Female',
+               'Spinal_Cord.Male - Spinal_Cord.Female',
+               'Substantia_Nigra.Male - Substantia_Nigra.Female')
 
-Names <- c('Am.F.vs.M', 'At.F.vs.M', 'Ca.F.vs.M', 'Ce.F.vs.M', 'Co.F.vs.M', 'Fc.F.vs.M', 'Cm.F.vs.M', 
-           'Hp.F.vs.M', 'Hy.F.vs.M', 'Na.F.vs.M', 'Pu.F.vs.M', 'Sp.F.vs.M', 'Sn.F.vs.M')
+Names <- c('Am.MvsF', 'At.MvsF', 'Ca.MvsF', 'Ce.MvsF', 'Co.MvsF', 'Fc.MvsF', 'Cm.MvsF', 
+           'Hp.MvsF', 'Hy.MvsF', 'Na.MvsF', 'Pu.MvsF', 'Sp.MvsF', 'Sn.MvsF')
 
 # Make contrasts
 Contrast_Func <- function(a, b){
