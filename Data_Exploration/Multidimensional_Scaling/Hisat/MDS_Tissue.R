@@ -3,25 +3,55 @@
 setwd("/scratch/mjpete11/GTEx/Data_Exploration/Multidimensional_Scaling/Hisat")
 
 METADATA = file.path('/scratch/mjpete11/GTEx/Metadata/', 'Matched_Metadata.csv')
-TABLE_DIR =  '/scratch/mjpete11/GTEx/Data_Exploration/Sex_Tissue_Age/Multidimensional_Scaling/Hisat/Matched_Table'
-MDS_K2 = '/scratch/mjpete11/GTEx/Data_Exploration/Multidimensional_Scaling/Hisat/Matched_Plots/Matched_Hisat_MDS_k2.pdf'
-MDS_K4 = '/scratch/mjpete11/GTEx/Data_Exploration/Multidimensional_Scaling/Hisat/Matched_Plots/Matched_Hisat_MDS_k4.pdf'
-REPS_K2 = '/scratch/mjpete11/GTEx/Data_Exploration/Multidimensional_Scaling/Hisat/Matched_Plots/Matched_Reps_Hisat_MDS_k2.pdf'
-REPS_K4 = '/scratch/mjpete11/GTEx/Data_Exploration/Multidimensional_Scaling/Hisat/Matched_Plots/Matched_Reps_Hisat_MDS_k4.pdf'
+TABLE_DIR =  '/scratch/mjpete11/GTEx/Data_Exploration/Sex_Tissue_Age/Multidimensional_Scaling/Hisat/Matched/Gene/Tables/'
+MDS_K2 = '/scratch/mjpete11/GTEx/Data_Exploration/Multidimensional_Scaling/Hisat/Matched/Gene/Matched_Hisat_MDS_k2.pdf'
+MDS_K4 = '/scratch/mjpete11/GTEx/Data_Exploration/Multidimensional_Scaling/Hisat/Matched/Gene/Matched_Hisat_MDS_k4.pdf'
+REPS_K2 = '/scratch/mjpete11/GTEx/Data_Exploration/Multidimensional_Scaling/Hisat/Matched/Gene/Matched_Reps_Hisat_MDS_k2.pdf'
+REPS_K4 = '/scratch/mjpete11/GTEx/Data_Exploration/Multidimensional_Scaling/Hisat/Matched/Gene/Matched_Reps_Hisat_MDS_k4.pdf'
 
-PATHS <- c('/scratch/mjpete11/GTEx/Amygdala/Hisat_Stringtie/gene_count_matrix.csv', 
-           '/scratch/mjpete11/GTEx/Anterior/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Caudate/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Cerebellar/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Cerebellum/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Cortex/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Frontal_Cortex/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Hippocampus/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Hypothalamus/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Nucleus_Accumbens/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Putamen/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Spinal_Cord/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Substantia_Nigra/Hisat_Stringtie/gene_count_matrix.csv')
+# Originally used count matrices generated using Prep_DE.py
+# PATHS <- c('/scratch/mjpete11/GTEx/Amygdala/Hisat_Stringtie/gene_count_matrix.csv', 
+#            '/scratch/mjpete11/GTEx/Anterior/Hisat_Stringtie/gene_count_matrix.csv',
+#            '/scratch/mjpete11/GTEx/Caudate/Hisat_Stringtie/gene_count_matrix.csv',
+#            '/scratch/mjpete11/GTEx/Cerebellar/Hisat_Stringtie/gene_count_matrix.csv',
+#            '/scratch/mjpete11/GTEx/Cerebellum/Hisat_Stringtie/gene_count_matrix.csv',
+#            '/scratch/mjpete11/GTEx/Cortex/Hisat_Stringtie/gene_count_matrix.csv',
+#            '/scratch/mjpete11/GTEx/Frontal_Cortex/Hisat_Stringtie/gene_count_matrix.csv',
+#            '/scratch/mjpete11/GTEx/Hippocampus/Hisat_Stringtie/gene_count_matrix.csv',
+#            '/scratch/mjpete11/GTEx/Hypothalamus/Hisat_Stringtie/gene_count_matrix.csv',
+#            '/scratch/mjpete11/GTEx/Nucleus_Accumbens/Hisat_Stringtie/gene_count_matrix.csv',
+#            '/scratch/mjpete11/GTEx/Putamen/Hisat_Stringtie/gene_count_matrix.csv',
+#            '/scratch/mjpete11/GTEx/Spinal_Cord/Hisat_Stringtie/gene_count_matrix.csv',
+#            '/scratch/mjpete11/GTEx/Substantia_Nigra/Hisat_Stringtie/gene_count_matrix.csv')
+
+# Switching to count matrices generated with tximport
+GENE_PATHS <- c('/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Amygdala_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Anterior_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Caudate_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Cerebellar_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Cerebellum_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Cortex_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/FrontalCortex_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Hippocampus_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Hypothalamus_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/NucleusAccumbens_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Putamen_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/SpinalCord_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/SubstantiaNigra_Gene_Hisat_CountMatrix.tsv')
+
+# TRANSCRIPT_PATHS <-c('/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Amygdala_Transcript_Hisat_CountMatrix.tsv',
+#                      '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Anterior_Transcript_Hisat_CountMatrix.tsv',
+#                      '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Caudate_Transcript_Hisat_CountMatrix.tsv',
+#                      '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Cerebellar_Transcript_Hisat_CountMatrix.tsv',
+#                      '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Cerebellum_Transcript_Hisat_CountMatrix.tsv',
+#                      '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Cortex_Transcript_Hisat_CountMatrix.tsv',
+#                      '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/FrontalCortex_Transcript_Hisat_CountMatrix.tsv',
+#                      '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Hippocampus_Transcript_Hisat_CountMatrix.tsv',
+#                      '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Hypothalamus_Transcript_Hisat_CountMatrix.tsv',
+#                      '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/NucleusAccumbens_Transcript_Hisat_CountMatrix.tsv',
+#                      '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Putamen_Transcript_Hisat_CountMatrix.tsv',
+#                      '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/SpinalCord_Transcript_Hisat_CountMatrix.tsv',
+#                      '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/SubstantiaNigra_Transcript_Hisat_CountMatrix.tsv')
 
 # Load packages                                                                 
 library(readr)
@@ -37,8 +67,8 @@ Samples = read.csv(METADATA, header = TRUE)
 rownames(Samples) <- Samples$Sample                                             
 
 # Load count data 
-cts <- lapply(PATHS, function(x) {
-  t <- as.matrix(read.csv(x, row.names="gene_id"))
+cts <- lapply(GENE_PATHS, function(x){
+  t <- read.table(x, sep="\t")
 })
 names(cts) <- c('Amygdala', 'Anterior', 'Caudate', 'Cerebellar', 'Cerebellum', 'Cortex', 'Frontal_Cortex',
                 'Hippocampus', 'Hypothalamus', 'Nucleus_Accumbens', 'Putamen', 'Spinal_Cord', 'Substantia_Nigra')
@@ -47,9 +77,6 @@ names(cts) <- c('Amygdala', 'Anterior', 'Caudate', 'Cerebellar', 'Cerebellum', '
 for (i in seq_along(cts)){
   colnames(cts[[i]]) <- str_replace_all(colnames(cts[[i]]), pattern = "\\.","-")
 }
-
-# Remove the - at the end of the Caudate sample names
-colnames(cts$Caudate) <- substring(colnames(cts$Caudate), 1, nchar(colnames(cts$Caudate))-1)
 
 # Metadata split into list of dfs by tissue
 Meta <- list()
@@ -70,19 +97,20 @@ Check_Func <- function(a, b){
   Check <- all(rownames(a) %in% colnames(b))
 }
 Res_1 <- Map(Check_Func, a=Meta, b=Tissue_Count)
+all(Res_1==TRUE)
 
 # Match order of samples in metadata and count data
 Match_Order <- function(a, b){ # Will throw an error if dfs are different lengths
   a <- a[, rownames(b)]
 }
-#Tissue_Count <- Map(Match_Order, a=Tissue_Count, b=Meta)
-test <- Tissue_Count <- Map(Match_Order, a=Tissue_Count, b=Meta)
+Tissue_Count <- Map(Match_Order, a=Tissue_Count, b=Meta)
 
 # Check that order matches
 Match_Check <- function(a, b){
   Match <- all(rownames(a) == colnames(b))
 }
 Res_2 <- Map(Match_Check, a=Meta, b=Tissue_Count)
+all(Res_2==TRUE)
 
 # Create DGEList object for each tissue count matrix
 DGE_lst <- lapply(Tissue_Count, function(x){
@@ -122,7 +150,7 @@ Meta_Reps <- Meta[c(4:7)]
 
 pdf(REPS_K2)
 par(mfrow = c(2, 2), cex=0.4, mar = c(3, 2, 2, 6), oma =c(5, 5, 6, 6), xpd=TRUE)
-k2_MDS <- Map(MDS_FUN_k2, DGE = DGE_Reps, NAME = names(DGE_Reps), META = Meta_Reps, TOP = 100)
+k2_MDS_Reps <- Map(MDS_FUN_k2, DGE = DGE_Reps, NAME = names(DGE_Reps), META = Meta_Reps, TOP = 100)
 legend(5.0, 2.5, inset=0, legend=levels(Meta$Amygdala$Sex), pch=16, cex=2.0, col=colors, xpd=NA)
 dev.off()
 
@@ -157,6 +185,9 @@ dev.off()
 # Eigenvector table
 setwd(TABLE_DIR)
 sapply(names(k2_MDS), 
+       function (x) write.table(k2_MDS[[x]]['cmdscale.out'], file=paste(x, "txt", sep=".")))
+
+sapply(names(k2_MDS_Reps), 
        function (x) write.table(k2_MDS[[x]]['cmdscale.out'], file=paste(x, "txt", sep=".")))
 
 
