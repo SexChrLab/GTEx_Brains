@@ -1,10 +1,32 @@
 # This script looks at differential gene expression between males and females within each brain tissue type.
 setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon")
 
-METADATA <- "/scratch/mjpete11/GTEx/Metadata/Matched_Metadata.csv"
-COUNT_MATRIX <- "/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Count_Matrix.tsv"
-MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Plots/Matched_Salmon_FTest_MD.pdf'
-VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Plots/Matched_Salmon_FTest_Volcano.pdf'
+#MATCHED_METADATA <- '/scratch/mjpete11/GTEx/Metadata/Matched_Metadata.csv'
+AGE_MATCHED_METADATA <- '/scratch/mjpete11/GTEx/Metadata/Age_Matched_Metadata.csv'
+
+#GENE_COUNTS = file.path('/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Salmon/', 'Gene_Salmon_CountMatrix.tsv')
+TRANSCRIPT_COUNTS =  file.path('/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Salmon/', 'Transcript_Salmon_CountMatrix.tsv')
+
+# GENE_MATCHED_MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Matched/Gene/Salmon_FTest_MD.pdf'
+# GENE_MATCHED_VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Matched/Gene/Salmon_FTest_Volcano.pdf'
+# GENE_MATCHED_UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Matched/Gene/Salmon_Upreg_FTest.json'
+# GENE_MATCHED_DOWN_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Matched/Gene/Salmon_Downreg_FTest.json'
+# 
+# TRANS_MATCHED_MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Matched/Transcript/Salmon_FTest_MD.pdf'
+# TRANS_MATCHED_VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Matched/Transcript/Salmon_FTest_Volcano.pdf'
+# TRANS_MATCHED_UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Matched/Transcript/Salmon_Upreg_FTest.json'
+# TRANS_MATCHED_DOWN_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Matched/Transcript/Salmon_Downreg_FTest.json'
+
+# GENE_AGE_MATCHED_MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Age_Matched/Gene/Salmon_FTest_MD.pdf'
+# GENE_AGE_MATCHED_VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Age_Matched/Gene/Salmon_FTest_Volcano.pdf'
+# GENE_AGE_MATCHED_UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Age_Matched/Gene/Salmon_Upreg_FTest.json'
+# GENE_AGE_MATCHED_DOWN_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Age_Matched/Gene/Salmon_Downreg_FTest.json'
+
+TRANS_AGE_MATCHED_MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Age_Matched/Transcript/Salmon_FTest_MD.pdf'
+TRANS_AGE_MATCHED_VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Age_Matched/Transcript/Salmon_FTest_Volcano.pdf'
+TRANS_AGE_MATCHED_UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Age_Matched/Transcript/Salmon_Upreg_FTest.json'
+TRANS_AGE_MATCHED_DOWN_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Age_Matched/Transcript/Salmon_Downreg_FTest.json'
+
 
 # Load packages                                                                 
 library(tximport)                                                               
@@ -17,7 +39,7 @@ library(grid)
 library(rjson)
 
 # Read Metadata CSV.                                                            
-Samples = read.csv(METADATA, header = TRUE)
+Samples = read.csv(AGE_MATCHED_METADATA, header = TRUE)
 
 # Set rownames of metadata object equal to sample names.                        
 rownames(Samples) <- Samples$Sample    
@@ -30,7 +52,7 @@ for(i in 1:length(levels(Samples$Tissue))){
 names(Meta) <- levels(Samples$Tissue)
 
 # Read in counts 
-cts <- read.csv(COUNT_MATRIX, sep = "\t")
+cts <- read.csv(TRANSCRIPT_COUNTS, sep = "\t")
 
 # Replace . to - in colnames
 colnames(cts) <- str_replace_all(colnames(cts),pattern = "\\.","-")
@@ -198,15 +220,15 @@ Down_Genes <- lapply(Down_Top, Get_Vec)
 Up_Json <- toJSON(Up_Genes)
 Down_Json <- toJSON(Down_Genes)
 
-write(Up_Json, "Salmon_Upreg_FTest.json")
-write(Down_Json, "Salmon_Downreg_FTest.json")
+write(Up_Json, TRANS_AGE_MATCHED_UP_JSON)
+write(Down_Json, TRANS_AGE_MATCHED_DOWN_JSON)
 
 # Get summary of results as table
 Summary_Func <- function(x){
   res <- summary(decideTests(x))
   return(res)
 }
-Results_df <- lapply(Exact_Res, Summary_Func)
+Results_df <- lapply(GLM_Res, Summary_Func)
 
 #---------------------------------------------------------------------------------------------------------------------
 # Mean-Difference Plots
@@ -220,7 +242,7 @@ MD_Plot_Func <- function(x, w){
 }
 
 # Write to file
-pdf(MD_PLOT)
+pdf(TRANS_AGE_MATCHED_MD_PLOT)
 par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)  # margins: c(bottom, left, top, right)
 Res_Plots <- Map(MD_Plot_Func, x=GLM_Res, w=Tissues)
 legend(50.0, 15.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
@@ -257,7 +279,7 @@ Plot_Func <- function(a, b, c, d){
   mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('negLogPval', side = 2, outer = TRUE, line=2)
 }
-pdf(VOLCANO_PLOT)
+pdf(TRANS_AGE_MATCHED_VOLCANO_PLOT)
 par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE)
 Map(Plot_Func, a=Volcano_Res, b=Tissues, c=Up_Top, d=Down_Top)
 legend(25.0, 8.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
