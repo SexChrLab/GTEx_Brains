@@ -1,23 +1,56 @@
 # This script looks at differential gene expression between males and females within each brain tissue type.
 setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat")
 
-METADATA <- "/scratch/mjpete11/GTEx/Metadata/Matched_Metadata.csv"
-COUNT_MATRIX <- "/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Count_Matrix.tsv"
-PATHS <- c('/scratch/mjpete11/GTEx/Amygdala/Hisat_Stringtie/gene_count_matrix.csv', 
-           '/scratch/mjpete11/GTEx/Anterior/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Caudate/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Cerebellar/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Cerebellum/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Cortex/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Frontal_Cortex/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Hippocampus/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Hypothalamus/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Nucleus_Accumbens/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Putamen/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Spinal_Cord/Hisat_Stringtie/gene_count_matrix.csv',
-           '/scratch/mjpete11/GTEx/Substantia_Nigra/Hisat_Stringtie/gene_count_matrix.csv')
-MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Plots/Matched_Hisat_Ratio_MD.pdf'
-VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Plots/Matched_Hisat_Ratio_Volcano.pdf'
+# Constants
+AGE_MATCHED_METADATA <- "/scratch/mjpete11/GTEx/Metadata/Age_Matched_Metadata.csv"
+#MATCHED_METADATA <- "/scratch/mjpete11/GTEx/Metadata/Matched_Metadata.csv"
+# Hisat/stringtie results are stored in seperate matrices because the same transcripts/genes reported are tissue-specific
+# GENE_PATHS <- c('/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Amygdala_Gene_Hisat_CountMatrix.tsv',
+#            '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Anterior_Gene_Hisat_CountMatrix.tsv',
+#            '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Caudate_Gene_Hisat_CountMatrix.tsv',
+#            '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Cerebellar_Gene_Hisat_CountMatrix.tsv',
+#            '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Cerebellum_Gene_Hisat_CountMatrix.tsv',
+#            '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Cortex_Gene_Hisat_CountMatrix.tsv',
+#            '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/FrontalCortex_Gene_Hisat_CountMatrix.tsv',
+#            '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Hippocampus_Gene_Hisat_CountMatrix.tsv',
+#            '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Hypothalamus_Gene_Hisat_CountMatrix.tsv',
+#            '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/NucleusAccumbens_Gene_Hisat_CountMatrix.tsv',
+#            '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Putamen_Gene_Hisat_CountMatrix.tsv',
+#            '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/SpinalCord_Gene_Hisat_CountMatrix.tsv',
+#            '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/SubstantiaNigra_Gene_Hisat_CountMatrix.tsv')
+TRANSCRIPT_PATHS <-c('/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Amygdala_Transcript_Hisat_CountMatrix.tsv',
+                     '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Anterior_Transcript_Hisat_CountMatrix.tsv',
+                     '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Caudate_Transcript_Hisat_CountMatrix.tsv',
+                     '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Cerebellar_Transcript_Hisat_CountMatrix.tsv',
+                     '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Cerebellum_Transcript_Hisat_CountMatrix.tsv',
+                     '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Cortex_Transcript_Hisat_CountMatrix.tsv',
+                     '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/FrontalCortex_Transcript_Hisat_CountMatrix.tsv',
+                     '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Hippocampus_Transcript_Hisat_CountMatrix.tsv',
+                     '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Hypothalamus_Transcript_Hisat_CountMatrix.tsv',
+                     '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/NucleusAccumbens_Transcript_Hisat_CountMatrix.tsv',
+                     '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Putamen_Transcript_Hisat_CountMatrix.tsv',
+                     '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/SpinalCord_Transcript_Hisat_CountMatrix.tsv',
+                     '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/SubstantiaNigra_Transcript_Hisat_CountMatrix.tsv')
+# Plots/json files
+# GENE_MATCHED_UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Matched/Gene/Hisat_Upreg_Ratio.json'
+# GENE_MATCHED_DOWN_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Matched/Gene/Hisat_Downreg_Ratio.json'
+# TRANS_MATCHED_UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Matched/Transcript/Hisat_Upreg_Ratio.json'
+# TRANS_MATCHED_DOWN_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Matched/Transcript/Hisat_Downreg_Ratio.json'
+# 
+# GENE_AGE_MATCHED_UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Age_Matched/Gene/Hisat_Upreg_Ratio.json'
+# GENE_AGE_MATCHED_DOWN_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Age_Matched/Gene/Hisat_Downreg_Ratio.json'
+TRANS_AGE_MATCHED_UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Age_Matched/Transcript/Hisat_Upreg_Ratio.json'
+TRANS_AGE_MATCHED_DOWN_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Age_Matched/Transcript/Hisat_Downreg_Ratio.json'
+
+# GENE_MATCHED_MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Matched/Gene/Hisat_Ratio_MD.pdf'
+# GENE_MATCHED_VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Matched/Gene/Hisat_Ratio_Volcano.pdf'
+# TRANS_MATCHED_MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Matched/Transcript/Hisat_Ratio_MD.pdf'
+# TRANS_MATCHED_VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Matched/Transcript/Hisat_Ratio_Volcano.pdf'
+# 
+# GENE_AGE_MATCHED_MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Age_Matched/Gene/Hisat_Ratio_MD.pdf'
+# GENE_AGE_MATCHED_VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Age_Matched/Gene/Hisat_Ratio_Volcano.pdf'
+TRANS_AGE_MATCHED_MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Age_Matched/Transcript/Hisat_Ratio_MD.pdf'
+TRANS_AGE_MATCHED_VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Age_Matched/Transcipt/Hisat_Ratio_Volcano.pdf'
 
 # Load packages                                                                 
 library(tximport)                                                               
@@ -30,20 +63,17 @@ library(grid)
 library(rjson)
 
 # Read Metadata CSV.                                                            
-samples = read.csv(METADATA, header = TRUE)
+samples = read.csv(AGE_MATCHED_METADATA, header = TRUE)
 
 # Set rownames of metadata object equal to sample names.                        
 rownames(samples) <- samples$Sample                                             
 
 # Count matrices
-cts <- lapply(PATHS, function(x) {
-  t <- as.matrix(read.csv(x, row.names="gene_id"))
+cts <- lapply(TRANSCRIPT_PATHS, function(x){
+  t <- read.table(x, sep="\t")
 })
 names(cts) <- c('Amygdala', 'Anterior', 'Caudate', 'Cerebellar', 'Cerebellum', 'Cortex', 'Frontal_Cortex',
                 'Hippocampus', 'Hypothalamus', 'Nucleus_Accumbens', 'Putamen', 'Spinal_Cord', 'Substantia_Nigra')
-
-# Remove the . at the end of the Caudate sample names
-colnames(cts$Caudate) <- substring(colnames(cts$Caudate), 1, nchar(colnames(cts$Caudate))-1)
 
 # Replace . to - in colnames in each df
 for (i in seq_along(cts)){
@@ -208,8 +238,8 @@ Down_Genes <- lapply(Down_Top, Get_Vec)
 Up_Json <- toJSON(Up_Genes)
 Down_Json <- toJSON(Down_Genes)
 
-write(Up_Json, "Hisat_Upreg_Ratio.json")
-write(Down_Json, "Hisat_Downreg_Ratio.json")
+write(Up_Json, TRANS_AGE_MATCHED_UP_JSON)
+write(Down_Json, TRANS_AGE_MATCHED_DOWN_JSON)
 
 # Get summary of results as tables
 Summary_Func <- function(x){
@@ -230,7 +260,7 @@ MD_Plot_Func <- function(x, w){
 }
 
 # Write to file
-pdf(MD_PLOT)
+pdf(TRANS_AGE_MATCHED_MD_PLOT)
 par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)  # margins: c(bottom, left, top, right)
 Res_Plots <- Map(MD_Plot_Func, x=GLM_Res, w=Tissues)
 legend(50.0, 15.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
@@ -267,7 +297,7 @@ Plot_Func <- function(a, b, c, d){
   mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('negLogPval', side = 2, outer = TRUE, line=2)
 }
-pdf(VOLCANO_PLOT)
+pdf(TRANS_AGE_MATCHED_VOLCANO_PLOT)
 par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE)
 Map(Plot_Func, a=Volcano_Res, b=Tissues, c=Up_Top, d=Down_Top)
 legend(25.0, 8.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
