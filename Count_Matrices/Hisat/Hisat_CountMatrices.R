@@ -75,7 +75,8 @@ Paths <- Map(Name_Vec, w=Paths, x=Tissues)
 # Map of transcript to gene IDs will be diff for each tissue since they were run seperately.
 # e.g. different novel transcripts/diff number of transcripts will be detected in diff tissues.
 tmp <- lapply(Paths, function(x) read_tsv(x[[1]]))
-tx2gene <- lapply(tmp, function(x) x[, c("t_name", "gene_name")])
+# tx2gene <- lapply(tmp, function(x) x[, c("t_name", "gene_name")]) # to write output with gene name/trans name (MSTRG)
+tx2gene <- lapply(tmp, function(x) x[, c("t_name", "gene_id")]) # to write output with gene ID/ trans ID (if one exits)
 head(tx2gene)
 
 # Import Hisat output files.
