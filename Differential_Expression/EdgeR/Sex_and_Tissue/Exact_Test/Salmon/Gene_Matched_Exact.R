@@ -137,19 +137,19 @@ y <- Map(Dispersion_Func, y, Design)
 #---------------------------------------------------------------------------------------------------------------------
 # Comaprisons to test
 # Set females as baseline
-Pairs <- list(c("Amygdala.Male", "Amygdala.Female"), 
-              c("Anterior.Male", "Anterior.Female"), 
-              c("Caudate.Male", "Caudate.Female"),
-              c("Cerebellar.Male", "Cerebellar.Female"),
-              c("Cerebellum.Male", "Cerebellum.Female"),
-              c("Cortex.Male", "Cortex.Female"),
-              c("Frontal_Cortex.Male", "Frontal_Cortex.Female"),
-              c("Hippocampus.Male", "Hippocampus.Female"), 
-              c("Hypothalamus.Male", "Hypothalamus.Female"), 
-              c("Nucleus_Accumbens.Male", "Nucleus_Accumbens.Female"), 
-              c("Putamen.Male", "Putamen.Female"),  
-              c("Spinal_Cord.Male", "Spinal_Cord.Female"), 
-              c("Substantia_Nigra.Male", "Substantia_Nigra.Female"))
+Pairs <- list(c("Amygdala.Female", "Amygdala.Male"), 
+              c("Anterior.Female", "Anterior.Male"), 
+              c("Caudate.Female", "Caudate.Male"),
+              c("Cerebellar.Female", "Cerebellar.Male"),
+              c("Cerebellum.Female", "Cerebellum.Male"),
+              c("Cortex.Female", "Cortex.Male"),
+              c("Frontal_Cortex.Female", "Frontal_Cortex.Male"),
+              c("Hippocampus.Female", "Hippocampus.Male"), 
+              c("Hypothalamus.Female", "Hypothalamus.Male"), 
+              c("Nucleus_Accumbens.Female", "Nucleus_Accumbens.Male"), 
+              c("Putamen.Female", "Putamen.Male"),  
+              c("Spinal_Cord.Female", "Spinal_Cord.Male"), 
+              c("Substantia_Nigra.Female", "Substantia_Nigra.Male"))
 
 # Apply exact test
 Exact_Func <- function(x, comp){
