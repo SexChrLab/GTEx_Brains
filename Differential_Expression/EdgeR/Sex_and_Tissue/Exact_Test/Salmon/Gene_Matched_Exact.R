@@ -3,7 +3,7 @@
 setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon")
 
 METADATA <- '/scratch/mjpete11/GTEx/Metadata/Matched_Metadata.csv'
-COUNTS <- file.path('/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Salmon/', 'Gene_Salmon_CountMatrix.tsv')
+COUNTS <- file.path('/scratch/mjpete11/GTEx/Count_Matrices/Salmon/', 'Gene_Salmon_CountMatrix.tsv')
 MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Matched/Gene/Salmon_Exact_MD.pdf'
 VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Matched/Gene/Salmon_Exact_Volcano.pdf'
 UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Matched/Gene/Salmon_Upreg_Exact.json'
@@ -17,10 +17,12 @@ library(readr)
 library(stringr)
 library(gridExtra)
 library(grid)
+library(rjson)
+library(dplyr)
 library(org.Hs.eg.db)
 
 # Read Metadata CSV.                                                            
-Samples = read.csv(METADATA, header = TRUE)
+Samples <- read.csv(METADATA, header = TRUE)
 
 # Set rownames of metadata object equal to sample names.                        
 rownames(Samples) <- Samples$Sample   
@@ -134,19 +136,20 @@ y <- Map(Dispersion_Func, y, Design)
 # Test for DGX with Exact Test
 #---------------------------------------------------------------------------------------------------------------------
 # Comaprisons to test
-Pairs <- list(c("Amygdala.Female", "Amygdala.Male"), 
-              c("Anterior.Female", "Anterior.Male"), 
-              c("Caudate.Female", "Caudate.Male"),
-              c("Cerebellar.Female", "Cerebellar.Male"),
-              c("Cerebellum.Female", "Cerebellum.Male"),
-              c("Cortex.Female", "Cortex.Male"),
-              c("Frontal_Cortex.Female", "Frontal_Cortex.Male"),
-              c("Hippocampus.Female", "Hippocampus.Male"), 
-              c("Hypothalamus.Female", "Hypothalamus.Male"), 
-              c("Nucleus_Accumbens.Female", "Nucleus_Accumbens.Male"), 
-              c("Putamen.Female", "Putamen.Male"),  
-              c("Spinal_Cord.Female", "Spinal_Cord.Male"), 
-              c("Substantia_Nigra.Female", "Substantia_Nigra.Male"))
+# Set females as baseline
+Pairs <- list(c("Amygdala.Male", "Amygdala.Female"), 
+              c("Anterior.Male", "Anterior.Female"), 
+              c("Caudate.Male", "Caudate.Female"),
+              c("Cerebellar.Male", "Cerebellar.Female"),
+              c("Cerebellum.Male", "Cerebellum.Female"),
+              c("Cortex.Male", "Cortex.Female"),
+              c("Frontal_Cortex.Male", "Frontal_Cortex.Female"),
+              c("Hippocampus.Male", "Hippocampus.Female"), 
+              c("Hypothalamus.Male", "Hypothalamus.Female"), 
+              c("Nucleus_Accumbens.Male", "Nucleus_Accumbens.Female"), 
+              c("Putamen.Male", "Putamen.Female"),  
+              c("Spinal_Cord.Male", "Spinal_Cord.Female"), 
+              c("Substantia_Nigra.Male", "Substantia_Nigra.Female"))
 
 # Apply exact test
 Exact_Func <- function(x, comp){
@@ -177,15 +180,15 @@ Get_Vec <- function(x){
   res <- rownames(x)
   return(res)
 }
-Up_Genes <- lapply(Up_Top, Get_Vec)
-Down_Genes <- lapply(Down_Top, Get_Vec)
+Up_Genes.V <- lapply(Up_Top, Get_Vec)
+Down_Genes.V <- lapply(Down_Top, Get_Vec)
 
 # Write to file
 Up_Json <- toJSON(Up_Genes)
 Down_Json <- toJSON(Down_Genes)
 
-write(Up_Json, UP_JSON)
-write(Down_Json, DOWN_JSON)
+#write(Up_Json, UP_JSON)
+#write(Down_Json, DOWN_JSON)
 
 # Get summary of results as table
 Summary_Func <- function(x){
@@ -197,9 +200,14 @@ Results_df <- lapply(Exact_Res, Summary_Func)
 #---------------------------------------------------------------------------------------------------------------------
 # Mean-Difference Plots
 #---------------------------------------------------------------------------------------------------------------------
+# Non-replicates only
+# Titles and counts without replicates
+ExactRes_No_Reps <- Exact_Res[-c(4,6)]
+Tissues_No_Reps <- Tissues[-c(4,6)]
+
 # Plot Mean-Difference  plots on one page
 MD_Plot_Func <- function(x, w){
-  plotMD(x, main=w, legend=FALSE, hl.col=c("green", "blue"), cex=1.4)
+  plotMD(x, main=w, legend=FALSE, hl.col=c("green", "blue"), cex=1.2)
   mtext('Salmon: Gene Mean-Difference Plots; Exact Test', side = 3, outer = TRUE, cex=1.2, line=3)
   mtext('Average log CPM', side = 1, outer = TRUE, line=1)
   mtext('Log-fold-change', side = 2, outer = TRUE, line=2)
@@ -207,9 +215,10 @@ MD_Plot_Func <- function(x, w){
 
 # Write to file
 pdf(MD_PLOT)
-par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)  # margins: c(bottom, left, top, right)
-Res_Plots <- Map(MD_Plot_Func, x=Exact_Res, w=Tissues)
-legend(50.0, 15.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
+par(mfrow = c(3, 4), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)  # margins: c(bottom, left, top, right)
+Res_Plots <- Map(MD_Plot_Func, x=ExactRes_No_Reps, w=Tissues_No_Reps)
+#legend(15.0, 5.0, legend=c("Upregulated in females","Not Signigicant", "Downregulated in females"), pch = 16, 
+#       col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
 dev.off()
 
 #---------------------------------------------------------------------------------------------------------------------
@@ -246,7 +255,7 @@ Plot_Func <- function(a, b, c, d){
 pdf(VOLCANO_PLOT)
 par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE)
 Map(Plot_Func, a=Volcano_Res, b=Tissues, c=Up_Top, d=Down_Top)
-legend(25.0, 8.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
+legend(25.0, 8.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"),
        pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
 dev.off()
 
@@ -256,28 +265,131 @@ dev.off()
 # Both use the NCBI RefSeq annotation.
 # Convert ensemble annotation to NCBI RefSeq
 library(biomaRt)
-symbols <- mapIds(org.Hs.eg.db, keys = Up_Genes[[1]], keytype = "ENSEMBL", column="SYMBOL")
 
-# GO
-Gene_Ont <- function(x){
-  res <- goana(rownames(x), species="Hs")
+# Remove numbers after decimal in gene IDs
+# Those just indicate the version number
+Drop_Dot <- function(x){
+  res <- gsub("\\..*", "", x)
   return(res)
 }
-GO <- lapply(Exact_Res, Gene_Ont)
+Up_Genes <- lapply(Up_Genes, Drop_Dot)
+Down_Genes <- lapply(Down_Genes, Drop_Dot)
 
+# Map enseble IDs to entrez IDs
+# e.g.) EntrezIDs <- mapIds(org.Hs.eg.db, keys = Up_Genes[[1]], keytype = "ENSEMBL", column="ENTREZID")
+Map_IDs <- function(x){
+  res <- mapIds(org.Hs.eg.db, keys = x, keytype = "ENSEMBL", column="ENTREZID")
+  return(res)
+}
+Up_EntrezIDs <- lapply(Up_Genes[-c(5,8)], Map_IDs) # Drop cerebellum/hippocampus since no DEGs called
+Down_EntrezIDs <- lapply(Down_Genes, Map_IDs) 
+
+#------------------------------------------------------------------------------------------------------------
+# Map ensembl IDs to gene names without transcript version number
+Genes <- mapIds(org.Hs.eg.db, keys = Up_Genes[[1]], keytype = "ENSEMBL", column="ENTREZID")
+
+ensembl <- useEnsembl(biomart = "ensembl", dataset = "hsapiens_gene_ensembl")
+res <- getBM(
+  attributes = c("ensembl_gene_id", "external_gene_name", "description"),
+  filters = "ensembl_gene_id",
+  values = Up_Genes[[1]],
+  mart = ensembl)
+res
+
+# map ensembl IDs to gene names with transcript version number
+ensembl <- useEnsembl(biomart = "ensembl", dataset = "hsapiens_gene_ensembl")
+res.1 <- getBM(
+  attributes = c("ensembl_gene_id_version", "ensembl_gene_id", "external_gene_name", "description"),
+  filters = "ensembl_gene_id_version",
+  values = Up_Genes.V[[1]],
+  mart = ensembl)
+res.1
+
+#------------------------------------------------------------------------------------------------------------
+
+# Some transcripts do not return an Entrez ID
+# These either  do not have an 'ungapped mapping of this gene onto the GRCh38 assembly' according to ensembl website.
+# Drop NAs for now
+Drop_NA <- function(x){
+  res <- x[!is.na(x)]
+  return(res)
+}
+Up_EntrezIDs <- lapply(Up_EntrezIDs, Drop_NA)
+Down_EntrezIDs <- lapply(Down_EntrezIDs, Drop_NA)
+
+# GO with entrez IDs
+# NOTE: This will be an incomplete list of DEGs since I dropped the NAs!
+Gene_Ont <- function(x){
+  res <- goana(x, species="Hs") # dropped rownames()
+  return(res)
+}
+Up_GO <- lapply(Up_EntrezIDs, Gene_Ont)
+Down_GO <- lapply(Down_EntrezIDs, Gene_Ont)
+
+# Rank by differential expression p-val
 # Ontology options: 'MF': molecular function, 'BP': biological process, 'CC': celular component
 TOP_GO <- function(x, w){
-  res <- topGO(x, ontology=c('BP'), sort=rownames(w), number=10)
+  res <- topGO(x, ontology=c('BP'), sort=rownames(w), number=Inf)
   return(res)
 }
-Up_GO_Res <- Map(TOP_GO, x=GO, w=Up_Genes)
-Down_GO_Res <- Map(TOP_GO, x=GO, w=Down_Genes)
+Up_GO.Res <- Map(TOP_GO, x=Up_GO, w=Up_Genes[-c(5,8)])
+Down_GO.Res <- Map(TOP_GO, x=Down_GO, w=Down_Genes)
+
+# Remove any DE p vals >0.05
+Filter_PVal <- function(x){
+  res <- x[x[,'P.DE']<0.05,]
+}
+Up_GO.Filtered <- lapply(Up_GO_Res, Filter_PVal)
+Down_GO.Filtered <- lapply(Down_GO_Res, Filter_PVal)
+
+# Bind list of dfs into single df 
+All.Up_GO <- do.call(rbind, Up_GO.Filtered)
+All.Down_GO <- do.call(rbind, Down_GO.Filtered)
+
+# Find any pathways that are enriched in all brain regions with DEGs
+# To find any duplicate rows
+All_Enriched <- All.Up_GO[All.Up_GO$Term %in% All.Up_GO$Term[duplicated(All.Up_GO$Term)],]
+
+# To find rows duplicated a certain number of times
+All.Up_GO[All.Up_GO$Term %in% names(which(table(All.Up_GO$Term) > 11)), ] # none present in all 11 tissues with DEGs
+All.Down_GO[All.Down_GO$Term %in% names(which(table(All.Down_GO$Term) > 12)), ]
+
+# X chm dosage compensation is the only pathway present in all tissues with UpReg DEGs
+All.Up_GO[All.Up_GO$Term %in% names(which(table(All.Up_GO$Term) > 7)), ] 
+
+
+# Look at overlap in enrichment between brain regions
+# Try with UpSetR
+# library(UpSetR)
+# test <- upset(data=All.Up_GO, nsets = 11, nintersects = NA, sets = NULL,
+#               keep.order = F, set.metadata = NULL, intersections = NULL,
+#               matrix.color = "gray23", main.bar.color = "gray23",
+#               mainbar.y.label = "Intersection Size", mainbar.y.max = NULL,
+#               sets.bar.color = "gray23", sets.x.label = "Set Size",
+#               point.size = 2.2, line.size = 0.7, mb.ratio = c(0.7, 0.3),
+#               expression = NULL, att.pos = NULL, att.color = main.bar.color,
+#               order.by = c("freq", "degree"), decreasing = c(T, F),
+#               show.numbers = "yes", number.angles = 0, group.by = "degree",
+#               cutoff = NULL, queries = NULL, query.legend = "none",
+#               shade.color = "gray88", shade.alpha = 0.25, matrix.dot.alpha = 0.5,
+#               empty.intersections = NULL, color.pal = 1, boxplot.summary = NULL,
+#               attribute.plots = NULL, scale.intersections = "identity",
+#               scale.sets = "identity", text.scale = 1, set_size.angles = 0,
+#               set_size.show = FALSE, set_size.numbers_size = NULL,
+#               set_size.scale_max = NULL)
+# 
+# movies <- read.csv( system.file("extdata", "movies.csv", package = "UpSetR"), header=TRUE, sep=";" )
+# View(upset(movies, nsets = 7, nintersects = 30, mb.ratio = c(0.5, 0.5),
+#       order.by = c("freq", "degree"), decreasing = c(TRUE,FALSE)))
+
+
+# Write to table
+# write.csv(All.Up_GO, file='Up_GO.csv')
+# write.csv(All.Down_GO, file='Down_GO.csv')
 
 # KEGG
-keg <- kegga(qlf, species="Mm")
-
 Kegg_Path <- function(x){
-  res <- kegga(rownames(x), species="Hs")
+  res <- kegga(x, species="Hs")
   return(res)
 }
 KEGG <- lapply(Exact_Res, Kegg_Path)
@@ -289,6 +401,10 @@ TOP_KEGG <- function(x, w){
 Up_Kegg_Res <- Map(TOP_KEGG, x=KEGG, w=Up_Genes)
 Down_Kegg_Res <- Map(TOP_KEGG, x=KEGG, w=Down_Genes)
 
+#---------------------------------------------------------------------------------------------------------------------
+# To figure out how edgeR decides DEGs, try subsetting the test results where:
+# logFC > 2, PValue < 0.05, AND FDR < 0.05
+Filtered.Amygdala <- Exact_Res[[1]][(Exact_Res[[1]]$)]
 
-
+df[!(df$gender == "woman" & df$age > 40 & df$bp = "high"), ]
 

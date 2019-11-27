@@ -5,19 +5,19 @@ setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F
 # Constants
 METADATA <- "/scratch/mjpete11/GTEx/Metadata/Matched_Metadata.csv"
 # Hisat/stringtie results are stored in seperate matrices because the same transcripts/genes reported are tissue-specific
-PATHS <- c('/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat_Gene_Name/Amygdala_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat_Gene_Name/Anterior_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat_Gene_Name/Caudate_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat_Gene_Name/Cerebellar_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat_Gene_Name/Cerebellum_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat_Gene_Name/Cortex_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat_Gene_Name/FrontalCortex_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat_Gene_Name/Hippocampus_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat_Gene_Name/Hypothalamus_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat_Gene_Name/NucleusAccumbens_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat_Gene_Name/Putamen_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat_Gene_Name/SpinalCord_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat_Gene_Name/SubstantiaNigra_Gene_Hisat_CountMatrix.tsv')
+PATHS <- c('/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Amygdala_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Anterior_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Caudate_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Cerebellar_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Cerebellum_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Cortex_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/FrontalCortex_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Hippocampus_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Hypothalamus_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/NucleusAccumbens_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Putamen_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/SpinalCord_Gene_Hisat_CountMatrix.tsv',
+           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/SubstantiaNigra_Gene_Hisat_CountMatrix.tsv')
 
 # Plots/json files
 UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Matched/Gene/Named_Upreg_FTest.json'

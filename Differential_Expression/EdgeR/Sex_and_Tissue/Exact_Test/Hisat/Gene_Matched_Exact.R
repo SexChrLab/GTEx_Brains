@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # This script uses an exact test to tests for differential gene expression between males and females 
 # within each brain tissue type using gene level counts on the matched samples.
 setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat")
@@ -5,6 +6,7 @@ setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact
 # Constants
 METADATA <- "/scratch/mjpete11/GTEx/Metadata/Matched_Metadata.csv"
 # Hisat/stringtie results are stored in seperate matrices because the same transcripts/genes reported are tissue-specific
+# Using geneID count matrix
 PATHS <- c('/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Amygdala_Gene_Hisat_CountMatrix.tsv',
            '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Anterior_Gene_Hisat_CountMatrix.tsv',
            '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Caudate_Gene_Hisat_CountMatrix.tsv',
@@ -20,8 +22,8 @@ PATHS <- c('/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Amygdal
            '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/SubstantiaNigra_Gene_Hisat_CountMatrix.tsv')
 
 # Plots/json files
-UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Matched/Gene/Hisat_Upreg_Exact.json'
-DOWN_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Matched/Gene/Hisat_Downreg_Exact.json'
+UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Matched/Gene/Named_Upreg_Exact.json'
+DOWN_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Matched/Gene/Named_Downreg_Exact.json'
 MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Matched/Gene/Hisat_Exact_MD.pdf'
 VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Matched/Gene/Hisat_Exact_Volcano.pdf'
 
@@ -193,8 +195,8 @@ Down_Genes <- lapply(Down_Top, Get_Vec)
 Up_Json <- toJSON(Up_Genes)
 Down_Json <- toJSON(Down_Genes)
 
-write(Up_Json, UP_JSON)
-write(Down_Json, DOWN_JSON)
+# write(Up_Json, UP_JSON)
+# write(Down_Json, DOWN_JSON)
 
 # Get summary of results as table
 # Summary_Func <- function(x){
@@ -215,11 +217,11 @@ MD_Plot_Func <- function(x, w){
 }
 
 # Write to file
-pdf(MD_PLOT)
-par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)  # margins: c(bottom, left, top, right)
-Res_Plots <- Map(MD_Plot_Func, x=Exact_Res, w=Tissues)
-legend(50.0, 15.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
-dev.off()
+# pdf(MD_PLOT)
+# par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)  # margins: c(bottom, left, top, right)
+# Res_Plots <- Map(MD_Plot_Func, x=Exact_Res, w=Tissues)
+# legend(50.0, 15.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
+# dev.off()
 
 #---------------------------------------------------------------------------------------------------------------------
 # Volcano Plots
@@ -252,33 +254,50 @@ Plot_Func <- function(a, b, c, d){
   mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('negLogPval', side = 2, outer = TRUE, line=2)
 }
-pdf(VOLCANO_PLOT)
-par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE)
-Map(Plot_Func, a=Volcano_Res, b=Tissues, c=Up_Top, d=Down_Top)
-legend(40.0, 80.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
-       pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
-dev.off()
+# pdf(VOLCANO_PLOT)
+# par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE)
+# Map(Plot_Func, a=Volcano_Res, b=Tissues, c=Up_Top, d=Down_Top)
+# legend(40.0, 80.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
+#        pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
+# dev.off()
 
 #---------------------------------------------------------------------------------------------------------------------
-# Gene ontology analysis
+# Gene ontology and pathway enrichment analysis
 #---------------------------------------------------------------------------------------------------------------------
-# Example
-#qlf <- glmQLFTest(fit, coef=2)
-# go <- goana(qlf, species="Hm")
-# topGO(go, sort="up")
+# Both use the NCBI RefSeq annotation.
+# Convert ensemble annotation to NCBI RefSeq
+library(biomaRt)
+symbols <- mapIds(org.Hs.eg.db, keys = Up_Genes[[1]], keytype = "ENSEMBL", column="SYMBOL")
 
-# # RD
-# Gene_Ont <- function(x){
-#   res <- goana(x, species="Hm")
-#   return(res)
-# }
-# GO <- lapply(Exact_Res, Gene_Ont)
-# 
-# TOP_GO <- function(x){
-#   res <- topGO(x, sort="up")
-#   return(res)
-# }
-# GO_Res <- lapply(GO, TOP_GO)
+# GO
+Gene_Ont <- function(x){
+  res <- goana(rownames(x), species="Hs")
+  return(res)
+}
+GO <- lapply(Exact_Res, Gene_Ont)
 
-# add step to write results
+# Ontology options: 'MF': molecular function, 'BP': biological process, 'CC': celular component
+TOP_GO <- function(x, w){
+  res <- topGO(x, ontology=c('BP'), sort=rownames(w), number=10)
+  return(res)
+}
+Up_GO_Res <- Map(TOP_GO, x=GO, w=Up_Genes)
+Down_GO_Res <- Map(TOP_GO, x=GO, w=Down_Genes)
+
+# KEGG
+keg <- kegga(qlf, species="Mm")
+
+Kegg_Path <- function(x){
+  res <- kegga(rownames(x), species="Hs")
+  return(res)
+}
+KEGG <- lapply(Exact_Res, Kegg_Path)
+
+TOP_KEGG <- function(x, w){
+  res <- topKEGG(x, sort=rownames(w), number=10)
+  return(res)
+}
+Up_Kegg_Res <- Map(TOP_KEGG, x=KEGG, w=Up_Genes)
+Down_Kegg_Res <- Map(TOP_KEGG, x=KEGG, w=Down_Genes)
+
 

@@ -3,7 +3,7 @@
 setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon")
 
 METADATA <- '/scratch/mjpete11/GTEx/Metadata/Matched_Metadata.csv'
-COUNTS <- file.path('/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Salmon/', 'Gene_Salmon_CountMatrix.tsv')
+COUNTS <- file.path('/scratch/mjpete11/GTEx/Count_Matrices/Salmon/', 'Gene_Salmon_CountMatrix.tsv')
 MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Matched/Gene/Salmon_FTest_MD.pdf'
 VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Matched/Gene/Salmon_FTest_Volcano.pdf'
 UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Matched/Gene/Salmon_Upreg_FTest.json'
@@ -18,6 +18,7 @@ library(stringr)
 library(gridExtra)
 library(grid)
 library(rjson)
+library(dplyr)
 library(org.Hs.eg.db)
 
 # Read Metadata CSV.                                                            
