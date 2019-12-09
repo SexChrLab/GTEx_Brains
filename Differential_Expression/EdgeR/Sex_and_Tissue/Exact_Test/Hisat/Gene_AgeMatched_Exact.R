@@ -120,9 +120,9 @@ Set_Levels <- function(x, z){
 }
 Design <- Map(Set_Levels, x=Design, z=y)
 
-# Keep only genes expressed in at least half the samples
+# Keep only genes expressed in at least half the samples for each tissue type
 Keep <- lapply(y, function(x){
-  rowSums(cpm(x)>1)>=11
+  rowSums(cpm(x[['counts']])>1) >= ncol(x[['counts']]) 
 })
 
 Filter_Func <- function(x, k){
@@ -193,8 +193,8 @@ Down_Genes <- lapply(Down_Top, Get_Vec)
 Up_Json <- toJSON(Up_Genes)
 Down_Json <- toJSON(Down_Genes)
 
-write(Up_Json, UP_JSON)
-write(Down_Json, DOWN_JSON)
+# write(Up_Json, UP_JSON)
+# write(Down_Json, DOWN_JSON)
 
 # Get summary of results as table
 # Summary_Func <- function(x){
@@ -215,11 +215,11 @@ MD_Plot_Func <- function(x, w){
 }
 
 # Write to file
-pdf(MD_PLOT)
-par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)  # margins: c(bottom, left, top, right)
-Res_Plots <- Map(MD_Plot_Func, x=Exact_Res, w=Tissues)
-legend(50.0, 15.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
-dev.off()
+# pdf(MD_PLOT)
+# par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)  # margins: c(bottom, left, top, right)
+# Res_Plots <- Map(MD_Plot_Func, x=Exact_Res, w=Tissues)
+# legend(50.0, 15.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
+# dev.off()
 
 #---------------------------------------------------------------------------------------------------------------------
 # Volcano Plots
@@ -252,27 +252,27 @@ Plot_Func <- function(a, b, c, d){
   mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('negLogPval', side = 2, outer = TRUE, line=2)
 }
-pdf(VOLCANO_PLOT)
-par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE)
-Map(Plot_Func, a=Volcano_Res, b=Tissues, c=Up_Top, d=Down_Top)
-legend(40.0, 80.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
-       pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
-dev.off()
+# pdf(VOLCANO_PLOT)
+# par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE)
+# Map(Plot_Func, a=Volcano_Res, b=Tissues, c=Up_Top, d=Down_Top)
+# legend(40.0, 80.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
+#        pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
+# dev.off()
 
 #---------------------------------------------------------------------------------------------------------------------
 # Gene ontology analysis
 #---------------------------------------------------------------------------------------------------------------------
 # Example
-#qlf <- glmQLFTest(fit, coef=2)
+# qlf <- glmQLFTest(fit, coef=2)
 # go <- goana(qlf, species="Hm")
 # topGO(go, sort="up")
 
 # # RD
-# Gene_Ont <- function(x){
-#   res <- goana(x, species="Hm")
-#   return(res)
-# }
-# GO <- lapply(Exact_Res, Gene_Ont)
+Gene_Ont <- function(x){
+  res <- goana(x, species="Hm")
+  return(res)
+}
+GO <- lapply(Exact_Res, Gene_Ont)
 # 
 # TOP_GO <- function(x){
 #   res <- topGO(x, sort="up")

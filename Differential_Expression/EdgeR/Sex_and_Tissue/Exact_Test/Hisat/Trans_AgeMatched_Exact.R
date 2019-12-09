@@ -4,8 +4,8 @@
 # Constants
 METADATA <- "/scratch/mjpete11/GTEx/Metadata/Age_Matched_Metadata.csv"
 # Hisat/stringtie results are stored in seperate matrices because the same transcripts/genes reported are tissue-specific
-PATHS <-c('/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/Hisat/Amygdala_Transcript_Hisat_CountMatrix.tsv',
-          '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/Hisat/Anterior_Transcript_Hisat_CountMatrix.tsv',
+PATHS <-c('/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/Amygdala_Transcript_Hisat_CountMatrix.tsv',
+          '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/Anterior_Transcript_Hisat_CountMatrix.tsv',
           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/Caudate_Transcript_Hisat_CountMatrix.tsv',
           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/Cerebellar_Transcript_Hisat_CountMatrix.tsv',
           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/Cerebellum_Transcript_Hisat_CountMatrix.tsv',
@@ -118,9 +118,9 @@ Set_Levels <- function(x, z){
 }
 Design <- Map(Set_Levels, x=Design, z=y)
 
-# Keep only genes expressed in at least half the samples
+# Keep only genes expressed in at least half the samples for each tissue type
 Keep <- lapply(y, function(x){
-  rowSums(cpm(x)>1)>=11
+  rowSums(cpm(x[['counts']])>1) >= ncol(x[['counts']]) 
 })
 
 Filter_Func <- function(x, k){
