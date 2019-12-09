@@ -1,9 +1,9 @@
 #!/bin/bash 
 
-#SBATCH -p phi                                                                 
-#SBATCH -n 28                          # Max is 256 on phi node                
-#SBATCH -t 48:00:00                                                           
-#SBATCH --job-name=Exact_DGX        # Job name
+#SBATCH -p fn1                         # fat node; more memmory                                        
+#SBATCH -n 28                          # number of cores                
+#SBATCH -t 2:00:00                     # wall time                                       
+#SBATCH --job-name=Hisat_Gene_Exact    # job name
 #SBATCH -o slurm.%j.out                # STDOUT (%j = JobId)
 #SBATCH -e slurm.%j.err                # STDERR (%j = JobId)
 #SBATCH --mail-type=END,FAIL           # notifications for job done & fail
@@ -15,5 +15,3 @@ module load r/3.5.2
 
 Rscript Gene_Matched_Exact.R
 Rscript Gene_AgeMatched_Exact.R
-Rscript Trans_Matched_Exact.R
-Rscript Trans_AgeMatched_Exact.R
