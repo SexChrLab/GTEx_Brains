@@ -28,10 +28,9 @@ rule stringtie:
         assembled_transcripts = "Annotated_Stringtie/{sample}/{sample}_GRCh38.assembled_transcripts.gtf",
         gene_abundances = "Annotated_Stringtie/{sample}/{sample}_GRCh38.gene_abundances.txt",
         fully_covered_transcripts = "Annotated_Stringtie/{sample}/{sample}_GRCh38.fully_covered_transcripts.gtf"
-    threads: 4
     params:
         stringtie = STRINGTIE_PATH,
-        threads = 4
+        threads = 12
     shell: 
         "{params.stringtie} {input.bam} -p {params.threads} "
         "-G {input.gff} -B -e "
