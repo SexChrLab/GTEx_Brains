@@ -1,0 +1,14 @@
+#!/bin/bash/
+
+#SBATCH --job-name=DGX_snakefile
+#SBATCH -o slurm.%j.out                
+#SBATCH -e slurm.%j.err                
+#SBATCH --mail-type=END,FAIL           
+#SBATCH --mail-user=mjpete11@asu.edu 
+#SBATCH -n 24
+#SBATCH -N 1
+#SBATCH -t 00:01:00
+
+source activate DGX_environment
+
+snakemake --snakefile DGX.snakefile -j 20 --keep-target-files --rerun-incomplete 
