@@ -17,21 +17,21 @@ PATHS <- c('/mnt/storage/SAYRES/Mollie/GTEx_Brains/GTEx_Brains_092719/GTEx/Amygd
            '/mnt/storage/SAYRES/Mollie/GTEx_Brains/GTEx_Brains_092719/GTEx/Spinal_Cord/Hisat_Stringtie/gene_count_matrix.csv',
            '/mnt/storage/SAYRES/Mollie/GTEx_Brains/GTEx_Brains_092719/GTEx/Substantia_Nigra/Hisat_Stringtie/gene_count_matrix.csv')
 
-GENE_MATRIX <- c("Amygdala_Gene_Hisat_CountMatrix.tsv", "Anterior_Gene_Hisat_CountMatrix.tsv", 
-           "Caudate_Gene_Hisat_CountMatrix.tsv", "Cerebellar_Gene_Hisat_CountMatrix.tsv",
-           "Cerebellum_Gene_Hisat_CountMatrix.tsv", "Cortex_Gene_Hisat_CountMatrix.tsv",
-           "FrontalCortex_Gene_Hisat_CountMatrix.tsv", "Hippocampus_Gene_Hisat_CountMatrix.tsv",
-           "Hypothalamus_Gene_Hisat_CountMatrix.tsv", "NucleusAccumbens_Gene_Hisat_CountMatrix.tsv",
-           "Putamen_Gene_Hisat_CountMatrix.tsv", "SpinalCord_Gene_Hisat_CountMatrix.tsv",
-           "SubstantiaNigra_Gene_Hisat_CountMatrix.tsv")
+GENE_MATRIX <- c("Amygdala_CountMatrix.tsv", "Anterior_CountMatrix.tsv",
+           "Caudate_CountMatrix.tsv", "Cerebellar_CountMatrix.tsv",
+           "Cerebellum_CountMatrix.tsv", "Cortex_CountMatrix.tsv",
+           "Frontal_Cortex_CountMatrix.tsv", "Hippocampus_CountMatrix.tsv",
+           "Hypothalamus_CountMatrix.tsv", "Nucleus_Accumbens_CountMatrix.tsv",
+           "Putamen_CountMatrix.tsv", "Spinal_Cord_CountMatrix.tsv",
+           "Substantia_Nigra_CountMatrix.tsv")
 
-TRANS_MATRIX <- c("Amygdala_Transcript_Hisat_CountMatrix.tsv", "Anterior_Transcript_Hisat_CountMatrix.tsv", 
-             "Caudate_Transcript_Hisat_CountMatrix.tsv", "Cerebellar_Transcript_Hisat_CountMatrix.tsv",
-             "Cerebellum_Transcript_Hisat_CountMatrix.tsv", "Cortex_Transcript_Hisat_CountMatrix.tsv",
-             "FrontalCortex_Transcript_Hisat_CountMatrix.tsv", "Hippocampus_Transcript_Hisat_CountMatrix.tsv",
-             "Hypothalamus_Transcript_Hisat_CountMatrix.tsv", "NucleusAccumbens_Transcript_Hisat_CountMatrix.tsv",
-             "Putamen_Transcript_Hisat_CountMatrix.tsv", "SpinalCord_Transcript_Hisat_CountMatrix.tsv",
-             "SubstantiaNigra_Transcript_Hisat_CountMatrix.tsv")
+TRANS_MATRIX <- c("Amygdala_CountMatrix.tsv", "Anterior_CountMatrix.tsv", 
+             "Caudate_CountMatrix.tsv", "Cerebellar_CountMatrix.tsv",
+             "Cerebellum_CountMatrix.tsv", "Cortex_CountMatrix.tsv",
+             "Frontal_Cortex_CountMatrix.tsv", "Hippocampus_CountMatrix.tsv",
+             "Hypothalamus_CountMatrix.tsv", "Nucleus_Accumbens_CountMatrix.tsv",
+             "Putamen_CountMatrix.tsv", "Spinal_Cord_CountMatrix.tsv",
+             "Substantia_Nigra_CountMatrix.tsv")
 
 # Load packages                                                                 
 library(tximport)                                                               
