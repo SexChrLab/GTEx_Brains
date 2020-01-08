@@ -2,12 +2,12 @@
 # transcript, matched
 setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon")
 
-METADATA <- '/scratch/mjpete11/GTEx/Metadata/Matched_Metadata.csv'
-COUNTS <-  file.path('/scratch/mjpete11/GTEx/Count_Matrices/Salmon/', 'Transcript_Salmon_CountMatrix.tsv')
-MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Matched/Transcript/Salmon_Exact_MD.pdf'
-VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Matched/Transcript/Salmon_Exact_Volcano.pdf'
-UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Matched/Transcript/Salmon_Upreg_Exact.json'
-DOWN_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Matched/Transcript/Salmon_Downreg_Exact.json'
+METADATA <- snakemake@input[[1]] 
+COUNTS <-  snakemake@input[[2]]
+MD_PLOT <- snakemake@output[[1]]
+VOLCANO_PLOT <- snakemake@output[[2]]
+UP_JSON <- snakemake@output[[3]]
+DOWN_JSON <- snakemake@output[[4]]
 
 # Load packages                                                                 
 library(tximport)                                                               

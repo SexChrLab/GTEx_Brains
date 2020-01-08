@@ -2,12 +2,15 @@
 # gene, age matched
 setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon")
 
-METADATA <- '/scratch/mjpete11/GTEx/Metadata/Age_Matched_Metadata.csv'
-COUNTS <- file.path('/scratch/mjpete11/GTEx/Count_Matrices/Salmon/', 'Gene_Salmon_CountMatrix.tsv')
-MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Age_Matched/Gene/Salmon_Exact_MD.pdf'
-VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Age_Matched/Gene/Salmon_Exact_Volcano.pdf'
-UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Age_Matched/Gene/Salmon_Upreg_Exact.json'
-DOWN_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Age_Matched/Gene/Salmon_Downreg_Exact.json'
+# Input
+METADATA <- snakemake@input[[1]]
+COUNTS <- snakemake@input[[2]] 
+
+# Output
+MD_PLOT <- snakemake@output[[1]]
+VOLCANO_PLOT <- snakemake@output[[2]]
+UP_JSON <- snakemake@output[[3]]
+DOWN_JSON <-snakemake@output[[4]]
 
 # Load packages                                                                 
 library(tximport)                                                               

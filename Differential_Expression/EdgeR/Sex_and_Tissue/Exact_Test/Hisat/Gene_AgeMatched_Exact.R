@@ -1,29 +1,18 @@
 # This script uses an exact test to tests for differential gene expression between males and females 
 # within each brain tissue type using gene level counts on the age matched samples.
+setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat")
 
 # Constants
-METADATA <- "/scratch/mjpete11/GTEx/Metadata/Age_Matched_Metadata.csv"
 # Hisat/stringtie results are stored in seperate matrices because the same transcripts/genes reported are tissue-specific
 # Using annotated gene count matrix
-PATHS <- c('/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Amygdala_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Anterior_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Caudate_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Cerebellar_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Cerebellum_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Cortex_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/FrontalCortex_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Hippocampus_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Hypothalamus_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/NucleusAccumbens_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Putamen_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/SpinalCord_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/SubstantiaNigra_Gene_Hisat_CountMatrix.tsv')
+METADATA <- snakemake@input[[1]]
+PATHS <- snakemake@input[[2]]
 
 # Plots/json files
-UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Age_Matched/Gene/Named_Upreg_Exact.json'
-DOWN_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Age_Matched/Gene/Named_Downreg_Exact.json'
-MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Age_Matched/Gene/Hisat_Exact_MD.pdf'
-VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Age_Matched/Gene/Hisat_Exact_Volcano.pdf'
+MD_PLOT <_ snakemake@output[[1]]
+VOLCANO_PLOT <- snakemake@output[[2]]
+UP_JSON <- snakemake@output[[3]]
+DOWN_JSON <- snakemake@output[[4]]
 
 # Load packages                                                                 
 library(tximport)                                                               
@@ -48,7 +37,7 @@ Tissues <- list('Amygdala', 'Anterior', 'Caudate', 'Cerbellar', 'Cerebellum', 'C
                 'Hippocampus', 'Hypothalamus', 'Nucleus Accumbens', 'Putamen', 'Spinal Cord', 'Substantia Nigra')
 
 cts <- lapply(PATHS, function(x){
-  t <- read.table(x, sep="\t")
+  t <- read.csv(x, sep=",")
 })
 names(cts) <- Tissues
 
@@ -56,6 +45,11 @@ names(cts) <- Tissues
 for (i in seq_along(cts)){
   colnames(cts[[i]]) <- str_replace_all(colnames(cts[[i]]), pattern = "\\.","-")
 }
+
+# Replace - at end of Caudate colnames, excluding first col
+# should be 131 samples
+colnames(cts[[3]]) <- substring(colnames(cts[[3]][,2:ncol(cts[[3]])]), 1, nchar(colnames(cts[[3]][2:ncol(cts[[3]])]))-1)
+ncol(cts[[3]])
 
 # Metadata split into list of dfs by tissue
 Meta <- list()

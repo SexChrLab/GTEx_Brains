@@ -1,31 +1,17 @@
-#!/usr/bin/env Rscript
 # This script uses an exact test to tests for differential gene expression between males and females 
 # within each brain tissue type using gene level counts on the matched samples.
 setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat")
 
 # Constants
-METADATA <- "/scratch/mjpete11/GTEx/Metadata/Matched_Metadata.csv"
+METADATA <- snakemake@input[[1]] 
 # Hisat/stringtie results are stored in seperate matrices because the same transcripts/genes reported are tissue-specific
 # Using geneID count matrix
-PATHS <- c('/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Amygdala_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Anterior_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Caudate_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Cerebellar_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Cerebellum_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Cortex_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/FrontalCortex_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Hippocampus_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Hypothalamus_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/NucleusAccumbens_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/Putamen_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/SpinalCord_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Data_Exploration/Count_Matrices/Hisat/SubstantiaNigra_Gene_Hisat_CountMatrix.tsv')
-
+PATHS <- snakemake@input[[2]]
 # Plots/json files
-UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Matched/Gene/Named_Upreg_Exact.json'
-DOWN_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Matched/Gene/Named_Downreg_Exact.json'
-MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Matched/Gene/Hisat_Exact_MD.pdf'
-VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Matched/Gene/Hisat_Exact_Volcano.pdf'
+MD_PLOT <- snakemake@output[[1]]
+VOLCANO_PLOT <- snakemake@output[[2]]
+UP_JSON <- snakemake@output[[3]]
+DOWN_JSON <- snakemake@output[[4]]
 
 # Load packages                                                                 
 library(tximport)                                                               

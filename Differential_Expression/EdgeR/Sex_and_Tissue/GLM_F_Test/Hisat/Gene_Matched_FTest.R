@@ -3,27 +3,15 @@
 setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat")
 
 # Constants
-METADATA <- "/scratch/mjpete11/GTEx/Metadata/Matched_Metadata.csv"
+METADATA <- snakemake@input[[1]]
 # Hisat/stringtie results are stored in seperate matrices because the same transcripts/genes reported are tissue-specific
-PATHS <- c('/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Amygdala_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Anterior_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Caudate_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Cerebellar_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Cerebellum_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Cortex_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/FrontalCortex_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Hippocampus_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Hypothalamus_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/NucleusAccumbens_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/Putamen_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/SpinalCord_Gene_Hisat_CountMatrix.tsv',
-           '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Gene_ID/SubstantiaNigra_Gene_Hisat_CountMatrix.tsv')
+PATHS <- snakemake@input[[2]]
 
 # Plots/json files
-UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Matched/Gene/Named_Upreg_FTest.json'
-DOWN_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Matched/Gene/Named_Downreg_FTest.json'
-MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Matched/Gene/Hisat_FTest_MD.pdf'
-VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Matched/Gene/Hisat_FTest_Volcano.pdf'
+MD_PLOT <- snakemake@output[[1]]
+VOLCANO_PLOT <- snakemake@output[[2]]
+UP_JSON <- snakemake@output[[3]]
+DOWN_JSON <- snakemake@output[[4]]
 
 # Load packages                                                                 
 library(tximport)                                                               
