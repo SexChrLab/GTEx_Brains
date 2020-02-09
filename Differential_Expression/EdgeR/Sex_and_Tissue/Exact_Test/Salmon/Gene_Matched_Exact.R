@@ -2,7 +2,7 @@
 # gene, matched
 setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon")
 
-METADATA <- snakemake@input[[1]] 
+METADATA <- snakemake@input[[1]]
 COUNTS <- snakemake@input[[2]]
 MD_PLOT <- snakemake@output[[1]]
 VOLCANO_PLOT <- snakemake@output[[2]]
