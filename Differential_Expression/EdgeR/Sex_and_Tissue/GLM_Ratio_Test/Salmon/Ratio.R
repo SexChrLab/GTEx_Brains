@@ -1,14 +1,13 @@
 # This script looks at differential gene expression between males and females within each brain tissue type.
-# gene, age matched
-setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon")
+# gene, age matched 
+setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Salmon")
 
-# Input/Output
-METADATA <- snakemake@input[[1]]
-COUNTS <- snakemake@input[[2]] 
+METADATA <- snakemake@input[[1]] 
+COUNTS <- snakemake@input[[2]]
 MD_PLOT <- snakemake@output[[1]]
 VOLCANO_PLOT <- snakemake@output[[2]]
 UP_JSON <- snakemake@output[[3]]
-DOWN_JSON <-snakemake@output[[4]]
+DOWN_JSON <- snakemake@output[[4]]
 
 # Load packages                                                                 
 library(tximport)                                                               
@@ -17,15 +16,16 @@ library(edgeR)
 library(readr)
 library(stringr)
 library(gridExtra)
-library(org.Hs.eg.db)
+library(grid)
 library(rjson)
 library(dplyr)
+library(org.Hs.eg.db)
 
 # Read Metadata CSV.                                                            
-Samples = read.csv(METADATA, header = TRUE)
+Samples <- read.csv(METADATA, header = TRUE)
 
 # Set rownames of metadata object equal to sample names.                        
-rownames(Samples) <- Samples$Sample   
+rownames(Samples) <- Samples$Sample      
 
 # Metadata split into list of dfs by tissue
 Meta <- list()
@@ -34,8 +34,8 @@ for(i in 1:length(levels(Samples$Tissue))){
 }
 names(Meta) <- levels(Samples$Tissue)
 
-# Read in count matrix
-cts <- read.table(COUNTS, sep="\t")
+# Read in counts 
+cts <- read.csv(COUNTS, sep = "\t")
 
 # Replace . to - in colnames
 colnames(cts) <- str_replace_all(colnames(cts),pattern = "\\.","-")
@@ -63,7 +63,6 @@ check <- list()
 for (i in 1:13){
   check[[i]] <- colnames(res[[i]]) %in% subset(Samples$Sample, Samples$Tissue==Tissues[[i]])
 }
-all(as.logical(lapply(check, all)))
 
 # Create design matrix: Step 1
 # Create sex and tissue factor
@@ -95,7 +94,7 @@ y <- Map(DGE_Func, cts, Groups)
 
 # Create design matrix: Step 2; Part 1
 Model_Func <- function(fc, df){
-  res <- model.matrix(~0 + fc, data = df$samples)
+  res <- model.matrix(~0 + fc, data = df$Samples)
   return(res)
 }
 Design <- Map(Model_Func, Groups, y)
@@ -133,39 +132,58 @@ Dispersion_Func <- function(a, b){
 }
 y <- Map(Dispersion_Func, y, Design)
 
-#---------------------------------------------------------------------------------------------------------------------
-# Test for DGX with Exact Test
-#---------------------------------------------------------------------------------------------------------------------
-# Comaprisons to test
-Pairs <- list(c("Amygdala.Female", "Amygdala.Male"), 
-              c("Anterior.Female", "Anterior.Male"), 
-              c("Caudate.Female", "Caudate.Male"),
-              c("Cerebellar.Female", "Cerebellar.Male"),
-              c("Cerebellum.Female", "Cerebellum.Male"),
-              c("Cortex.Female", "Cortex.Male"),
-              c("Frontal_Cortex.Female", "Frontal_Cortex.Male"),
-              c("Hippocampus.Female", "Hippocampus.Male"), 
-              c("Hypothalamus.Female", "Hypothalamus.Male"), 
-              c("Nucleus_Accumbens.Female", "Nucleus_Accumbens.Male"), 
-              c("Putamen.Female", "Putamen.Male"),  
-              c("Spinal_Cord.Female", "Spinal_Cord.Male"), 
-              c("Substantia_Nigra.Female", "Substantia_Nigra.Male"))
-
-# Apply exact test
-Exact_Func <- function(x, comp){
-  exactTest(x, comp)
+#------------------------------------------------------------------------------------------------------------------
+# Test for DGX with GLM Ratio Test
+#------------------------------------------------------------------------------------------------------------------
+# Fit glm model
+Fit_Func <- function(a, b){
+  fit <- glmFit(a, b, robust=TRUE)
+  return(fit)
 }
-Exact_Res <- Map(Exact_Func, y, Pairs)
+Fit <- Map(Fit_Func, a=y, b=Design)
+
+# Make contrasts: Sex by Tissue
+Contrasts <- c('Amygdala.Male - Amygdala.Female',
+               'Anterior.Male - Anterior.Female',
+               'Caudate.Male - Caudate.Female',
+               'Cerebellar.Male - Cerebellar.Female',
+               'Cerebellum.Male - Cerebellum.Female',
+               'Cortex.Male - Cortex.Female',
+               'Frontal_Cortex.Male - Frontal_Cortex.Female',
+               'Hippocampus.Male - Hippocampus.Female',
+               'Hypothalamus.Male - Hypothalamus.Female',
+               'Nucleus_Accumbens.Male - Nucleus_Accumbens.Female',
+               'Putamen.Male - Putamen.Female',
+               'Spinal_Cord.Male - Spinal_Cord.Female',
+               'Substantia_Nigra.Male - Substantia_Nigra.Female')
+
+Names <- c('Am.MvsF', 'At.MvsF', 'Ca.MvsF', 'Ce.MvsF', 'Co.MvsF', 'Fc.MvsF', 'Cm.MvsF', 
+           'Hp.MvsF', 'Hy.MvsF', 'Na.MvsF', 'Pu.MvsF', 'Sp.MvsF', 'Sn.MvsF')
+
+# Make contrasts
+Contrast_Func <- function(a, b){
+  res <- makeContrasts(contrasts = a, levels = colnames(b))
+  return(res)
+}
+my.contrasts <- Map(Contrast_Func, a=Contrasts, b=Design)
+names(my.contrasts) <- Names
+
+# Apply GLM F test
+# Resulting objects are of class DGELRT 
+GLM_Ratio_Func <- function(a, b){
+  glmLRT(a, contrast=b)
+}
+GLM_Res <- Map(GLM_Ratio_Func, a=Fit, b=my.contrasts)
 
 #---------------------------------------------------------------------------------------------------------------------
-# Summarize results 
+# Summary stats
 #---------------------------------------------------------------------------------------------------------------------
-# Function to correct for multiple testing
+# Function to correct for multiple testing 
 Test_Correct <- function(x){
-  x[['table']][['PValue']] <- p.adjust(x[['table']][['PValue']],method="BH")
-  return(x)
-}
-Corrected_Exact <- lapply(Exact_Res, Test_Correct)
+    x[['table']][['PValue']] <- p.adjust(x[['table']][['PValue']],method="BH")
+    return(x)
+}    
+Corrected_GLMR <- lapply(GLM_Res, Test_Correct)
 
 # Function to filter p-vals, and filter by logFC
 Up_Reg <- function(x){
@@ -180,10 +198,10 @@ Down_Reg <- function(x){
   return(res)
 }
 
-Up_Top <- lapply(Corrected_Exact, Up_Reg)
-Down_Top <- lapply(Corrected_Exact, Down_Reg)
+Up_Top <- lapply(Corrected_GLMR, Up_Reg)
+Down_Top <- lapply(Corrected_GLMR, Down_Reg)
 
-# Make table of up and down regulated genes for each tissue
+# Make list of up and down regulated genes for each tissue 
 Get_Vec <- function(x){
   res <- rownames(x)
   return(res)
@@ -203,8 +221,8 @@ write(Down_Json, DOWN_JSON)
 #---------------------------------------------------------------------------------------------------------------------
 # Plot Mean-Difference  plots on one page
 MD_Plot_Func <- function(x, w){
-  plotMD(x, main=w, p.value=0.05, adjust.method="BH", legend=FALSE, hl.col=c("green", "blue"), cex=1.4)
-  mtext('Salmon: Gene Mean-Difference Plots; Exact Test', side = 3, outer = TRUE, cex=1.2, line=3)
+  plotMD(x, main=w, legend=FALSE, hl.col=c("green", "blue"), cex=1.4)
+  mtext('Salmon: Gene Mean-Difference Plots; GLM Ratio Test', side = 3, outer = TRUE, cex=1.2, line=3)
   mtext('Average log CPM', side = 1, outer = TRUE, line=1)
   mtext('Log-fold-change', side = 2, outer = TRUE, line=2)
 }
@@ -212,33 +230,33 @@ MD_Plot_Func <- function(x, w){
 # Write to file
 pdf(MD_PLOT)
 par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)  # margins: c(bottom, left, top, right)
-Res_Plots <- Map(MD_Plot_Func, x=Exact_Res, w=Tissues)
-legend(10.0,0.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
+Res_Plots <- Map(MD_Plot_Func, x=GLM_Res, w=Tissues)
+legend(50.0, 15.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
 dev.off()
 
 #---------------------------------------------------------------------------------------------------------------------
 # Volcano Plots
 #---------------------------------------------------------------------------------------------------------------------
-# Make df of neg log p-vals and logFC results after correcting for multiple testing 
+# Make df of neg log p-vals and logFC results after correcting for multiple testing
 Volcano_Func <- function(x){
   cbind(x[["logFC"]], -log10(x[["PValue"]]))
 }
 Volcano_Up <- lapply(Up_Top, Volcano_Func)
-Volcano_Down <- lapply(Down_Top, Volcano_Func) 
+Volcano_Down <- lapply(Down_Top, Volcano_Func)
 
 # Function to make df of log p-vals and logFC on untransformed exact test results
 Untrans_Volcano <- function(x){
-      cbind(x[["table"]][["logFC"]], -log10(x[["table"]][,"PValue"]))
-}
-Volcano_Res <- lapply(Exact_Res, Untrans_Volcano)
+    cbind(x[["table"]][["logFC"]], -log10(x[["table"]][,"PValue"]))
+}    
+Volcano_Res <- lapply(GLM_Res, Untrans_Volcano)
 
-# Coerce to df from mtx
+# Coerce to df from mtx 
 Volcano_Up <- lapply(Volcano_Up, as.data.frame)
 Volcano_Down <- lapply(Volcano_Down, as.data.frame)
 Volcano_Res <- lapply(Volcano_Res, as.data.frame)
 
 # Rename columns
-colnames <- c("logFC", "negLogPval")
+colnames <- c("logFC", "negLogPVal")
 
 Rename_Cols_Func <- function(x){
   setNames(x, colnames)
@@ -250,66 +268,25 @@ Volcano_Res <- lapply(Volcano_Res, Rename_Cols_Func)
 # Set ylim and xlim
 xmax <- ceiling(max(as.numeric(lapply(Volcano_Res, function(x) max(x[['logFC']])))))
 xmin <- ceiling(min(as.numeric(lapply(Volcano_Res, function(x) min(x[['logFC']])))))
-ymax <- ceiling(max(as.numeric(lapply(Volcano_Res, function(x) max(x[['negLogPval']])))))
-ymin <- ceiling(min(as.numeric(lapply(Volcano_Res, function(x) min(x[['negLogPval']])))))
+ymax <- ceiling(max(as.numeric(lapply(Volcano_Res, function(x) max(x[['negLogPVal']])))))
+ymin <- ceiling(min(as.numeric(lapply(Volcano_Res, function(x) min(x[['negLogPVal']])))))
 
 # Plot
 Plot_Func <- function(RES, TISSUE, UP, DOWN){
-  plot(RES, pch=19, main=TISSUE, xlab = '', ylab = '', las = 1, ylim=c(ymin, ymax), xlim=c(xmin,xmax))
-  with(UP, points(logFC, negLogPval, pch=19, col="green"))
-  with(DOWN, points(logFC, negLogPval, pch=19, col="blue"))
+  plot(RES, pch=19, main=TISSUE, xlab = '', ylab = '', las = 1, 
+  ylim=c(ymin, ymax), xlim=c(xmin,xmax))
+  with(UP, points(logFC, negLogPVal, pch=19, col="green"))
+  with(DOWN, points(logFC, negLogPVal, pch=19, col="blue"))
   abline(a=-log10(0.05), b=0, col="blue") 
-  abline(v=c(2,-2), col="red")
-  mtext('Salmon: Gene Volcano Plots; Exact Test', side = 3, outer = TRUE,  cex=1.2, line=3)
+  abline(v=c(2, -2), col="red")
+  mtext('Salmon: Gene Volcano Plots; GLM Ratio Test', side = 3, outer = TRUE,  cex=1.2, line=3)
   mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('negLogPval', side = 2, outer = TRUE, line=2)
 }
 pdf(VOLCANO_PLOT)
 par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE)
 Map(Plot_Func, RES=Volcano_Res, TISSUE=Tissues, UP=Volcano_Up, DOWN=Volcano_Down)
-legend(10.0, 8.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
+legend(25.0, 8.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
        pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
 dev.off()
-
-#---------------------------------------------------------------------------------------------------------------------
-# Gene ontology and pathway enrichment analysis
-#---------------------------------------------------------------------------------------------------------------------
-# Both use the NCBI RefSeq annotation.
-# Convert ensemble annotation to NCBI RefSeq
-#library(biomaRt)
-#symbols <- mapIds(org.Hs.eg.db, keys = Up_Genes[[1]], keytype = "ENSEMBL", column="SYMBOL")
-#
-## GO
-#Gene_Ont <- function(x){
-#  res <- goana(rownames(x), species="Hs")
-#  return(res)
-#}
-#GO <- lapply(Exact_Res, Gene_Ont)
-#
-## Ontology options: 'MF': molecular function, 'BP': biological process, 'CC': celular component
-#TOP_GO <- function(x, w){
-#  res <- topGO(x, ontology=c('BP'), sort=rownames(w), number=10)
-#  return(res)
-#}
-#Up_GO_Res <- Map(TOP_GO, x=GO, w=Up_Genes)
-#Down_GO_Res <- Map(TOP_GO, x=GO, w=Down_Genes)
-#
-## KEGG
-#keg <- kegga(qlf, species="Mm")
-#
-#Kegg_Path <- function(x){
-#  res <- kegga(rownames(x), species="Hs")
-#  return(res)
-#}
-#KEGG <- lapply(Exact_Res, Kegg_Path)
-#
-#TOP_KEGG <- function(x, w){
-#  res <- topKEGG(x, sort=rownames(w), number=10)
-#  return(res)
-#}
-#Up_Kegg_Res <- Map(TOP_KEGG, x=KEGG, w=Up_Genes)
-#Down_Kegg_Res <- Map(TOP_KEGG, x=KEGG, w=Down_Genes)
-
-
-
 
