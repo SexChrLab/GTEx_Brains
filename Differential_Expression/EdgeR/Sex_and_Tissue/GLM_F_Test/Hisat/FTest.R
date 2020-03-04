@@ -1,29 +1,30 @@
 # This script looks at differential gene expression between males and females within each brain tissue type.
-# Transcript level, age matched metadata 
+# Gene level, age matched metadata 
 
 # Constants
-METADATA <- "/scratch/mjpete11/GTEx/Metadata/Age_Matched_Metadata.csv"
-
+METADATA <- snakemake@input[[1]]
 # Hisat/stringtie results are stored in seperate matrices because the same transcripts/genes reported are tissue-specific
-PATHS <-c('/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/Amygdala_Transcript_Hisat_CountMatrix.tsv',
-          '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/Anterior_Transcript_Hisat_CountMatrix.tsv',
-          '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/Caudate_Transcript_Hisat_CountMatrix.tsv',
-          '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/Cerebellar_Transcript_Hisat_CountMatrix.tsv',
-          '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/Cerebellum_Transcript_Hisat_CountMatrix.tsv',
-          '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/Cortex_Transcript_Hisat_CountMatrix.tsv',
-          '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/FrontalCortex_Transcript_Hisat_CountMatrix.tsv',
-          '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/Hippocampus_Transcript_Hisat_CountMatrix.tsv',
-          '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/Hypothalamus_Transcript_Hisat_CountMatrix.tsv',
-          '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/NucleusAccumbens_Transcript_Hisat_CountMatrix.tsv',
-          '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/Putamen_Transcript_Hisat_CountMatrix.tsv',
-          '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/SpinalCord_Transcript_Hisat_CountMatrix.tsv',
-          '/scratch/mjpete11/GTEx/Count_Matrices/Hisat/Trans_ID/SubstantiaNigra_Transcript_Hisat_CountMatrix.tsv')
+PATHS.1 <- snakemake@input[[2]]
+PATHS.2 <- snakemake@input[[3]]
+PATHS.3 <- snakemake@input[[4]]
+PATHS.4 <- snakemake@input[[5]]
+PATHS.5 <- snakemake@input[[6]]
+PATHS.6 <- snakemake@input[[7]]
+PATHS.7 <- snakemake@input[[8]]
+PATHS.8 <- snakemake@input[[9]]
+PATHS.9 <- snakemake@input[[10]]
+PATHS.10 <- snakemake@input[[11]]
+PATHS.11 <- snakemake@input[[12]]
+PATHS.12 <- snakemake@input[[13]]
+PATHS.13 <- snakemake@input[[14]]
+# Combine to one vector
+PATHS <- c(PATHS.1,PATHS.2,PATHS.3,PATHS.4,PATHS.5,PATHS.6,PATHS.7,PATHS.8,PATHS.9,PATHS.10,PATHS.11,PATHS.12,PATHS.13)
 
-# Plots/json files
-UP_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Age_Matched/Transcript/Hisat_Upreg_FTest.json'
-DOWN_JSON <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Age_Matched/Transcript/Hisat_Downreg_FTest.json'
-MD_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Age_Matched/Transcript/Hisat_FTest_MD.pdf'
-VOLCANO_PLOT <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Age_Matched/Transcript/Hisat_FTest_Volcano.pdf'
+# Output
+MD_PLOT <- snakemake@output[[1]] 
+VOLCANO_PLOT <- snakemake@output[[2]]
+UP_JSON <- snakemake@output[[3]]
+DOWN_JSON <- snakemake@output[[4]]
 
 # Load packages                                                                 
 library(tximport)                                                               
@@ -32,7 +33,6 @@ library(edgeR)
 library(readr)
 library(stringr)
 library(gridExtra)
-library(grid)
 library(rjson)
 library(dplyr)
 library(org.Hs.eg.db)
@@ -120,9 +120,9 @@ Set_Levels <- function(x, z){
 }
 Design <- Map(Set_Levels, x=Design, z=y)
 
-# Keep only genes expressed in at least half the samples
+# Keep only genes expressed in at least half the samples for each tissue type
 Keep <- lapply(y, function(x){
-  rowSums(cpm(x)>1)>=11
+  rowSums(cpm(x[['counts']])>1) >= ncol(x[['counts']]) 
 })
 
 Filter_Func <- function(x, k){
@@ -184,20 +184,27 @@ GLM_Res <- Map(GLM_Ratio_Func, a=Fit, b=my.contrasts)
 #---------------------------------------------------------------------------------------------------------------------
 # Summary stats
 #---------------------------------------------------------------------------------------------------------------------
-# Report sig DGX genes
+# Function to correct for multiple testing
+Test_Correct <- function(x){
+  x[['table']][['PValue']] <- p.adjust(x[['table']][['PValue']],method="BH")
+  return(x)
+}
+Corrected_FGLM <- lapply(GLM_Res, Test_Correct)
+
+# Function to filter p-vals, and filter by logFC
 Up_Reg <- function(x){
-  res <- topTags(x, n=Inf, p=0.05)$table
-  up <- res[res$logFC > 0, ]
-  return(up)
+  res <- x[['table']][x[['table']][['PValue']] < 0.05, ] 
+  res <- res[res[['logFC']] > 0, ]
+  return(res)
 }
 
 Down_Reg <- function(x){
-  res <- topTags(x, n=Inf, p=0.05)$table
-  down <- res[res$logFC < 0, ]
-  return(down)
+  res <- x[['table']][x[['table']][['PValue']] < 0.05, ] 
+  res <- res[res[['logFC']] < 0, ]
+  return(res)
 }
-Up_Top <- lapply(GLM_Res, Up_Reg)
-Down_Top <- lapply(GLM_Res, Down_Reg)
+Up_Top <- lapply(Corrected_FGLM, Up_Reg)
+Down_Top <- lapply(Corrected_FGLM, Down_Reg)
 
 # Male table of up and down regulated genes for each tissue
 Get_Vec <- function(x){
@@ -214,39 +221,41 @@ Down_Json <- toJSON(Down_Genes)
 write(Up_Json, UP_JSON)
 write(Down_Json, DOWN_JSON)
 
-# Get summary of results as tables
-Summary_Func <- function(x){
-  res <- summary(decideTests(x))
-  return(res)
-}
-Results_df <- lapply(GLM_Res, Summary_Func)
-
 #---------------------------------------------------------------------------------------------------------------------
 # Mean-Difference plots
 #---------------------------------------------------------------------------------------------------------------------
 # Plot Mean-Difference  plots on one page
 MD_Plot_Func <- function(x, w){
   plotMD(x, main=w, legend=FALSE, hl.col=c("green", "blue"), cex=1.4)
-  mtext('Hisat: Transcript Mean-Difference Plots; GLM F Test', side = 3, outer = TRUE, cex=1.2, line=3)
+  mtext('Hisat: Gene Mean-Difference Plots; GLM F Test', side = 3, outer = TRUE, cex=1.2, line=3)
   mtext('Average log CPM', side = 1, outer = TRUE, line=1)
   mtext('Log-fold-change', side = 2, outer = TRUE, line=2)
 }
 pdf(MD_PLOT)
 par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE) # margins: c(bottom, left, top, right)
 Res_Plots <- Map(MD_Plot_Func, x=GLM_Res, w=Tissues)
-legend(26.0, 10.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
+legend(20.0, 0.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
 dev.off()
 
 #---------------------------------------------------------------------------------------------------------------------
 # Volcano Plots
 #---------------------------------------------------------------------------------------------------------------------
-# Make df of values for axes
+# Make df of neg log p-vals and logFC results after correcting for multiple testing 
 Volcano_Func <- function(x){
-  cbind(x$table$logFC, -log10(x$table[,"PValue"]))
+  cbind(x[["logFC"]], -log10(x[["PValue"]]))
 }
-Volcano_Res <- lapply(GLM_Res, Volcano_Func)
+Volcano_Up <- lapply(Up_Top, Volcano_Func)
+Volcano_Down <- lapply(Down_Top, Volcano_Func) 
 
-# Coerce to df
+# Function to make df of log p-vals and logFC on untransformed exact test results
+Untrans_Volcano <- function(x){
+      cbind(x[["table"]][["logFC"]], -log10(x[["table"]][,"PValue"]))
+}
+Volcano_Res <- lapply(GLM_Res, Untrans_Volcano)
+
+# Coerce to df from mtx
+Volcano_Up <- lapply(Volcano_Up, as.data.frame)
+Volcano_Down <- lapply(Volcano_Down, as.data.frame)
 Volcano_Res <- lapply(Volcano_Res, as.data.frame)
 
 # Rename columns
@@ -255,39 +264,32 @@ colnames <- c("logFC", "negLogPval")
 Rename_Cols_Func <- function(x){
   setNames(x, colnames)
 }
+Volcano_Up <- lapply(Volcano_Up, Rename_Cols_Func)
+Volcano_Down <- lapply(Volcano_Down, Rename_Cols_Func)
 Volcano_Res <- lapply(Volcano_Res, Rename_Cols_Func)
 
+# Set ylim and xlim
+xmax <- ceiling(max(as.numeric(lapply(Volcano_Res, function(x) max(x[['logFC']])))))
+xmin <- ceiling(min(as.numeric(lapply(Volcano_Res, function(x) min(x[['logFC']])))))
+ymax <- ceiling(max(as.numeric(lapply(Volcano_Res, function(x) max(x[['negLogPval']])))))
+ymin <- ceiling(min(as.numeric(lapply(Volcano_Res, function(x) min(x[['negLogPval']])))))
+
 # Plot
-Plot_Func <- function(a, b, c, d){
-  plot(a, pch=19, main=b, xlab = '', ylab = '', las = 1)
-  with(inner_join(a, c), points(logFC, negLogPval, pch=19, col="green"))
-  with(inner_join(a, d), points(logFC, negLogPval, pch=19, col="blue"))
+Plot_Func <- function(RES, TISSUE, UP, DOWN){
+  plot(RES, pch=19, main=TISSUE, xlab = '', ylab = '', las = 1, ylim=c(ymin, ymax), xlim=c(xmin,xmax))
+  with(UP, points(logFC, negLogPval, pch=19, col="green"))
+  with(DOWN, points(logFC, negLogPval, pch=19, col="blue"))
   abline(a=-log10(0.05), b=0, col="blue") 
-  abline(v=c(2, -2), col="red")
-  mtext('Hisat: Transcript Volcano Plots; GLM F Test', side = 3, outer = TRUE,  cex=1.2, line=3)
+  abline(v=c(2,-2), col="red")
+  mtext('Hisat: Gene Volcano Plots; GLM F Test', side = 3, outer = TRUE,  cex=1.2, line=3)
   mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('negLogPval', side = 2, outer = TRUE, line=2)
 }
 pdf(VOLCANO_PLOT)
 par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE)
-Map(Plot_Func, a=Volcano_Res, b=Tissues, c=Up_Top, d=Down_Top)
-legend(25.0, 3.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
+Map(Plot_Func, RES=Volcano_Res, TISSUE=Tissues, UP=Volcano_Up, DOWN=Volcano_Down)
+legend(10.0, 8.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
        pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
 dev.off()
 
-#---------------------------------------------------------------------------------------------------------------------
-# Gene ontology analysis
-#---------------------------------------------------------------------------------------------------------------------
-Gene_Ont <- function(x){
-  res <- goana(rownames(x), species="Hs")
-  return(res)
-}
-GO <- lapply(GLM_Res, Gene_Ont)
-
-TOP_GO <- function(x, w){
-  res <- topGO(x, sort=rownames(w), number=10)
-  return(res)
-}
-Up_GO_Res <- Map(TOP_GO, x=GO, w=Up_Genes)
-Down_GO_Res <- Map(TOP_GO, x=GO, w=Down_Genes)
 

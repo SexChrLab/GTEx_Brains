@@ -6,20 +6,34 @@ setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact
 # Hisat/stringtie results are stored in seperate matrices because the same transcripts/genes reported are tissue-specific
 # Using annotated gene count matrix
 METADATA <- snakemake@input[[1]]
-PATHS <- snakemake@input[[2]]
-MD_PLOT <_ snakemake@output[[1]]
+PATHS.1 <- snakemake@input[[2]]
+PATHS.2 <- snakemake@input[[3]]
+PATHS.3 <- snakemake@input[[4]]
+PATHS.4 <- snakemake@input[[5]]
+PATHS.5 <- snakemake@input[[6]]
+PATHS.6 <- snakemake@input[[7]]
+PATHS.7 <- snakemake@input[[8]]
+PATHS.8 <- snakemake@input[[9]]
+PATHS.9 <- snakemake@input[[10]]
+PATHS.10 <- snakemake@input[[11]]
+PATHS.11 <- snakemake@input[[12]]
+PATHS.12 <- snakemake@input[[13]]
+PATHS.13 <- snakemake@input[[14]]
+# Combine to one vector
+PATHS <- c(PATHS.1,PATHS.2,PATHS.3,PATHS.4,PATHS.5,PATHS.6,PATHS.7,PATHS.8,PATHS.9,PATHS.10,PATHS.11,PATHS.12,PATHS.13)
+
+# Output
+MD_PLOT <- snakemake@output[[1]]
 VOLCANO_PLOT <- snakemake@output[[2]]
 UP_JSON <- snakemake@output[[3]]
 DOWN_JSON <- snakemake@output[[4]]
 
 # Load packages                                                                 
-library(tximport)                                                               
 library(GenomicFeatures)                                                        
 library(edgeR) 
 library(readr)
 library(stringr)
 library(gridExtra)
-library(grid)
 library(rjson)
 library(dplyr)
 library(org.Hs.eg.db)
@@ -31,11 +45,11 @@ samples = read.csv(METADATA, header = TRUE)
 rownames(samples) <- samples$Sample   
 
 # Count matrices
-Tissues <- list('Amygdala', 'Anterior', 'Caudate', 'Cerbellar', 'Cerebellum', 'Cortex', 'Frontal Cortex',
-                'Hippocampus', 'Hypothalamus', 'Nucleus Accumbens', 'Putamen', 'Spinal Cord', 'Substantia Nigra')
+Tissues <- c('Amygdala', 'Anterior', 'Caudate', 'Cerbellar', 'Cerebellum', 'Cortex', 'Frontal_Cortex',
+'Hippocampus', 'Hypothalamus', 'Nucleus_Accumbens', 'Putamen', 'Spinal Cord', 'Substantia_Nigra')
 
 cts <- lapply(PATHS, function(x){
-  t <- read.csv(x, sep=",")
+  t <- read.table(file=x, sep="\t")
 })
 names(cts) <- Tissues
 
@@ -43,11 +57,6 @@ names(cts) <- Tissues
 for (i in seq_along(cts)){
   colnames(cts[[i]]) <- str_replace_all(colnames(cts[[i]]), pattern = "\\.","-")
 }
-
-# Replace - at end of Caudate colnames, excluding first col
-# should be 131 samples
-colnames(cts[[3]]) <- substring(colnames(cts[[3]][,2:ncol(cts[[3]])]), 1, nchar(colnames(cts[[3]][2:ncol(cts[[3]])]))-1)
-ncol(cts[[3]])
 
 # Metadata split into list of dfs by tissue
 Meta <- list()
@@ -160,7 +169,25 @@ Exact_Res <- Map(Exact_Func, y, Pairs)
 #---------------------------------------------------------------------------------------------------------------------
 # Function to correct for multiple testing
 Test_Correct <- function(x){
-    x[['table']][['PValue']] <- p.adjust(x[['table']][[
+  x[['table']][['PValue']] <- p.adjust(x[['table']][['PValue']],method="BH")
+  return(x)
+}
+Corrected_Exact <- lapply(Exact_Res, Test_Correct)
+
+# Function to filter p-vals, and filter by logFC
+Up_Reg <- function(x){
+  res <- x[['table']][x[['table']][['PValue']] < 0.05, ] 
+  res <- res[res[['logFC']] > 0, ]
+  return(res)
+}
+
+Down_Reg <- function(x){
+  res <- x[['table']][x[['table']][['PValue']] < 0.05, ] 
+  res <- res[res[['logFC']] < 0, ]
+  return(res)
+}
+Up_Top <- lapply(Corrected_Exact, Up_Reg)
+Down_Top <- lapply(Corrected_Exact, Down_Reg)
 
 # Make table of up and down regulated genes for each tissue
 Get_Vec <- function(x){
@@ -174,15 +201,8 @@ Down_Genes <- lapply(Down_Top, Get_Vec)
 Up_Json <- toJSON(Up_Genes)
 Down_Json <- toJSON(Down_Genes)
 
-# write(Up_Json, UP_JSON)
-# write(Down_Json, DOWN_JSON)
-
-# Get summary of results as table
-# Summary_Func <- function(x){
-#   res <- summary(decideTests(x))
-#   return(res)
-# }
-# Results_df <- lapply(Exact_Res, Summary_Func)
+ write(Up_Json, UP_JSON)
+ write(Down_Json, DOWN_JSON)
 
 #---------------------------------------------------------------------------------------------------------------------
 # Mean-Difference Plots
@@ -195,23 +215,32 @@ MD_Plot_Func <- function(x, w){
   mtext('Log-fold-change', side = 2, outer = TRUE, line=2)
 }
 
-# Write to file
-# pdf(MD_PLOT)
-# par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)  # margins: c(bottom, left, top, right)
-# Res_Plots <- Map(MD_Plot_Func, x=Exact_Res, w=Tissues)
-# legend(50.0, 15.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
-# dev.off()
+#Write to file
+pdf(MD_PLOT)
+par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)  # margins: c(bottom, left, top, right)
+Res_Plots <- Map(MD_Plot_Func, x=Exact_Res, w=Tissues)
+legend(20.0,0.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
+dev.off()
 
 #---------------------------------------------------------------------------------------------------------------------
 # Volcano Plots
 #---------------------------------------------------------------------------------------------------------------------
-# Make df of values for axis
+# Make df of neg log p-vals and logFC results after correcting for multiple testing 
 Volcano_Func <- function(x){
-  cbind(x$table$logFC, -log10(x$table[,"PValue"]))
+  cbind(x[["logFC"]], -log10(x[["PValue"]]))
 }
-Volcano_Res <- lapply(Exact_Res, Volcano_Func)
+Volcano_Up <- lapply(Up_Top, Volcano_Func)
+Volcano_Down <- lapply(Down_Top, Volcano_Func) 
 
-# Coerce to df
+# Function to make df of log p-vals and logFC on untransformed exact test results
+Untrans_Volcano <- function(x){
+      cbind(x[["table"]][["logFC"]], -log10(x[["table"]][,"PValue"]))
+}
+Volcano_Res <- lapply(Exact_Res, Untrans_Volcano)
+
+# Coerce to df from mtx
+Volcano_Up <- lapply(Volcano_Up, as.data.frame)
+Volcano_Down <- lapply(Volcano_Down, as.data.frame)
 Volcano_Res <- lapply(Volcano_Res, as.data.frame)
 
 # Rename columns
@@ -220,13 +249,21 @@ colnames <- c("logFC", "negLogPval")
 Rename_Cols_Func <- function(x){
   setNames(x, colnames)
 }
+Volcano_Up <- lapply(Volcano_Up, Rename_Cols_Func)
+Volcano_Down <- lapply(Volcano_Down, Rename_Cols_Func)
 Volcano_Res <- lapply(Volcano_Res, Rename_Cols_Func)
 
+# Set ylim and xlim
+xmax <- ceiling(max(as.numeric(lapply(Volcano_Res, function(x) max(x[['logFC']])))))
+xmin <- ceiling(min(as.numeric(lapply(Volcano_Res, function(x) min(x[['logFC']])))))
+ymax <- ceiling(max(as.numeric(lapply(Volcano_Res, function(x) max(x[['negLogPval']])))))
+ymin <- ceiling(min(as.numeric(lapply(Volcano_Res, function(x) min(x[['negLogPval']])))))
+
 # Plot
-Plot_Func <- function(a, b, c, d){
-  plot(a, pch=19, main=b, xlab = '', ylab = '', las = 1)
-  with(inner_join(a, c), points(logFC, negLogPval, pch=19, col="green"))
-  with(inner_join(a, d), points(logFC, negLogPval, pch=19, col="blue"))
+Plot_Func <- function(RES, TISSUE, UP, DOWN){
+  plot(RES, pch=19, main=TISSUE, xlab = '', ylab = '', las = 1, ylim=c(ymin, ymax), xlim=c(xmin,xmax))
+  with(UP, points(logFC, negLogPval, pch=19, col="green"))
+  with(DOWN, points(logFC, negLogPval, pch=19, col="blue"))
   abline(a=-log10(0.05), b=0, col="blue") 
   abline(v=c(2,-2), col="red")
   mtext('Hisat: Gene Volcano Plots; Exact Test', side = 3, outer = TRUE,  cex=1.2, line=3)
@@ -235,9 +272,8 @@ Plot_Func <- function(a, b, c, d){
 }
 pdf(VOLCANO_PLOT)
 par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE)
-Map(Plot_Func, a=Volcano_Res, b=Tissues, c=Up_Top, d=Down_Top)
-legend(40.0, 80.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
+Map(Plot_Func, RES=Volcano_Res, TISSUE=Tissues, UP=Volcano_Up, DOWN=Volcano_Down)
+legend(10.0, 8.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
        pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
 dev.off()
-
 
