@@ -16,7 +16,6 @@ library(edgeR)
 library(readr)
 library(stringr)
 library(gridExtra)
-library(grid)
 library(rjson)
 library(dplyr)
 library(org.Hs.eg.db)
@@ -231,7 +230,7 @@ MD_Plot_Func <- function(x, w){
 pdf(MD_PLOT)
 par(mfrow = c(3, 5), cex=0.4, mar = c(3, 3, 3, 2), oma =c(6, 6, 6, 2), xpd=TRUE)  # margins: c(bottom, left, top, right)
 Res_Plots <- Map(MD_Plot_Func, x=GLM_Res, w=Tissues)
-legend(50.0, 15.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
+legend(20.0, 0.0, legend=c("Up","Not Sig", "Down"), pch = 16, col = c("green","black", "blue"), bty = "o", xpd=NA, cex=2.0)
 dev.off()
 
 #---------------------------------------------------------------------------------------------------------------------
@@ -286,7 +285,7 @@ Plot_Func <- function(RES, TISSUE, UP, DOWN){
 pdf(VOLCANO_PLOT)
 par(mfrow = c(3, 5), cex=0.4, mar = c(2, 2, 4, 2), oma =c(6, 6, 6, 2), xpd=FALSE)
 Map(Plot_Func, RES=Volcano_Res, TISSUE=Tissues, UP=Volcano_Up, DOWN=Volcano_Down)
-legend(25.0, 8.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
+legend(10.0, 8.0, inset=0, legend=c("Positive Significant", "Negative Significant", "Not significant"), 
        pch=16, cex=2.0, col=c("green", "blue", "black"), xpd=NA)
 dev.off()
 
