@@ -1,199 +1,96 @@
-# Generate summary stats
-setwd("/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats")
+setwd("/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/")
 
+# Output
+H_M_U <- 'Test_Res/Hisat/Matched/Up%d.tiff'
+H_M_D <- 'Test_Res/Hisat/Matched/Down%d.tiff'
+H_A_U <- 'Test_Res/Hisat/Age_Matched/Up%d.tiff'
+H_A_D <- 'Test_Res/Hisat/Age_Matched/Down%d.tiff'
+S_M_U <- 'Test_Res/Salmon/Matched/Up%d.tiff'
+S_M_D <- 'Test_Res/Salmon/Matched/Down%d.tiff'
+S_A_U <- 'Test_Res/Salmon/Age_Matched/Up%d.tiff'
+S_A_D <- 'Test_Res/Salmon/Age_Matched/Down%d.tiff'
+E_M_U <- 'Aligner_Res/Exact/Matched/Up%d.tiff'
+E_M_D <- 'Aligner_Res/Exact/Matched/Down%d.tiff'
+E_A_U <- 'Aligner_Res/Exact/Age_Matched/Up%d.tiff'
+E_A_D <- 'Aligner_Res/Exact/Age_Matched/Down%d.tiff'
+F_M_U <- 'Aligner_Res/FTest/Matched/Up%d.tiff'
+F_M_D <- 'Aligner_Res/FTest/Matched/Down%d.tiff'
+F_A_U <- 'Aligner_Res/FTest/Age_Matched/Up%d.tiff'
+F_A_D <- 'Aligner_Res/FTest/Age_Matched/Down%d.tiff'
+R_M_U <- 'Aligner_Res/Ratio/Matched/Up%d.tiff'
+R_M_D <- 'Aligner_Res/Ratio/Matched/Down%d.tiff'
+R_A_U <- 'Aligner_Res/Ratio/Age_Matched/Up%d.tiff'
+R_A_D <- 'Aligner_Res/Ratio/Age_Matched/Down%d.tiff'
+
+# Libraries
+library(ggplot2)
 library(VennDiagram)
+library(ggVennDiagram)
 library(rjson)
 library(grDevices)
-library(grid)
 
 #------------------------------------------------------------------------------------------------------------------
 # Paths
 #------------------------------------------------------------------------------------------------------------------
 # Exact Test, Salmon
-S_EXACT_GENE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Matched/Gene/Salmon_Upreg_Exact.json'
-S_EXACT_GENE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Matched/Gene/Salmon_Downreg_Exact.json'
+ESMU <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Salmon/Matched/Gene/Upreg.json')
+ESMD <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Salmon/Matched/Gene/Downreg.json')
 
-S_EXACT_TRANS_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Matched/Transcript/Salmon_Upreg_Exact.json'
-S_EXACT_TRANS_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Matched/Transcript/Salmon_Downreg_Exact.json'
-
-S_EXACT_GENE_AGE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Age_Matched/Gene/Salmon_Upreg_Exact.json'
-S_EXACT_GENE_AGE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Age_Matched/Gene/Salmon_Downreg_Exact.json'
-
-S_EXACT_TRANS_AGE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Age_Matched/Transcript/Salmon_Upreg_Exact.json'
-S_EXACT_TRANS_AGE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon/Age_Matched/Transcript/Salmon_Downreg_Exact.json'
+ESAU <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Salmon/Age_Matched/Gene/Upreg.json')
+ESAD <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Salmon/Age_Matched/Gene/Downreg.json') 
 
 # F Test, Salmon
-S_FTEST_GENE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Matched/Gene/Salmon_Upreg_FTest.json'
-S_FTEST_GENE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Matched/Gene/Salmon_Downreg_FTest.json'
+FSMU <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Salmon/Matched/Gene/Upreg.json')
+FSMD <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Salmon/Matched/Gene/Downreg.json')
 
-S_FTEST_TRANS_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Matched/Transcript/Salmon_Upreg_FTest.json'
-S_FTEST_TRANS_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Matched/Transcript/Salmon_Downreg_FTest.json'
-
-S_FTEST_GENE_AGE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Age_Matched/Gene/Salmon_Upreg_FTest.json'
-S_FTEST_GENE_AGE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Age_Matched/Gene/Salmon_Downreg_FTest.json'
-
-S_FTEST_TRANS_AGE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Age_Matched/Transcript/Salmon_Upreg_FTest.json'
-S_FTEST_TRANS_AGE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Salmon/Age_Matched/Transcript/Salmon_Downreg_FTest.json'
+FSAU <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Salmon/Age_Matched/Gene/Upreg.json')
+FSAD <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Salmon/Age_Matched/Gene/Downreg.json')
 
 # Ratio Test, Salmon
-S_RATIO_GENE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Salmon/Matched/Gene/Salmon_Upreg_Ratio.json'
-S_RATIO_GENE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Salmon/Matched/Gene/Salmon_Downreg_Ratio.json'
+RSMU <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Salmon/Matched/Gene/Upreg.json')
+RSMD <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Salmon/Matched/Gene/Downreg.json')
 
-S_RATIO_TRANS_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Salmon/Matched/Transcript/Salmon_Upreg_Ratio.json'
-S_RATIO_TRANS_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Salmon/Matched/Transcript/Salmon_Downreg_Ratio.json'
-
-S_RATIO_GENE_AGE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Salmon/Age_Matched/Gene/Salmon_Upreg_Ratio.json'
-S_RATIO_GENE_AGE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Salmon/Age_Matched/Gene/Salmon_Downreg_Ratio.json'
-
-S_RATIO_TRANS_AGE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Salmon/Age_Matched/Transcript/Salmon_Upreg_Ratio.json'
-S_RATIO_TRANS_AGE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Salmon/Age_Matched/Transcript/Salmon_Downreg_Ratio.json'
+RSAU <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Salmon/Age_Matched/Gene/Upreg.json')
+RSAD <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Salmon/Age_Matched/Gene/Downreg.json')
 
 # Exact Test, Hisat
-H_EXACT_GENE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Matched/Gene/Hisat_Upreg_Exact.json'
-H_EXACT_GENE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Matched/Gene/Hisat_Downreg_Exact.json'
+EHMU <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Hisat/Matched/Gene/Upreg.json')
+EHMD <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Hisat/Matched/Gene/Downreg.json')
 
-H_EXACT_TRANS_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Matched/Transcript/Hisat_Upreg_Exact.json'
-H_EXACT_TRANS_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Matched/Transcript/Hisat_Downreg_Exact.json'
-
-H_EXACT_GENE_AGE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Age_Matched/Gene/Hisat_Upreg_Exact.json'
-H_EXACT_GENE_AGE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Age_Matched/Gene/Hisat_Downreg_Exact.json'
-
-H_EXACT_TRANS_AGE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Age_Matched/Transcript/Hisat_Upreg_Exact.json'
-H_EXACT_TRANS_AGE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat/Age_Matched/Transcript/Hisat_Downreg_Exact.json'
+EHAU <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Hisat/Age_Matched/Gene/Upreg.json')
+EHAD <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Hisat/Age_Matched/Gene/Downreg.json')
 
 # F Test, Hisat
-H_FTEST_GENE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Matched/Gene/Hisat_Upreg_FTest.json'
-H_FTEST_GENE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Matched/Gene/Hisat_Downreg_FTest.json'
+FHMU <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Hisat/Matched/Gene/Upreg.json')
+FHMD <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Hisat/Matched/Gene/Downreg.json')
 
-H_FTEST_TRANS_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Matched/Transcript/Hisat_Upreg_FTest.json'
-H_FTEST_TRANS_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Matched/Transcript/Hisat_Downreg_FTest.json'
-
-H_FTEST_GENE_AGE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Age_Matched/Gene/Hisat_Upreg_FTest.json'
-H_FTEST_GENE_AGE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Age_Matched/Gene/Hisat_Downreg_FTest.json'
-
-H_FTEST_TRANS_AGE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Age_Matched/Transcript/Hisat_Upreg_FTest.json'
-H_FTEST_TRANS_AGE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_F_Test/Hisat/Age_Matched/Transcript/Hisat_Downreg_FTest.json'
+FHAU <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Hisat/Age_Matched/Gene/Upreg.json')
+FHAD <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Hisat/Age_Matched/Gene/Downreg.json')
 
 # Ratio Test, Hisat
-H_RATIO_GENE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Matched/Gene/Hisat_Upreg_Ratio.json'
-H_RATIO_GENE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Matched/Gene/Hisat_Downreg_Ratio.json'
+RHMU <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Hisat/Matched/Gene/Upreg.json')
+RHMD <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Hisat/Matched/Gene/Downreg.json')
 
-H_RATIO_TRANS_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Matched/Transcript/Hisat_Upreg_Ratio.json'
-H_RATIO_TRANS_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Matched/Transcript/Hisat_Downreg_Ratio.json'
-
-H_RATIO_GENE_AGE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Age_Matched/Gene/Hisat_Upreg_Ratio.json'
-H_RATIO_GENE_AGE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Age_Matched/Gene/Hisat_Downreg_Ratio.json'
-
-H_RATIO_TRANS_AGE_MATCHED_UP <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Age_Matched/Transcript/Hisat_Upreg_Ratio.json'
-H_RATIO_TRANS_AGE_MATCHED_DOWN <- '/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat/Age_Matched/Transcript/Hisat_Downreg_Ratio.json'
-
-# Read in json files
-# Salmon, Exact
-S_Exact_Gene_Matched_Up <- fromJSON(file=S_EXACT_GENE_MATCHED_UP)
-S_Exact_Gene_Matched_Down <- fromJSON(file=S_EXACT_GENE_MATCHED_DOWN)
-S_Exact_Gene_Age_Matched_Up <- fromJSON(file=S_EXACT_GENE_AGE_MATCHED_UP)
-S_Exact_Gene_Age_Matched_Down <- fromJSON(file=S_EXACT_GENE_AGE_MATCHED_DOWN)
-
-S_Exact_Trans_Matched_Up <- fromJSON(file=S_EXACT_GENE_MATCHED_UP)
-S_Exact_Trans_Matched_Down <- fromJSON(file=S_EXACT_GENE_MATCHED_DOWN)
-S_Exact_Trans_Age_Matched_Up <- fromJSON(file=S_EXACT_TRANS_AGE_MATCHED_UP) # To Do
-S_Exact_Trans_Age_Matched_Down <- fromJSON(file=S_EXACT_TRANS_AGE_MATCHED_DOWN) # To Do
-
-# Salmon, F Test
-S_FTest_Gene_Matched_Up <- fromJSON(file=S_FTEST_GENE_MATCHED_UP)
-S_FTest_Gene_Matched_Down <- fromJSON(file=S_FTEST_GENE_MATCHED_DOWN)
-S_FTest_Gene_Age_Matched_Up <- fromJSON(file=S_FTEST_GENE_AGE_MATCHED_UP)
-S_FTest_Gene_Age_Matched_Down <- fromJSON(file=S_FTEST_GENE_AGE_MATCHED_DOWN)
-
-S_FTest_Trans_Matched_Up <- fromJSON(file=S_FTEST_GENE_MATCHED_UP)
-S_FTest_Trans_Matched_Down <- fromJSON(file=S_FTEST_GENE_MATCHED_DOWN)
-S_FTest_Trans_Age_Matched_Up <- fromJSON(file=S_FTEST_TRANS_AGE_MATCHED_UP)
-S_FTest_Trans_Age_Matched_Down <- fromJSON(file=S_FTEST_TRANS_AGE_MATCHED_DOWN)
-
-# Salmon, Ratio
-S_Ratio_Gene_Matched_Up <- fromJSON(file=S_RATIO_GENE_MATCHED_UP) 
-S_Ratio_Gene_Matched_Down <- fromJSON(file=S_RATIO_GENE_MATCHED_DOWN) 
-S_Ratio_Gene_Age_Matched_Up <- fromJSON(file=S_RATIO_GENE_AGE_MATCHED_UP)
-S_Ratio_Gene_Age_Matched_Down <- fromJSON(file=S_RATIO_GENE_AGE_MATCHED_DOWN)
-
-S_Ratio_Trans_Matched_Up <- fromJSON(file=S_RATIO_TRANS_MATCHED_UP) 
-S_Ratio_Trans_Matched_Down <- fromJSON(file=S_RATIO_TRANS_MATCHED_DOWN) 
-S_Ratio_Trans_Age_Matched_Up <- fromJSON(file=S_RATIO_TRANS_AGE_MATCHED_UP)
-S_Ratio_Trans_Age_Matched_Down <- fromJSON(file=S_RATIO_TRANS_AGE_MATCHED_DOWN)
-
-# Hisat, Exact
-H_Exact_Gene_Matched_Up <- fromJSON(file=H_EXACT_GENE_MATCHED_UP)
-H_Exact_Gene_Matched_Down <- fromJSON(file=H_EXACT_GENE_MATCHED_DOWN)
-H_Exact_Gene_Age_Matched_Up <- fromJSON(file=H_EXACT_GENE_AGE_MATCHED_UP)
-H_Exact_Gene_Age_Matched_Down <- fromJSON(file=H_EXACT_GENE_AGE_MATCHED_DOWN)
-
-H_Exact_Trans_Matched_Up <- fromJSON(file=H_EXACT_TRANS_MATCHED_UP)
-H_Exact_Trans_Matched_Down <- fromJSON(file=H_EXACT_TRANS_MATCHED_DOWN)
-H_Exact_Trans_Age_Matched_Up <- fromJSON(file=H_EXACT_TRANS_AGE_MATCHED_UP)
-H_Exact_Trans_Age_Matched_Down <- fromJSON(file=H_EXACT_TRANS_AGE_MATCHED_DOWN)
-
-# Hisat, F Test
-H_FTest_Gene_Matched_Up <- fromJSON(file=H_FTEST_GENE_MATCHED_UP)
-H_FTest_Gene_Matched_Down <- fromJSON(file=H_FTEST_GENE_MATCHED_DOWN)
-H_FTest_Gene_Age_Matched_Up <- fromJSON(file=H_FTEST_GENE_AGE_MATCHED_UP)
-H_FTest_Gene_Age_Matched_Down <- fromJSON(file=H_FTEST_GENE_AGE_MATCHED_DOWN)
-
-H_FTest_Trans_Matched_Up <- fromJSON(file=H_FTEST_GENE_MATCHED_UP)
-H_FTest_Trans_Matched_Down <- fromJSON(file=H_FTEST_GENE_MATCHED_DOWN)
-H_FTest_Trans_Age_Matched_Up <- fromJSON(file=H_FTEST_TRANS_AGE_MATCHED_UP)
-H_FTest_Trans_Age_Matched_Down <- fromJSON(file=H_FTEST_TRANS_AGE_MATCHED_DOWN)
-
-# Hisat, Ratio
-H_Ratio_Gene_Matched_Up <- fromJSON(file=H_RATIO_GENE_MATCHED_UP)
-H_Ratio_Gene_Matched_Down <- fromJSON(file=H_RATIO_GENE_MATCHED_DOWN)
-H_Ratio_Gene_Age_Matched_Up <- fromJSON(file=H_RATIO_GENE_AGE_MATCHED_UP)
-H_Ratio_Gene_Age_Matched_Down <- fromJSON(file=H_RATIO_GENE_AGE_MATCHED_DOWN)
-
-H_Ratio_Trans_Matched_Up <- fromJSON(file=H_RATIO_GENE_MATCHED_UP)
-H_Ratio_Trans_Matched_Down <- fromJSON(file=H_RATIO_GENE_MATCHED_DOWN)
-H_Ratio_Trans_Age_Matched_Up <- fromJSON(file=H_RATIO_TRANS_AGE_MATCHED_UP) # To Do
-H_Ratio_Trans_Age_Matched_Down <- fromJSON(file=H_RATIO_TRANS_AGE_MATCHED_DOWN) # To Do
+RHAU <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Hisat/Age_Matched/Gene/Upreg.json')
+RHAD <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Hisat/Age_Matched/Gene/Downreg.json')
 
 #------------------------------------------------------------------------------------------------------------------
 # Make list of test results for each aligner/tissue
 # Results are for the 3-way venn diagram of the overlap between genes called as DGX by aligner
 #------------------------------------------------------------------------------------------------------------------
-Test_Lst <- function(E, F, R){
-  res <- list("Exact Test" = E, "F Test" = F, "Ratio Test" = R)
+Test_Lst <- function(Exact, FTest, Ratio){
+  res <- list("Exact Test" = Exact, "FTest" = FTest, "Ratio Test" = Ratio)
 }
 
-# Hisat
-# Gene
-# Matched
-# Up
-M.H_Gene_Up <- Map(Test_Lst, E=H_Exact_Gene_Matched_Up, F=H_FTest_Gene_Matched_Up, R=H_Ratio_Gene_Matched_Up)
-# Down
-M.H_Gene_Down <- Map(Test_Lst, E=H_Exact_Gene_Matched_Down, F=H_FTest_Gene_Matched_Down, R=H_Ratio_Gene_Matched_Down)
-# Age Matched
-# Up
-AM.H_Gene_Up <- Map(Test_Lst, E=H_Exact_Gene_Age_Matched_Up, F=H_FTest_Gene_Age_Matched_Up, R=H_Ratio_Gene_Age_Matched_Up)
-# Down
-AM.H_Gene_Down <- Map(Test_Lst, E=H_Exact_Gene_Age_Matched_Down, F=H_FTest_Gene_Age_Matched_Down, R=H_Ratio_Gene_Age_Matched_Down)
+HMU <- Map(Test_Lst, Exact=EHMU, FTest=FHMU, Ratio=RHMU)
+HMD <- Map(Test_Lst, Exact=EHMD, FTest=FHMD, Ratio=RHMD)
+HAU <- Map(Test_Lst, Exact=EHMU, FTest=FHMU, Ratio=RHMU)
+HAD <- Map(Test_Lst, Exact=EHMD, FTest=FHAD, Ratio=RHMD)
 
-# By test: Hisat, transcript, matched
-# By test: Hisat, transcript, age matched
-
-# Salmon
-# Gene
-# Matched
-# Up
-M.S_Gene_Up <- Map(Test_Lst, E=S_Exact_Gene_Matched_Up, F=S_FTest_Gene_Matched_Up, R=S_Ratio_Gene_Matched_Up)
-# Down
-M.S_Gene_Down <- Map(Test_Lst, E=S_Exact_Gene_Matched_Down, F=S_FTest_Gene_Matched_Down, R=S_Ratio_Gene_Matched_Down)
-
-# Age Matched
-# Up
-AM.S_Gene_Up <- Map(Test_Lst, E=S_Exact_Gene_Age_Matched_Up, F=S_FTest_Gene_Age_Matched_Up, R=S_Ratio_Gene_Age_Matched_Up)
-# Down
-AM.S_Gene_Down <- Map(Test_Lst, E=S_Exact_Gene_Age_Matched_Down, F=S_FTest_Gene_Age_Matched_Down, R=S_Ratio_Gene_Age_Matched_Down)
-
-# By test: Salmon, transcript, matched
-# By test: Salmon, transcript, age matched
+SMU <- Map(Test_Lst, Exact=ESMU, FTest=FSMU, Ratio=RSMU)
+SMD <- Map(Test_Lst, Exact=ESMD, FTest=FSMD, Ratio=RSMD)
+SAU <- Map(Test_Lst, Exact=ESAU, FTest=FSAU, Ratio=RSAU)
+SAD <- Map(Test_Lst, Exact=ESAD, FTest=FSMD, Ratio=RSAD)
 
 #------------------------------------------------------------------------------------------------------------------
 # Make list of results by test for each aligner
@@ -202,300 +99,186 @@ AM.S_Gene_Down <- Map(Test_Lst, E=S_Exact_Gene_Age_Matched_Down, F=S_FTest_Gene_
 Aligner_Lst <- function(H, S){
   res <- list("Salmon" = S, "Hisat" = H)
 }
-# By aligner; Genes
-# Exact test
-# Matched
-M.Up_Exact_Gene <- Map(Aligner_Lst, H=H_Exact_Gene_Matched_Up, S=S_Exact_Gene_Matched_Up)
-M.Down_Exact_Gene <- Map(Aligner_Lst, H=H_Exact_Gene_Matched_Down, S=S_Exact_Gene_Matched_Down)
-# Age matched
-AM.Up_Exact_Gene <- Map(Aligner_Lst, H=H_Exact_Gene_Age_Matched_Up, S=S_Exact_Gene_Age_Matched_Up)
-AM.Down_Exact_Gene <- Map(Aligner_Lst, H=H_Exact_Gene_Age_Matched_Down, S=S_Exact_Gene_Age_Matched_Down)
 
-# F Test
-# Matched
-M.Up_FTest_Gene <- Map(Aligner_Lst, H=H_FTest_Gene_Matched_Up, S=S_FTest_Gene_Matched_Up)
-M.Down_FTest_Gene <- Map(Aligner_Lst, H=H_FTest_Gene_Matched_Down, S=S_FTest_Gene_Matched_Down)
-# Age Matched
-AM.Up_FTest_Gene <- Map(Aligner_Lst, H=H_FTest_Gene_Age_Matched_Up, S=S_FTest_Gene_Age_Matched_Up)
-AM.Down_FTest_Gene <- Map(Aligner_Lst, H=H_FTest_Gene_Age_Matched_Down, S=S_FTest_Gene_Age_Matched_Down)
+EMU <- Map(Aligner_Lst, H=EHMU, S=ESMU)
+EMD <- Map(Aligner_Lst, H=EHMD, S=ESMD)
+EAU <- Map(Aligner_Lst, H=EHMU, S=ESAU)
+EAD <- Map(Aligner_Lst, H=EHMD, S=ESAD)
 
-# Ratio test
-# Matched
-M.Up_Ratio_Gene <- Map(Aligner_Lst, H=H_Ratio_Gene_Matched_Up, S=S_Ratio_Gene_Matched_Up)
-M.Down_Ratio_Gene <- Map(Aligner_Lst, H=H_Ratio_Gene_Matched_Down, S=S_Ratio_Gene_Matched_Down)
-# Age Matched
-AM.Up_Ratio_Gene <- Map(Aligner_Lst, H=H_Ratio_Gene_Age_Matched_Up, S=S_Ratio_Gene_Age_Matched_Up)
-AM.Down_Ratio_Gene <- Map(Aligner_Lst, H=H_Ratio_Gene_Age_Matched_Down, S=S_Ratio_Gene_Age_Matched_Down)
+FMU <- Map(Aligner_Lst, H=FHMU, S=FSMU)
+FMD <- Map(Aligner_Lst, H=FHMD, S=FSMD)
+FAU <- Map(Aligner_Lst, H=FHAU, S=FSAU)
+FAD <- Map(Aligner_Lst, H=FHAD, S=FSAD)
 
-
-## Transcript
-## Exact Test
-## Matched
-# M.Up_Exact_Trans <- Map(Aligner_Lst, H=H_Exact_Trans_Matched_Up, S=S_Exact_Trans_Matched_Up)
-# M.Down_Exact_Trans <- Map(Aligner_Lst, H=H_Exact_Trans_Matched_Down, S=S_Exact_Trans_Matched_Down)
-## Age Matched
-# AM.Up_Exact_Trans <- Map(Aligner_Lst, H=H_Exact_Trans_Age_Matched_Up, S=S_Exact_Trans_Age_Matched_Up)
-# AM.Down_Exact_Trans <- Map(Aligner_Lst, H=H_Exact_Trans_Age_Matched_Down, S=S_Exact_Trans_Age_Matched_Down)
-
-# # F Test
-# # Matched
-# M.Up_FTest_Trans <- Map(Aligner_Lst, H=H_FTest_Trans_Matched_Up, S=S_FTest_Trans_Matched_Up)
-# M.Down_FTest_Trans <- Map(Aligner_Lst, H=H_FTest_Trans_Matched_Down, S=S_FTest_Trans_Matched_Down)
-# # Age Matched
-# AM.Up_FTest_Trans <- Map(Aligner_Lst, H=H_FTest_Trans_Age_Matched_Up, S=S_FTest_Trans_Age_Matched_Up)
-# AM.Down_FTest_Trans <- Map(Aligner_Lst, H=H_FTest_Trans_Age_Matched_Down, S=S_FTest_Trans_Age_Matched_Down)
-
-# # Ratio Test
-# # Matched
-# M.Up_Ratio_Trans <- Map(Aligner_Lst, H=H_Ratio_Trans_Matched_Up, S=S_Ratio_Trans_Matched_Up)
-# M.Down_Ratio_Trans <- Map(Aligner_Lst, H=H_Ratio_Trans_Matched_Down, S=S_Ratio_Trans_Matched_Down)
-# # Age Matched
-# AM.Up_Ratio_Trans <- Map(Aligner_Lst, H=H_Ratio_Trans_Age_Matched_Up, S=S_Ratio_Trans_Age_Matched_Up)
-# AM.Down_Ratio_Trans <- Map(Aligner_Lst, H=H_Ratio_Trans_Age_Matched_Down, S=S_Ratio_Trans_Age_Matched_Down)
+RMU <- Map(Aligner_Lst, H=RHMU, S=RSMU)
+RMD <- Map(Aligner_Lst, H=RHMD, S=RSMD)
+RAU <- Map(Aligner_Lst, H=RHAU, S=RSAU)
+RAD <- Map(Aligner_Lst, H=RHAD, S=RSAD)
 
 #------------------------------------------------------------------------------------------------------------------
 # 3-way Venn diagram plot function
 #------------------------------------------------------------------------------------------------------------------
-Venn_3 <- function(x, TISSUE){
-  venn.plot <- venn.diagram(
-    x = list("Exact" = x$'Exact Test', "F Test" = x$'F Test', "Ratio" = x$'Ratio Test'),
-    filename = NULL,
-    scaled = TRUE,
-    col = "transparent",
-    fill = c("firebrick", "deepskyblue4", "azure3"),
-    main.pos = c(0.5, 1.0),
-    cex = 1.5,
-    cat.cex = 1.5,
-    main.cex = 2,
-    cat.default.pos = "outer",
-    cat.pos = c(-70,60,-90), # first=F test, middle=Ratio, last=Exact
-    cat.dist = c(0.05,0.05,0.05),
-    cat.fontfamily = "sans",
-    main = TISSUE,
-    fontfamily = "sans",
-    na = "remove",
-    inverted = FALSE)
-  
-  venn.plot <- grid.draw(venn.plot)
-  grid.newpage()
-  
-  return(venn.plot)
+# Encode strings as numeric factors; apply to nested list to use with ggVennDiagram
+Factor_Func <- function(x){
+    x <- as.numeric(as.factor(x))
+    return(x)
 }
+HMU <- lapply(HMU, function(x) lapply(x, Factor_Func))
+HMD <- lapply(HMD, function(x) lapply(x, Factor_Func))
+HAU <- lapply(HAU, function(x) lapply(x, Factor_Func))
+HAD <- lapply(HAD, function(x) lapply(x, Factor_Func))
+SMU <- lapply(SMU, function(x) lapply(x, Factor_Func))
+SMD <- lapply(SMD, function(x) lapply(x, Factor_Func))
+SAU <- lapply(SAU, function(x) lapply(x, Factor_Func))
+SAD <- lapply(SAD, function(x) lapply(x, Factor_Func))
+
+# Plot function
+Test_Venn <- function(LST, TITLE){
+    res <- ggVennDiagram(LST[c('Exact Test', 'FTest', 'Ratio Test')]) +
+        scale_fill_gradient(low='blue', high='red') +
+        ggtitle(TITLE)
+    return(res)
+}    
+
 #------------------------------------------------------------------------------------------------------------------
 # Hisat; By test
 #------------------------------------------------------------------------------------------------------------------
-# Gene
-# Matched
-# Up
-pdf('/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Test_Res/M_Hisat_Gene_Up.pdf')
-Map(Venn_3, x=M.H_Gene_Up, TISSUE=names(M.H_Gene_Up))
+# Matched, Up
+tiff(H_M_U)
+Map(Test_Venn, LST=HMU, TITLE=paste(names(HMU), 'Up regulated DEGs'))
 dev.off()
 
-# Down
-pdf('/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Test_Res/M_Hisat_Gene_Down.pdf')
-Map(Venn_3, x=M.H_Gene_Down, TISSUE=names(M.H_Gene_Down))
+# Matched, Down
+tiff(H_M_D)
+Map(Test_Venn, LST=HMD, TITLE=paste(names(HMD), 'Down regulated DEGs'))
 dev.off()
 
-# Age Matched
-# Up
-pdf('/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Test_Res/AM_Hisat_Gene_Up.pdf')
-Map(Venn_3, x=AM.H_Gene_Up, TISSUE=names(AM.H_Gene_Up))
+# Age Matched, Up
+tiff(H_A_U)
+Map(Test_Venn, LST=HAU, TITLE=paste(names(HAU), 'Up regulated DEGs'))
 dev.off()
 
-# Down
-pdf('/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Test_Res/AM_Hisat_Gene_Down.pdf')
-Map(Venn_3, x=AM.H_Gene_Down, TISSUE=names(AM.H_Gene_Down))
+# Age Matched, Down
+tiff(H_A_D)
+Map(Test_Venn, LST=HAD, TITLE=paste(names(HAD), 'Down regulated DEGs'))
 dev.off()
-
-# Transcript
-# Matched
-# Up
-# pdf('/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Test_Res/M_Hisat_Trans_Up.pdf')
-# Map(Venn_3, x=M.H_Trans_Up, TISSUE=names(M.H_Trans_Up))
-# dev.off()
-# 
-# # Down
-# pdf('/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Test_Res/M_Hisat_Gene_Trans.pdf')
-# Map(Venn_3, x=M.H_Trans_Down, TISSUE=names(M.H_Trans_Down))
-# dev.off()
-# 
-# # Age Matched
-# # Up
-# pdf('/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Test_Res/AM_Hisat_Trans_Up.pdf')
-# Map(Venn_3, x=AM.H_Trans_Up, TISSUE=names(AM.H_Trans_Up))
-# dev.off()
-# 
-# # Down
-# pdf('/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Test_Res/AM_Hisat_Trans_Down.pdf')
-# Map(Venn_3, x=AM.H_Trans_Down, TISSUE=names(AM.H_Trans_Down))
-# dev.off()
 
 #------------------------------------------------------------------------------------------------------------------
 # Salmon; By test
 #------------------------------------------------------------------------------------------------------------------
-# Gene
-# Matched
-# Up
-pdf('/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Test_Res/M_Salmon_Gene_Up.pdf')
-Map(Venn_3, x=M.S_Gene_Up, TISSUE=names(M.S_Gene_Up))
+# Matched, Up
+tiff(S_M_U)
+Map(Test_Venn, LST=SMU, TITLE=paste(names(SMU), 'Up regulated DEGs'))
 dev.off()
 
-# Down
-pdf('/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Test_Res/M_Salmon_Gene_Down.pdf')
-Map(Venn_3, x=M.S_Gene_Down, TISSUE=names(M.S_Gene_Down))
+# Matched, Down
+tiff(S_M_D)
+Map(Test_Venn, LST=SMD, TITLE=paste(names(SMD), 'Down regulated DEGs'))
 dev.off()
 
-# Age Matched
-# Up
-pdf('/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Test_Res/AM_Salmon_Gene_Up.pdf')
-Map(Venn_3, x=AM.S_Gene_Up, TISSUE=names(AM.S_Gene_Up))
+# Age Matched, Up
+tiff(S_A_U)
+Map(Test_Venn, LST=SAU, TITLE=paste(names(SAU), 'Up regulated DEGs'))
 dev.off()
 
-# Down
-pdf('/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Test_Res/AM_Salmon_Gene_Down.pdf')
-Map(Venn_3, x=AM.S_Gene_Down, TISSUE=names(AM.S_Gene_Down))
+# Age Matched, Down
+tiff(S_A_D)
+Map(Test_Venn, LST=SAD, TITLE=paste(names(SAD), 'Down regulated DEGs'))
 dev.off()
-
-# # Transcript
-# # Matched
-# # Up
-# pdf('/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Test_Res/M_Salmon_Trans_Up.pdf')
-# Map(Venn_3, x=M.S_Trans_Up, TISSUE=names(M.S_Trans_Up))
-# dev.off()
-# 
-# # Down
-# pdf('/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Test_Res/M_Salmon_Gene_Trans.pdf')
-# Map(Venn_3, x=M.S_Trans_Down, TISSUE=names(M.S_Trans_Down))
-# dev.off()
-# 
-# # Age Matched
-# # Up
-# pdf('/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Test_Res/AM_Salmon_Trans_Up.pdf')
-# Map(Venn_3, x=AM.S_Trans_Up, TISSUE=names(AM.S_Trans_Up))
-# dev.off()
-# 
-# # Down
-# pdf('/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Test_Res/AM_Salmon_Trans_Down.pdf')
-# Map(Venn_3, x=AM.S_Trans_Down, TISSUE=names(AM.S_Trans_Down))
-# dev.off()
 
 #------------------------------------------------------------------------------------------------------------------
 # 2 way venn diagrams
 #------------------------------------------------------------------------------------------------------------------
-# Plot names
-# Exact
-# Up 
-UE.Files <- c("Amygdala_Up_Exact", "Anterior_Up_Exact", "Caudate_Up_Exact", "Cerebellar_Up_Exact", "Cerebellum_Up_Exact", "Cortex_Up_Exact",
-              "Frontal_Cortex_Up_Exact", "Hippocampus_Up_Exact", "Hypothalamus_Up_Exact", "Nucleus_Accumbens_Up_Exact", "Putamen_Up_Exact",
-              "Spinal_Cord_Up_Exact", "Substantia_Nigra_Up_Exact")
-# Down 
-DE.Files <- c("Amygdala_Down_Exact", "Anterior_Down_Exact", "Caudate_Down_Exact", "Cerebellar_Down_Exact", "Cerebellum_Down_Exact", 
-              "Cortex_Down_Exact", "Frontal_Cortex_Down_Exact", "Hippocampus_Down_Exact", "Hypothalamus_Down_Exact", "Nucleus_Accumbens_Down_Exact",
-              "Putamen_Down_Exact", "Spinal_Cord_Down_Exact", "Substantia_Nigra_Down_Exact")
+# Encode strings as numeric factors; apply to nested list to use with ggVennDiagram
+EMU <- lapply(EMU, function(x) lapply(x, Factor_Func))
+EMD <- lapply(EMD, function(x) lapply(x, Factor_Func))
+EAU <- lapply(EAU, function(x) lapply(x, Factor_Func))
+EAD <- lapply(EAD, function(x) lapply(x, Factor_Func))
 
-# F test
-# Up
-UF.Files <- c("Amygdala_Up_FTest", "Anterior_Up_FTest", "Caudate_Up_FTest", "Cerebellar_Up_FTest", "Cerebellum_Up_FTest", "Cortex_Up_FTes",
-              "Frontal_Cortex_Up_FTest", "Hippocampus_Up_FTest", "Hypothalamus_Up_FTest", "Nucleus_Accumbens_Up_FTest", "Putamen_Up_FTest",
-              "Spinal_Cord_Up_FTest", "Substantia_Nigra_Up_FTest")
-# Down
-DF.Files <- c("Amygdala_Down_FTest", "Anterior_Down_FTest", "Caudate_Down_FTest", "Cerebellar_Down_FTest", "Cerebellum_Down_FTest",
-              "Cortex_Down_FTest", "Frontal_Cortex_Down_FTest", "Hippocampus_Down_FTest", "Hypothalamus_Down_FTest",
-              "Nucleus_Accumbens_Down_FTest", "Putamen_Down_FTest", "Spinal_Cord_Down_FTest", "Substantia_Nigra_Down_FTest")
+SMU <- lapply(SMU, function(x) lapply(x, Factor_Func))
+SMD <- lapply(SMD, function(x) lapply(x, Factor_Func))
+SAU <- lapply(SAU, function(x) lapply(x, Factor_Func))
+SAD <- lapply(SAD, function(x) lapply(x, Factor_Func))
 
-# Ratio test
-# Up
-UR.Files <- c("Amygdala_Up_Ratio", "Anterior_Up_Ratio", "Caudate_Up_Ratio","Cerebellar_Up_Ratio", "Cerebellum_Up_Ratio", "Cortex_Up_Ratio",
-              "Frontal_Cortex_Up_Ratio", "Hippocampus_Up_Ratio", "Hypothalamus_Up_Ratio", "Nucleus_Accumbens_Up_Ratio", "Putamen_Up_Ratio",
-              "Spinal_Cord_Up_Ratio", "Substantia_Nigra_Up_Ratio")
-# Down
-DR.Files <- c("Amygdala_Down_Ratio", "Anterior_Down_Ratio", "Caudate_Down_Ratio","Cerebellar_Down_Ratio", "Cerebellum_Down_Ratio", 
-              "Cortex_Down_Ratio", "Frontal_Cortex_Down_Ratio", "Hippocampus_Down_Ratio", "Hypothalamus_Down_Ratio", 
-              "Nucleus_Accumbens_Down_Ratio", "Putamen_Down_Ratio", "Spinal_Cord_Down_Ratio", "Substantia_Nigra_Down_Ratio")
+FMU <- lapply(FMU, function(x) lapply(x, Factor_Func))
+FMD <- lapply(FMD, function(x) lapply(x, Factor_Func))
+FAU <- lapply(FAU, function(x) lapply(x, Factor_Func))
+FAD <- lapply(FAD, function(x) lapply(x, Factor_Func))
 
-
-# Function to plot two-way venn diagrams 
-Venn_2 <- function(x, FILES){
-  venn.plot <- venn.diagram(
-    x = list("Salmon" = x$Salmon, "Hisat" = x$Hisat),
-    filename = NULL,
-    scaled = TRUE,
-    col = "transparent",
-    fill = c("firebrick", "deepskyblue4"),
-    main.pos = c(0.5, 1.0),
-    cex = 1.5,
-    cat.cex = 1.5,
-    main.cex = 2,
-    cat.default.pos = "outer",
-    cat.pos = c(170,-170), 
-    cat.dist = c(0.05,0.05),
-    cat.fontfamily = "sans",
-    main = FILES,
-    fontfamily = "sans",
-    na = "remove",
-    inverted = FALSE)
-  
-  venn.plot <- grid.draw(venn.plot)
-  grid.newpage()
-  
-  return(venn.plot)
-}
+# Plot function
+Aligner_Venn <- function(LST, TITLE){
+    res <- ggVennDiagram(LST[c('Salmon', 'Hisat')]) +
+        scale_fill_gradient(low='blue', high='red') +
+        ggtitle(TITLE)
+    return(res)
+}    
 
 #------------------------------------------------------------------------------------------------------------------
-# Hisat 
+# Exact Test 
 #------------------------------------------------------------------------------------------------------------------
-# Gene
-# Matched
-# Up
-pdf(file='/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Aligner_Res/M_Up_Exact.pdf')
-Map(Venn_2, x=M.Up_Exact_Gene, FILES=UE.Files)
+# Matched, Up
+tiff(E_M_U)
+Map(Aligner_Venn, LST=EMU, TITLE=paste(names(EMU), 'Exact Test, Matched Samples, Up-regulated DEGs'))
 dev.off()
 
-pdf(file='/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Aligner_Res/M_Up_FTest.pdf')
-Map(Venn_2, x=M.Up_FTest_Gene, FILES=UF.Files)
+# Matched, Down
+tiff(E_M_D)
+Map(Aligner_Venn, LST=EMD, TITLE=paste(names(EMD), 'Exact Test, Matched Samples, Down-regulated DEGs'))
 dev.off()
 
-pdf(file='/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Aligner_Res/M_Up_Ratio.pdf')
-Map(Venn_2, x=M.Up_Ratio_Gene, FILES=UR.Files)
+# Age Matched, Up
+tiff(E_A_U)
+Map(Aligner_Venn, LST=EAU, TITLE=paste(names(EAU), 'Exact Test, Age Matched Samples, Up-regulated DEGs'))
 dev.off()
 
-# Down
-pdf(file='/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Aligner_Res/M_Down_Exact.pdf')
-Map(Venn_2, x=M.Down_Exact_Gene, FILES=DE.Files)
+# Age Matched, Down
+tiff(E_A_D)
+Map(Aligner_Venn, LST=EAD, TITLE=paste(names(EAD), 'Exact Test, Age Matched Samples, Down-regulated DEGs'))
 dev.off()
 
-### Error: zero entries for list item 3
-pdf(file='/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Aligner_Res/M_Down_FTest.pdf')
-Map(Venn_2, x=M.Down_FTest_Gene, FILES=DF.Files)
+#------------------------------------------------------------------------------------------------------------------
+# F Test 
+#------------------------------------------------------------------------------------------------------------------
+# Matched, Up
+tiff(F_M_U)
+Map(Aligner_Venn, LST=FMU, TITLE=paste(names(FMU), 'F Test, Matched Samples, Up-regulated DEGs'))
 dev.off()
 
-pdf(file='/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Aligner_Res/M_Down_Ratio.pdf')
-Map(Venn_2, x=M.Down_Ratio_Gene, FILES=DR.Files)
+# Matched, Down
+tiff(F_M_D)
+Map(Aligner_Venn, LST=FMD, TITLE=paste(names(FMD), 'F Test, Matched Samples, Down-regulated DEGs'))
 dev.off()
 
-# Age Matched
-# Up
-pdf(file='/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Aligner_Res/AM_Up_Exact.pdf')
-Map(Venn_2, x=AM.Up_Exact_Gene, FILES=UE.Files)
+# Age Matched, Up
+tiff(F_A_U)
+Map(Aligner_Venn, LST=FAU, TITLE=paste(names(FAU), 'F Test, Age Matched Samples, Up-regulated DEGs'))
 dev.off()
 
-pdf(file='/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Aligner_Res/AM_Up_FTest.pdf')
-Map(Venn_2, x=AM.Up_FTest_Gene, FILES=UF.Files)
+# Age Matched, Down
+tiff(F_A_D)
+Map(Aligner_Venn, LST=FAD, TITLE=paste(names(FAD), 'F Test, Age Matched Samples, Down-regulated DEGs'))
 dev.off()
 
-pdf(file='/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Aligner_Res/AM_Up_Ratio.pdf')
-Map(Venn_2, x=AM.Up_Ratio_Gene, FILES=UR.Files)
+#------------------------------------------------------------------------------------------------------------------
+# Ratio Test 
+#------------------------------------------------------------------------------------------------------------------
+# Matched, Up
+tiff(R_M_U)
+Map(Aligner_Venn, LST=RMU, TITLE=paste(names(RMU), 'Ratio Test, Matched Samples, Up-regulated DEGs'))
 dev.off()
 
-# Down
-pdf(file='/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Aligner_Res/AM_Down_Exact.pdf')
-Map(Venn_2, x=AM.Down_Exact_Gene, FILES=DE.Files)
+# Matched, Down
+tiff(R_M_D)
+Map(Aligner_Venn, LST=RMD, TITLE=paste(names(RMD), 'Ratio Test, Matched Samples, Down-regulated DEGs'))
 dev.off()
 
-pdf(file='/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Aligner_Res/AM_Down_FTest.pdf')
-Map(Venn_2, x=AM.Down_FTest_Gene, FILES=DF.Files)
+# Age Matched, Up
+tiff(R_A_U)
+Map(Aligner_Venn, LST=RAU, TITLE=paste(names(RAU), 'Ratio Test, Age Matched Samples, Up-regulated DEGs'))
 dev.off()
 
-pdf(file='/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/Aligner_Res/AM_Down_Ratio.pdf')
-Map(Venn_2, x=AM.Down_Ratio_Gene, FILES=DR.Files)
+# Age Matched, Down
+tiff(R_A_D)
+Map(Aligner_Venn, LST=RAD, TITLE=paste(names(RAD), 'Ratio Test, Age Matched Samples, Down-regulated DEGs'))
 dev.off()
+
