@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 setwd("/scratch/mjpete11/GTEx/Data_Exploration/Summary_Stats/")
 
 # Output
@@ -75,6 +77,26 @@ RHAU <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test
 RHAD <- fromJSON(file='/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Hisat/Age_Matched/Gene/Downreg.json')
 
 #------------------------------------------------------------------------------------------------------------------
+# Remove version number from gene IDs (numbers after decimal)
+#------------------------------------------------------------------------------------------------------------------
+Drop_Version <- function(LST){
+  res <- lapply(LST, function(x) gsub("\\..*", "", x))
+  return(res)              
+}
+
+# Pack variables (lists of named vectors) into list, apply function to each item, then unpack variables into the
+# global environment.
+All_Lsts <- list()
+Lst_Names <- c('ESMU', 'ESMD', 'ESAU', 'ESAD', 'FSMU', 'FSMD', 'FSAU', 'FSAD', 'RSMU', 'RSMD', 'RSAU', 'RSAD', 
+               'EHMU', 'EHMD', 'EHAU', 'EHAD', 'FHMU', 'FHMD', 'FHAU', 'FHAD', 'RHMU', 'RHMD', 'RHAU', 'RHAD')
+All_Lsts[c(Lst_Names)] <- list(ESMU, ESMD, ESAU, ESAD, FSMU, FSMD, FSAU, FSAD, RSMU, RSMD, RSAU, RSAD, 
+                  EHMU, EHMD, EHAU, EHAD, FHMU, FHMD, FHAU, FHAD, RHMU, RHMD, RHAU, RHAD)
+
+test <- lapply(All_Lsts, Drop_Version)
+
+list2env(test, .GlobalEnv)
+
+#------------------------------------------------------------------------------------------------------------------
 # Make list of test results for each aligner/tissue
 # Results are for the 3-way venn diagram of the overlap between genes called as DGX by aligner
 #------------------------------------------------------------------------------------------------------------------
@@ -117,6 +139,30 @@ RAD <- Map(Aligner_Lst, H=RHAD, S=RSAD)
 
 #------------------------------------------------------------------------------------------------------------------
 # 3-way Venn diagram plot function
+# Make list of results by test for each aligner
+# Results are for 2-way venn diagram of genes called as DGX by test
+#------------------------------------------------------------------------------------------------------------------
+Aligner_Lst <- function(H, S){
+  res <- list("Salmon" = S, "Hisat" = H)
+}
+
+EMU <- Map(Aligner_Lst, H=EHMU, S=ESMU)
+EMD <- Map(Aligner_Lst, H=EHMD, S=ESMD)
+EAU <- Map(Aligner_Lst, H=EHMU, S=ESAU)
+EAD <- Map(Aligner_Lst, H=EHMD, S=ESAD)
+
+FMU <- Map(Aligner_Lst, H=FHMU, S=FSMU)
+FMD <- Map(Aligner_Lst, H=FHMD, S=FSMD)
+FAU <- Map(Aligner_Lst, H=FHAU, S=FSAU)
+FAD <- Map(Aligner_Lst, H=FHAD, S=FSAD)
+
+RMU <- Map(Aligner_Lst, H=RHMU, S=RSMU)
+RMD <- Map(Aligner_Lst, H=RHMD, S=RSMD)
+RAU <- Map(Aligner_Lst, H=RHAU, S=RSAU)
+RAD <- Map(Aligner_Lst, H=RHAD, S=RSAD)
+
+#------------------------------------------------------------------------------------------------------------------
+# 3-way Venn diagram plot function
 #------------------------------------------------------------------------------------------------------------------
 # Encode strings as numeric factors; apply to nested list to use with ggVennDiagram
 Factor_Func <- function(x){
@@ -135,8 +181,8 @@ SAD <- lapply(SAD, function(x) lapply(x, Factor_Func))
 # Plot function
 Test_Venn <- function(LST, TITLE){
     res <- ggVennDiagram(LST[c('Exact Test', 'FTest', 'Ratio Test')]) +
-        scale_fill_gradient(low='blue', high='red') +
-        ggtitle(TITLE)
+           scale_fill_gradient(low='blue', high='red') +
+           ggtitle(TITLE)
     return(res)
 }    
 
@@ -207,10 +253,10 @@ FAD <- lapply(FAD, function(x) lapply(x, Factor_Func))
 
 # Plot function
 Aligner_Venn <- function(LST, TITLE){
-    res <- ggVennDiagram(LST[c('Salmon', 'Hisat')]) +
-        scale_fill_gradient(low='blue', high='red') +
-        ggtitle(TITLE)
-    return(res)
+   res <- ggVennDiagram(LST[c('Salmon', 'Hisat')]) +
+          scale_fill_gradient(low='blue', high='red') +
+          ggtitle(TITLE)
+  return(res)
 }    
 
 #------------------------------------------------------------------------------------------------------------------
