@@ -1,6 +1,5 @@
 # This script looks at differential gene expression between males and females within each brain tissue type.
 # Gene, age matched
-setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/GLM_Ratio_Test/Hisat")
 
 # Constants
 METADATA <- snakemake@input[[1]]
@@ -29,7 +28,6 @@ UP_JSON <- snakemake@output[[3]]
 DOWN_JSON <- snakemake@output[[4]]
 
 # Load packages                                                                 
-library(tximport)                                                               
 library(GenomicFeatures)                                                        
 library(edgeR) 
 library(readr)
@@ -50,7 +48,7 @@ Tissues <- list('Amygdala', 'Anterior', 'Caudate', 'Cerbellar', 'Cerebellum', 'C
                 'Hippocampus', 'Hypothalamus', 'Nucleus Accumbens', 'Putamen', 'Spinal Cord', 'Substantia Nigra')
 
 cts <- lapply(PATHS, function(x){
-  t <- read.table(x, sep="\t")
+  t <- read.csv(x, sep=",")
 })
 names(cts) <- Tissues
 
@@ -58,6 +56,9 @@ names(cts) <- Tissues
 for (i in seq_along(cts)){
   colnames(cts[[i]]) <- str_replace_all(colnames(cts[[i]]), pattern = "\\.","-")
 }
+
+# Remove "-" at end of caudate sample colnames
+colnames(cts[[3]]) <- str_remove(colnames(cts[[3]]),"-$")
 
 # Metadata split into list of dfs by tissue
 Meta <- list()

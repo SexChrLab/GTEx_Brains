@@ -1,6 +1,5 @@
 # This script uses an exact test to tests for differential gene expression between males and females 
 # within each brain tissue type using gene level counts on the age matched samples.
-setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Hisat")
 
 # Constants
 # Hisat/stringtie results are stored in seperate matrices because the same transcripts/genes reported are tissue-specific
@@ -49,7 +48,7 @@ Tissues <- c('Amygdala', 'Anterior', 'Caudate', 'Cerbellar', 'Cerebellum', 'Cort
 'Hippocampus', 'Hypothalamus', 'Nucleus_Accumbens', 'Putamen', 'Spinal Cord', 'Substantia_Nigra')
 
 cts <- lapply(PATHS, function(x){
-  t <- read.table(file=x, sep="\t")
+  t <- read.csv(file=x, sep=",")
 })
 names(cts) <- Tissues
 
@@ -57,6 +56,9 @@ names(cts) <- Tissues
 for (i in seq_along(cts)){
   colnames(cts[[i]]) <- str_replace_all(colnames(cts[[i]]), pattern = "\\.","-")
 }
+
+# Remove "-" at end of caudate sample colnames
+colnames(cts[[3]]) <- str_remove(colnames(cts[[3]]),"-$")
 
 # Metadata split into list of dfs by tissue
 Meta <- list()
