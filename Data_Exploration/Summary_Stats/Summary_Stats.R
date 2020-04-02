@@ -106,13 +106,13 @@ Test_Lst <- function(Exact, FTest, Ratio){
 
 HMU <- Map(Test_Lst, Exact=EHMU, FTest=FHMU, Ratio=RHMU)
 HMD <- Map(Test_Lst, Exact=EHMD, FTest=FHMD, Ratio=RHMD)
-HAU <- Map(Test_Lst, Exact=EHMU, FTest=FHMU, Ratio=RHMU)
-HAD <- Map(Test_Lst, Exact=EHMD, FTest=FHAD, Ratio=RHMD)
+HAU <- Map(Test_Lst, Exact=EHAU, FTest=FHAU, Ratio=RHAU)
+HAD <- Map(Test_Lst, Exact=EHAD, FTest=FHAD, Ratio=RHAD)
 
 SMU <- Map(Test_Lst, Exact=ESMU, FTest=FSMU, Ratio=RSMU)
 SMD <- Map(Test_Lst, Exact=ESMD, FTest=FSMD, Ratio=RSMD)
 SAU <- Map(Test_Lst, Exact=ESAU, FTest=FSAU, Ratio=RSAU)
-SAD <- Map(Test_Lst, Exact=ESAD, FTest=FSMD, Ratio=RSAD)
+SAD <- Map(Test_Lst, Exact=ESAD, FTest=FSAD, Ratio=RSAD)
 
 #------------------------------------------------------------------------------------------------------------------
 # Make list of results by test for each aligner
@@ -124,32 +124,8 @@ Aligner_Lst <- function(H, S){
 
 EMU <- Map(Aligner_Lst, H=EHMU, S=ESMU)
 EMD <- Map(Aligner_Lst, H=EHMD, S=ESMD)
-EAU <- Map(Aligner_Lst, H=EHMU, S=ESAU)
-EAD <- Map(Aligner_Lst, H=EHMD, S=ESAD)
-
-FMU <- Map(Aligner_Lst, H=FHMU, S=FSMU)
-FMD <- Map(Aligner_Lst, H=FHMD, S=FSMD)
-FAU <- Map(Aligner_Lst, H=FHAU, S=FSAU)
-FAD <- Map(Aligner_Lst, H=FHAD, S=FSAD)
-
-RMU <- Map(Aligner_Lst, H=RHMU, S=RSMU)
-RMD <- Map(Aligner_Lst, H=RHMD, S=RSMD)
-RAU <- Map(Aligner_Lst, H=RHAU, S=RSAU)
-RAD <- Map(Aligner_Lst, H=RHAD, S=RSAD)
-
-#------------------------------------------------------------------------------------------------------------------
-# 3-way Venn diagram plot function
-# Make list of results by test for each aligner
-# Results are for 2-way venn diagram of genes called as DGX by test
-#------------------------------------------------------------------------------------------------------------------
-Aligner_Lst <- function(H, S){
-  res <- list("Salmon" = S, "Hisat" = H)
-}
-
-EMU <- Map(Aligner_Lst, H=EHMU, S=ESMU)
-EMD <- Map(Aligner_Lst, H=EHMD, S=ESMD)
-EAU <- Map(Aligner_Lst, H=EHMU, S=ESAU)
-EAD <- Map(Aligner_Lst, H=EHMD, S=ESAD)
+EAU <- Map(Aligner_Lst, H=EHAU, S=ESAU)
+EAD <- Map(Aligner_Lst, H=EHAD, S=ESAD)
 
 FMU <- Map(Aligner_Lst, H=FHMU, S=FSMU)
 FMD <- Map(Aligner_Lst, H=FHMD, S=FSMD)
