@@ -10,23 +10,23 @@ HISAT = "Hisat/"
 EXACT = "Exact_Test/"
 FTEST = "F_Test/"
 RATIO = "Ratio_Test/"
-AGE_GENE = "Age_Matched/Gene/"
-MATCH_GENE = "Matched/Gene/"
+GENE = "Age_Matched/Gene/"
+GENE = "Matched/Gene/"
 TABLE = "Test_Res/"
 
 rule all:
     input:
-#        "/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Salmon/Age_Matched/Gene/Substantia_Nigra.csv",
-#        "/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Salmon/Matched/Gene/Substantia_Nigra.csv",
-#        "/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Salmon/Age_Matched/Gene/Substantia_Nigra.csv",
-#        "/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Salmon/Matched/Gene/Substantia_Nigra.csv",
-#       "/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Salmon/Age_Matched/Gene/Substantia_Nigra.csv",
-#        "/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Salmon/Matched/Gene/Substantia_Nigra.csv",
-#        "/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Hisat/Age_Matched/Gene/Substantia_Nigra.csv",
-#        "/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Hisat/Matched/Gene/Substantia_Nigra.csv",
-#        "/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Hisat/Age_Matched/Gene/Substantia_Nigra.csv",
-#        "/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Hisat/Matched/Gene/Substantia_Nigra.csv",
-#        "/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Hisat/Age_Matched/Gene/Substantia_Nigra.csv",
+        "/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Salmon/Age_Matched/Gene/Substantia_Nigra.csv",
+        "/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Salmon/Matched/Gene/Substantia_Nigra.csv",
+        "/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Salmon/Age_Matched/Gene/Substantia_Nigra.csv",
+        "/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Salmon/Matched/Gene/Substantia_Nigra.csv",
+        "/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Salmon/Age_Matched/Gene/Substantia_Nigra.csv",
+        "/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Salmon/Matched/Gene/Substantia_Nigra.csv",
+        "/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Hisat/Age_Matched/Gene/Substantia_Nigra.csv",
+        "/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Hisat/Matched/Gene/Substantia_Nigra.csv",
+        "/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Hisat/Age_Matched/Gene/Substantia_Nigra.csv",
+        "/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Hisat/Matched/Gene/Substantia_Nigra.csv",
+        "/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Hisat/Age_Matched/Gene/Substantia_Nigra.csv",
         "/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Hisat/Matched/Gene/Substantia_Nigra.csv"
 
 rule AgeMatched_Salmon_Exact:
@@ -34,23 +34,23 @@ rule AgeMatched_Salmon_Exact:
         os.path.join(METADATA, "Age_Matched_Metadata.csv"),
         os.path.join(SALMON_DIR, "Gene_Salmon_CountMatrix.tsv") 
     output:
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "MD_Plot.pdf"),
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "Volcano.pdf"),
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "Upreg.json"),
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "Downreg.json"),
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "Amygdala.csv"),
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "Anterior.csv"),
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "Caudate.csv"),
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "Cerebellar.csv"),
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "Cerebellum.csv"),
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "Cortex.csv"),
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "Frontal_Cortex.csv"),
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "Hippocampus.csv"),
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "Hypothalamus.csv"),
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "Nucleus_Accumbens.csv"),
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "Putamen.csv"),
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "Spinal_Cord.csv"),
-        os.path.join(BASE, EXACT, SALMON, AGE_GENE, "Substantia_Nigra.csv")
+        os.path.join(BASE, EXACT, SALMON, GENE, "MD_Plot.pdf"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Volcano.pdf"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Upreg.json"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Downreg.json"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Amygdala.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Anterior.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Caudate.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Cerebellar.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Cerebellum.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Cortex.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Frontal_Cortex.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Hippocampus.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Hypothalamus.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Nucleus_Accumbens.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Putamen.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Spinal_Cord.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Substantia_Nigra.csv")
     script:
         "/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Salmon/Exact.R"
 
@@ -59,23 +59,23 @@ rule Matched_Salmon_Exact:
         os.path.join(METADATA, "Matched_Metadata.csv"),
         os.path.join(SALMON_DIR, "Gene_Salmon_CountMatrix.tsv") 
     output:
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "MD_Plot.pdf"),
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "Volcano.pdf"),
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "Upreg.json"),
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "Downreg.json"),
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "Amygdala.csv"),
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "Anterior.csv"),
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "Caudate.csv"),
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "Cerebellar.csv"),
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "Cerebellum.csv"),
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "Cortex.csv"),
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "Frontal_Cortex.csv"),
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "Hippocampus.csv"),
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "Hypothalamus.csv"),
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "Nucleus_Accumbens.csv"),
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "Putamen.csv"),
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "Spinal_Cord.csv"),
-        os.path.join(BASE, EXACT, SALMON, MATCH_GENE, "Substantia_Nigra.csv")
+        os.path.join(BASE, EXACT, SALMON, GENE, "MD_Plot.pdf"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Volcano.pdf"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Upreg.json"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Downreg.json"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Amygdala.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Anterior.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Caudate.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Cerebellar.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Cerebellum.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Cortex.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Frontal_Cortex.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Hippocampus.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Hypothalamus.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Nucleus_Accumbens.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Putamen.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Spinal_Cord.csv"),
+        os.path.join(BASE, EXACT, SALMON, GENE, "Substantia_Nigra.csv")
     script:
         "/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Salmon/Exact.R"
 
@@ -84,23 +84,23 @@ rule AgeMatched_Salmon_FTest:
         os.path.join(METADATA, "Age_Matched_Metadata.csv"),
         os.path.join(SALMON_DIR, "Gene_Salmon_CountMatrix.tsv") 
     output:
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "MD_Plot.pdf"),
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "Volcano.pdf"),
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "Upreg.json"),
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "Downreg.json"),
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "Amygdala.csv"),
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "Anterior.csv"),
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "Caudate.csv"),
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "Cerebellar.csv"),
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "Cerebellum.csv"),
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "Cortex.csv"),
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "Frontal_Cortex.csv"),
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "Hippocampus.csv"),
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "Hypothalamus.csv"),
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "Nucleus_Accumbens.csv"),
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "Putamen.csv"),
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "Spinal_Cord.csv"),
-        os.path.join(BASE, FTEST, SALMON, AGE_GENE, "Substantia_Nigra.csv")
+        os.path.join(BASE, FTEST, SALMON, GENE, "MD_Plot.pdf"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Volcano.pdf"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Upreg.json"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Downreg.json"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Amygdala.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Anterior.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Caudate.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Cerebellar.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Cerebellum.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Cortex.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Frontal_Cortex.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Hippocampus.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Hypothalamus.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Nucleus_Accumbens.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Putamen.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Spinal_Cord.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Substantia_Nigra.csv")
     script:
         "/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Salmon/FTest.R"
 
@@ -109,23 +109,23 @@ rule Matched_Salmon_FTest:
         os.path.join(METADATA, "Matched_Metadata.csv"),
         os.path.join(SALMON_DIR, "Gene_Salmon_CountMatrix.tsv") 
     output:
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "MD_Plot.pdf"),
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "Volcano.pdf"),
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "Upreg.json"),
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "Downreg.json"),
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "Amygdala.csv"),
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "Anterior.csv"),
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "Caudate.csv"),
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "Cerebellar.csv"),
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "Cerebellum.csv"),
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "Cortex.csv"),
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "Frontal_Cortex.csv"),
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "Hippocampus.csv"),
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "Hypothalamus.csv"),
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "Nucleus_Accumbens.csv"),
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "Putamen.csv"),
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "Spinal_Cord.csv"),
-        os.path.join(BASE, FTEST, SALMON, MATCH_GENE, "Substantia_Nigra.csv")
+        os.path.join(BASE, FTEST, SALMON, GENE, "MD_Plot.pdf"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Volcano.pdf"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Upreg.json"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Downreg.json"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Amygdala.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Anterior.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Caudate.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Cerebellar.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Cerebellum.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Cortex.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Frontal_Cortex.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Hippocampus.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Hypothalamus.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Nucleus_Accumbens.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Putamen.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Spinal_Cord.csv"),
+        os.path.join(BASE, FTEST, SALMON, GENE, "Substantia_Nigra.csv")
     script:
         "/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Salmon/FTest.R"
 
@@ -134,23 +134,23 @@ rule AgeMatched_Salmon_Ratio:
         os.path.join(METADATA, "Age_Matched_Metadata.csv"),
         os.path.join(SALMON_DIR, "Gene_Salmon_CountMatrix.tsv") 
     output:
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "MD_Plot.pdf"),
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "Volcano.pdf"),
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "Upreg.json"),
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "Downreg.json"),
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "Amygdala.csv"),
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "Anterior.csv"),
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "Caudate.csv"),
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "Cerebellar.csv"),
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "Cerebellum.csv"),
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "Cortex.csv"),
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "Frontal_Cortex.csv"),
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "Hippocampus.csv"),
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "Hypothalamus.csv"),
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "Nucleus_Accumbens.csv"),
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "Putamen.csv"),
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "Spinal_Cord.csv"),
-        os.path.join(BASE, RATIO, SALMON, AGE_GENE, "Substantia_Nigra.csv")
+        os.path.join(BASE, RATIO, SALMON, GENE, "MD_Plot.pdf"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Volcano.pdf"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Upreg.json"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Downreg.json"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Amygdala.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Anterior.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Caudate.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Cerebellar.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Cerebellum.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Cortex.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Frontal_Cortex.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Hippocampus.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Hypothalamus.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Nucleus_Accumbens.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Putamen.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Spinal_Cord.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Substantia_Nigra.csv")
     script:
         "/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Salmon/Ratio.R"
 
@@ -159,23 +159,23 @@ rule Matched_Salmon_Ratio:
         os.path.join(METADATA, "Matched_Metadata.csv"),
         os.path.join(SALMON_DIR, "Gene_Salmon_CountMatrix.tsv") 
     output:
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "MD_Plot.pdf"),
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "Volcano.pdf"),
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "Upreg.json"),
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "Downreg.json"),
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "Amygdala.csv"),
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "Anterior.csv"),
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "Caudate.csv"),
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "Cerebellar.csv"),
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "Cerebellum.csv"),
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "Cortex.csv"),
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "Frontal_Cortex.csv"),
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "Hippocampus.csv"),
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "Hypothalamus.csv"),
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "Nucleus_Accumbens.csv"),
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "Putamen.csv"),
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "Spinal_Cord.csv"),
-        os.path.join(BASE, RATIO, SALMON, MATCH_GENE, "Substantia_Nigra.csv")
+        os.path.join(BASE, RATIO, SALMON, GENE, "MD_Plot.pdf"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Volcano.pdf"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Upreg.json"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Downreg.json"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Amygdala.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Anterior.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Caudate.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Cerebellar.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Cerebellum.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Cortex.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Frontal_Cortex.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Hippocampus.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Hypothalamus.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Nucleus_Accumbens.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Putamen.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Spinal_Cord.csv"),
+        os.path.join(BASE, RATIO, SALMON, GENE, "Substantia_Nigra.csv")
     script:
         "/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Salmon/Ratio.R"
 
@@ -196,23 +196,23 @@ rule AgeMatched_Hisat_Exact:
         os.path.join(HISAT_DIR, "Spinal_Cord_Gene_Matrix.csv"),
         os.path.join(HISAT_DIR, "Substantia_Nigra_Gene_Matrix.csv")
     output:
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "MD_Plot.pdf"),
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "Volcano.pdf"),
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "Upreg.json"),
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "Downreg.json"),
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "Amygdala.csv"),
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "Anterior.csv"),
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "Caudate.csv"),
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "Cerebellar.csv"),
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "Cerebellum.csv"),
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "Cortex.csv"),
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "Frontal_Cortex.csv"),
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "Hippocampus.csv"),
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "Hypothalamus.csv"),
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "Nucleus_Accumbens.csv"),
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "Putamen.csv"),
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "Spinal_Cord.csv"),
-        os.path.join(BASE, EXACT, HISAT, AGE_GENE, "Substantia_Nigra.csv")
+        os.path.join(BASE, EXACT, HISAT, GENE, "MD_Plot.pdf"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Volcano.pdf"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Upreg.json"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Downreg.json"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Amygdala.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Anterior.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Caudate.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Cerebellar.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Cerebellum.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Cortex.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Frontal_Cortex.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Hippocampus.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Hypothalamus.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Nucleus_Accumbens.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Putamen.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Spinal_Cord.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Substantia_Nigra.csv")
     script:
         "/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Hisat/Exact.R"
 
@@ -233,23 +233,23 @@ rule Matched_Hisat_Exact:
         os.path.join(HISAT_DIR, "Spinal_Cord_Gene_Matrix.csv"),
         os.path.join(HISAT_DIR, "Substantia_Nigra_Gene_Matrix.csv")
     output:
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "MD_Plot.pdf"),
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "Volcano.pdf"),
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "Upreg.json"),
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "Downreg.json"),
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "Amygdala.csv"),
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "Anterior.csv"),
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "Caudate.csv"),
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "Cerebellar.csv"),
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "Cerebellum.csv"),
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "Cortex.csv"),
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "Frontal_Cortex.csv"),
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "Hippocampus.csv"),
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "Hypothalamus.csv"),
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "Nucleus_Accumbens.csv"),
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "Putamen.csv"),
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "Spinal_Cord.csv"),
-        os.path.join(BASE, EXACT, HISAT, MATCH_GENE, "Substantia_Nigra.csv")
+        os.path.join(BASE, EXACT, HISAT, GENE, "MD_Plot.pdf"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Volcano.pdf"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Upreg.json"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Downreg.json"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Amygdala.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Anterior.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Caudate.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Cerebellar.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Cerebellum.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Cortex.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Frontal_Cortex.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Hippocampus.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Hypothalamus.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Nucleus_Accumbens.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Putamen.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Spinal_Cord.csv"),
+        os.path.join(BASE, EXACT, HISAT, GENE, "Substantia_Nigra.csv")
     script:
         "/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Hisat/Exact.R"
 
@@ -270,23 +270,23 @@ rule AgeMatched_Hisat_FTest:
         os.path.join(HISAT_DIR, "Spinal_Cord_Gene_Matrix.csv"),
         os.path.join(HISAT_DIR, "Substantia_Nigra_Gene_Matrix.csv")
     output:
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "MD_Plot.pdf"),
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "Volcano.pdf"),
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "Upreg.json"),
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "Downreg.json"),
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "Amygdala.csv"),
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "Anterior.csv"),
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "Caudate.csv"),
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "Cerebellar.csv"),
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "Cerebellum.csv"),
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "Cortex.csv"),
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "Frontal_Cortex.csv"),
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "Hippocampus.csv"),
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "Hypothalamus.csv"),
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "Nucleus_Accumbens.csv"),
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "Putamen.csv"),
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "Spinal_Cord.csv"),
-        os.path.join(BASE, FTEST, HISAT, AGE_GENE, "Substantia_Nigra.csv")
+        os.path.join(BASE, FTEST, HISAT, GENE, "MD_Plot.pdf"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Volcano.pdf"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Upreg.json"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Downreg.json"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Amygdala.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Anterior.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Caudate.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Cerebellar.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Cerebellum.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Cortex.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Frontal_Cortex.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Hippocampus.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Hypothalamus.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Nucleus_Accumbens.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Putamen.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Spinal_Cord.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Substantia_Nigra.csv")
     script:
         "/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Hisat/FTest.R"
 
@@ -307,23 +307,23 @@ rule Matched_Hisat_FTest:
         os.path.join(HISAT_DIR, "Spinal_Cord_Gene_Matrix.csv"),
         os.path.join(HISAT_DIR, "Substantia_Nigra_Gene_Matrix.csv")
     output:
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "MD_Plot.pdf"),
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "Volcano.pdf"),
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "Upreg.json"),
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "Downreg.json"),
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "Amygdala.csv"),
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "Anterior.csv"),
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "Caudate.csv"),
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "Cerebellar.csv"),
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "Cerebellum.csv"),
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "Cortex.csv"),
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "Frontal_Cortex.csv"),
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "Hippocampus.csv"),
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "Hypothalamus.csv"),
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "Nucleus_Accumbens.csv"),
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "Putamen.csv"),
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "Spinal_Cord.csv"),
-        os.path.join(BASE, FTEST, HISAT, MATCH_GENE, "Substantia_Nigra.csv")
+        os.path.join(BASE, FTEST, HISAT, GENE, "MD_Plot.pdf"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Volcano.pdf"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Upreg.json"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Downreg.json"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Amygdala.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Anterior.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Caudate.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Cerebellar.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Cerebellum.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Cortex.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Frontal_Cortex.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Hippocampus.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Hypothalamus.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Nucleus_Accumbens.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Putamen.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Spinal_Cord.csv"),
+        os.path.join(BASE, FTEST, HISAT, GENE, "Substantia_Nigra.csv")
     script:
         "/scratch/mjpete11/GTEx/Differential_Expression/F_Test/Hisat/FTest.R"
 
@@ -344,23 +344,23 @@ rule AgeMatched_Hisat_Ratio:
         os.path.join(HISAT_DIR, "Spinal_Cord_Gene_Matrix.csv"),
         os.path.join(HISAT_DIR, "Substantia_Nigra_Gene_Matrix.csv")
     output:
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "MD_Plot.pdf"),
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "Volcano.pdf"),
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "Upreg.json"),
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "Downreg.json"),
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "Amygdala.csv"),
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "Anterior.csv"),
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "Caudate.csv"),
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "Cerebellar.csv"),
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "Cerebellum.csv"),
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "Cortex.csv"),
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "Frontal_Cortex.csv"),
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "Hippocampus.csv"),
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "Hypothalamus.csv"),
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "Nucleus_Accumbens.csv"),
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "Putamen.csv"),
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "Spinal_Cord.csv"),
-        os.path.join(BASE, RATIO, HISAT, AGE_GENE, "Substantia_Nigra.csv")
+        os.path.join(BASE, RATIO, HISAT, GENE, "MD_Plot.pdf"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Volcano.pdf"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Upreg.json"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Downreg.json"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Amygdala.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Anterior.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Caudate.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Cerebellar.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Cerebellum.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Cortex.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Frontal_Cortex.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Hippocampus.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Hypothalamus.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Nucleus_Accumbens.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Putamen.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Spinal_Cord.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Substantia_Nigra.csv")
     script:
         "/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Hisat/Ratio.R"
 
@@ -381,22 +381,22 @@ rule Matched_Hisat_Ratio:
         os.path.join(HISAT_DIR, "Spinal_Cord_Gene_Matrix.csv"),
         os.path.join(HISAT_DIR, "Substantia_Nigra_Gene_Matrix.csv")
     output:
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "MD_Plot.pdf"),
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "Volcano.pdf"),
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "Upreg.json"),
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "Downreg.json"),
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "Amygdala.csv"),
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "Anterior.csv"),
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "Caudate.csv"),
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "Cerebellar.csv"),
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "Cerebellum.csv"),
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "Cortex.csv"),
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "Frontal_Cortex.csv"),
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "Hippocampus.csv"),
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "Hypothalamus.csv"),
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "Nucleus_Accumbens.csv"),
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "Putamen.csv"),
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "Spinal_Cord.csv"),
-        os.path.join(BASE, RATIO, HISAT, MATCH_GENE, "Substantia_Nigra.csv")
+        os.path.join(BASE, RATIO, HISAT, GENE, "MD_Plot.pdf"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Volcano.pdf"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Upreg.json"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Downreg.json"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Amygdala.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Anterior.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Caudate.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Cerebellar.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Cerebellum.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Cortex.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Frontal_Cortex.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Hippocampus.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Hypothalamus.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Nucleus_Accumbens.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Putamen.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Spinal_Cord.csv"),
+        os.path.join(BASE, RATIO, HISAT, GENE, "Substantia_Nigra.csv")
     script:
         "/scratch/mjpete11/GTEx/Differential_Expression/Ratio_Test/Hisat/Ratio.R"
