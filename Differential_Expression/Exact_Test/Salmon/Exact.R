@@ -1,6 +1,5 @@
 # This script looks at differential gene expression between males and females within each brain tissue type.
 # gene, age matched
-setwd("/scratch/mjpete11/GTEx/Differential_Expression/EdgeR/Sex_and_Tissue/Exact_Test/Salmon")
 
 # Input/Output
 METADATA <- snakemake@input[[1]]
@@ -9,9 +8,21 @@ MD_PLOT <- snakemake@output[[1]]
 VOLCANO_PLOT <- snakemake@output[[2]]
 UP_JSON <- snakemake@output[[3]]
 DOWN_JSON <-snakemake@output[[4]]
+TABLE.1 <- snakemake@output[[5]]
+TABLE.2 <- snakemake@output[[6]]
+TABLE.3 <- snakemake@output[[7]]
+TABLE.4 <- snakemake@output[[8]]
+TABLE.5 <- snakemake@output[[9]]
+TABLE.6 <- snakemake@output[[10]]
+TABLE.7 <- snakemake@output[[11]]
+TABLE.8 <- snakemake@output[[12]]
+TABLE.9 <- snakemake@output[[13]]
+TABLE.10 <- snakemake@output[[14]]
+TABLE.11 <- snakemake@output[[15]]
+TABLE.12 <- snakemake@output[[16]]
+TABLE.13 <- snakemake@output[[17]]
 
 # Load packages                                                                 
-library(tximport)                                                               
 library(GenomicFeatures)                                                        
 library(edgeR) 
 library(readr)
@@ -157,6 +168,16 @@ Exact_Func <- function(x, comp){
 }
 Exact_Res <- Map(Exact_Func, y, Pairs)
 
+# Write table from test results object to file for mashr analysis
+Snake_Var <- c(TABLE.1, TABLE.2, TABLE.3, TABLE.4, TABLE.5, TABLE.6,
+               TABLE.7, TABLE.8, TABLE.9, TABLE.10, TABLE.11, TABLE.12, TABLE.13)
+Table_Func <- function(tabl, name){
+    res <- write.table(tabl[['table']], 
+                       file=name) 
+    return(res)
+}
+Map(Table_Func, tabl=Exact_Res, name=Snake_Var)
+
 #---------------------------------------------------------------------------------------------------------------------
 # Summarize results 
 #---------------------------------------------------------------------------------------------------------------------
@@ -204,7 +225,7 @@ write(Down_Json, DOWN_JSON)
 # Plot Mean-Difference  plots on one page
 MD_Plot_Func <- function(x, w){
   plotMD(x, main=w, p.value=0.05, adjust.method="BH", legend=FALSE, hl.col=c("green", "blue"), cex=1.4)
-  mtext('Salmon: Gene Mean-Difference Plots; Exact Test', side = 3, outer = TRUE, cex=1.2, line=3)
+  mtext('Salmon: Isoform Mean-Difference Plots; Exact Test', side = 3, outer = TRUE, cex=1.2, line=3)
   mtext('Average log CPM', side = 1, outer = TRUE, line=1)
   mtext('Log-fold-change', side = 2, outer = TRUE, line=2)
 }
@@ -260,7 +281,7 @@ Plot_Func <- function(RES, TISSUE, UP, DOWN){
   with(DOWN, points(logFC, negLogPval, pch=19, col="blue"))
   abline(a=-log10(0.05), b=0, col="blue") 
   abline(v=c(2,-2), col="red")
-  mtext('Salmon: Gene Volcano Plots; Exact Test', side = 3, outer = TRUE,  cex=1.2, line=3)
+  mtext('Salmon: Isoform Volcano Plots; Exact Test', side = 3, outer = TRUE,  cex=1.2, line=3)
   mtext('logFC', side = 1, outer = TRUE,  cex=0.8, line=1)
   mtext('negLogPval', side = 2, outer = TRUE, line=2)
 }
