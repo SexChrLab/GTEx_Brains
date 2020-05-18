@@ -18,7 +18,7 @@ COUNTS = "/scratch/mjpete11/GTEx/Count_Matrices/Salmon/Gene_Salmon_CountMatrix.t
 # Data Preprocessing, experimental design, and normalization 
 #---------------------------------------------------------------------------------------------------------------------
 # Read Metadata CSV.                                                            
-Samples = read.csv(METADATA, header = TRUE, stringsAsFactors=FALSE)
+Samples <- read.csv(METADATA, header = TRUE, stringsAsFactors=FALSE)
 
 # Set rownames of metadata object equal to sample names.                        
 rownames(Samples) <- Samples$Sample   
@@ -26,11 +26,21 @@ rownames(Samples) <- Samples$Sample
 # Set tissues column as factor to add levels attribute
 Samples$Tissue <- as.factor(Samples$Tissue)
 
-# Drop samples < 55 
-Samples <- subset(Samples, Samples[,4] > 55)
+# Read in count matrix
+cts <- read.table(COUNTS, sep="\t")
 
-# Total number of samples after filtering by age
-nrow(Samples) # 932
+# Replace . to - in colnames
+colnames(cts) <- str_replace_all(colnames(cts),pattern = "\\.","-")
+
+# Identify sample in metadata that does not have count data and drop from metadata
+setdiff(Samples$Sample, colnames(cts)) # "GTEX-13N2G-0011-R2a-SM-5MR4Q"
+Samples <- Samples[!grepl("GTEX-13N2G-0011-R2a-SM-5MR4Q", Samples$Sample),]
+
+# Remove sample counts that do not have metadata
+# cts <- cts[intersect(colnames(cts), as.character(Samples$Sample))]
+
+# Number of samples with count data after subsetting with metadata
+ncol(cts) == nrow(Samples) # 1,340 samples total
 
 # Metadata split into list of dfs by tissue
 Meta <- list()
@@ -38,15 +48,6 @@ for(i in 1:length(levels(Samples$Tissue))){
       Meta[[i]] <- Samples[Samples$Tissue == levels(Samples$Tissue)[i],]
 }
 names(Meta) <- levels(Samples$Tissue)
-
-# Read in count matrix
-cts <- read.table(COUNTS, sep="\t")
-
-# Replace . to - in colnames
-colnames(cts) <- str_replace_all(colnames(cts),pattern = "\\.","-")
-
-# Remove Samples not present in metadata
-cts <- cts[intersect(colnames(cts), as.character(Samples$Sample))]
 
 # Function to split count matrix into list of dfs
 Tissues <- names(Meta)
@@ -56,25 +57,12 @@ Split_Cols <- function(w, z){
   res <- cts[, names]
   return(res)
 }
-#Split_Cols <- function(w, z){
-#  names <- which(colnames(w) %in% Samples[['Sample']] & Samples[['Tissue']] == z)
-#  res <- cts[, names]
-#  return(res)
-#}
 
 # Split count matrix into list of dfs
 res <- list()
 for (i in Tissues){
       res[[i]] <- Split_Cols(w=cts, z=i)
 }
-
-### There is a sample in Meta[[13]] that is not present in res[[13]]!!!
-# Check if columns were subset correctly
-check <- list()
-for (i in 1:13){
-      check[[i]] <- colnames(res[[i]]) %in% subset(Samples$Sample, Samples$Tissue==Tissues[[i]])
-}
-all(as.logical(lapply(check, all)))
 
 # Create design matrix: Step 1
 # Create sex and tissue factor
@@ -89,6 +77,13 @@ Col_Bind <- function(df, fc){
       cbind(df, fc)
 }
 Meta <- Map(Col_Bind, Meta, Groups)
+
+# Check that the count samples are in the same order as the metadata 
+Check_Order <- function(x, z){
+    res <- identical(colnames(x), rownames(z))
+    return(res)
+}
+all(Map(Check_Order, x=res, z=Meta)) # TRUE
 
 # Sort cols in cts in same order as rows in Meta
 Sort_Cols <- function(x, z){
@@ -126,14 +121,24 @@ Set_Levels <- function(x, z){
 Design <- Map(Set_Levels, x=Design, z=DGE_Lst)
 
 # Keep only genes expressed in at least half the samples for each tissue type
-Keep <- lapply(y, function(x){
-                     rowSums(cpm(x[['counts']])>1) >= ncol(x[['counts']]) 
-})
+# How many cols have cpm > 1 in each row; return TRUE if that value >= half the number of samples 
+Keep <- lapply(DGE_Lst, function(x){rowSums(cpm(x[['counts']]) > 1) >= ceiling(ncol(x[['counts']])/2)})
 
+# Every single gene passed the filter...
+# Are all values in each list TRUE?
+all(lapply(Keep, function(x) all(x) == TRUE)) # TRUE
+
+# Do all genes pass the filter if they mucst be expressed in all samples?
+Keep.test <- lapply(DGE_Lst, function(x){rowSums(cpm(x[['counts']]) > 1) >= ceiling(ncol(x[['counts']]))})
+
+# Are all values in each list TRUE?
+all(lapply(Keep.test, function(x) all(x) == TRUE)) # FALSE
+
+# Apply expression threshold filter
 Filter_Func <- function(x, k){
       x <- x[k, , keep.lib.sizes=FALSE]
 }
-DGE_Lst <- Map(Filter_Func, DGE_Lst, Keep)
+DGE_Lst <- Map(Filter_Func, x=DGE_Lst, k=Keep)
 
 # TMM Normalization
 DGE_Lst <- lapply(DGE_Lst, calcNormFactors)
