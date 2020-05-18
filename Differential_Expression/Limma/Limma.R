@@ -146,24 +146,21 @@ DGE_Lst <- lapply(DGE_Lst, calcNormFactors)
 #---------------------------------------------------------------------------------------------------------------------
 # Voom
 #---------------------------------------------------------------------------------------------------------------------
-# Chose voom since library sizes are > 3 fold diff between largest and smallest
-v <- voom(dge, design, plot=TRUE)
+# Apply voom (rather than plain limma) since library sizes are highly variable
+Voom_Func <- function(x, d){
+    v <- voom(x, d, plot=TRUE)
+    fit <- lmFit(v, d)
+    fit <- eBayes(fit)
+    return(fit)
+}
+Voom_Res <- Map(Voom_Func, x=DGE_Lst, d=Design)
 
-# Option to apply between-array quantile normalization for very noisy data
-#v <- voom(counts, design, plot=TRUE, normalize="quantile")
+# Combine the male beta coefficient (second col in coeff matrix) with the standard error (var^2)
+Make_Tables <- function(x){
+    res <- data.frame(Beta=x[['coefficients']][,2], SE=x[['s2.post']])
+    return(res)
+}
+Table_Lst <- lapply(Voom_Res, Make_Tables)
 
-# Fit model
-fit <- lmFit(v, design)
-fit <- eBayes(fit)
-topTable(fit, coef=ncol(design))
-
-# Option to give more weight to the log-fold changes in the rankings
-#fit <- treat(fit, lfc=log2(1.2))
-#topTreat(fit, coef=ncol(design))
-
-#---------------------------------------------------------------------------------------------------------------------
-# Write results to disk 
-#---------------------------------------------------------------------------------------------------------------------
-
-
-
+# Write results
+sapply(names(Table_Lst), function(x) write.table(Table_Lst[[x]], file=paste(x, "csv", sep="."))) 
