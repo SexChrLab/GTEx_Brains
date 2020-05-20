@@ -1,5 +1,12 @@
 #!/usr/bin/env Rscript
 
+# ________________________________________________________________________________________________________  
+# To-Do 
+# ________________________________________________________________________________________________________  
+# 1) Implement way to check if the nrow of the effect/s2.prior matrices are the expected length
+# would be the union of all DEGs detected across condtions
+
+
 setwd("/scratch/mjpete11/GTEx/Data_Exploration/Mashr/")
 
 library(mashr)
@@ -7,198 +14,131 @@ library(readr)
 library(data.table)
 
 # ________________________________________________________________________________________________________  
-# Function to convert test results (csv files) into effect matrices
+# Convert test results (csv files) into effect and standard error matrices
 # ________________________________________________________________________________________________________  
-# Paths to csv files with significant differentially expressed genes
-# Add transcripts later
-#BASE  <- "/scratch/mjpete11/GTEx/Differential_Expression/"
-#EXACT  <- "Exact_Test/"
-#FTEST <- "F_Test/"
-#RATIO <- "Ratio_Test/"
-#SAL  <- "Salmon/"
-#HIS  <- "Hisat/"
-#AGE <- "Age_Matched/Gene/"
-#MATCH <- "Matched/Gene/"
-#
-## Function to generate paths
-#Paths <- function(test, aligner, sample_set){
-#    res <- list()
-#    for (i in test){
-#        for (j in aligner){
-#            for (k in sample_set){
-#                path <- paste0(BASE, i, j, k)
-#                res <- c(res, path)
-#            }
-#        }
-#    }
-#    return(res)
-#}
-#p <- Paths(test=c(EXACT, FTEST, RATIO), aligner=c(SAL, HIS), sample_set=c(AGE, MATCH))
-#
-## Function to read csv files as list of dfs
-##Read_Tables <- function(paths){
-##    res <- list()
-#    for (p in paths){
-#         lst <- Map(fread, header=FALSE, list.files(path = p, pattern = "*.csv", full.names=T))
-#         res <- c(res, lst)
-#    }
-#    return(res)
-#}
-#Tables.Lst <- Read_Tables(paths=p) 
+# Path to limma results; female gene expression regressed onto male
+p1 <- "/scratch/mjpete11/GTEx/Differential_Expression/Limma/"
 
-# Read in csv files as list of dfs;,pass list of file names with list.files
-# Started writing function, but I need it to return a nested named list; a list of lists is too dangerous lol
-# Exact test, salmon 
-#Names <- c(ESA, ESM, EHA, EHM, FSA, FSM, FHA, FHM, RSA, RSM, RHA, RHM)
-#
-#ESA.lst <- Map(fread, header=FALSE, list.files(path = p1, pattern = "*.csv", full.names=T))
-#ESM.lst <- Map(fread, header=FALSE, list.files(path = p2, pattern = "*.csv", full.names=T))
-#EHA.lst <- Map(fread, header=FALSE, list.files(path = p3, pattern = "*.csv", full.names=T))
-#EHM.lst <- Map(fread, header=FALSE, list.files(path = p4, pattern = "*.csv", full.names=T))
-#FSA.lst <- Map(fread, header=FALSE, list.files(path = p5, pattern = "*.csv", full.names=T))
-#FSM.lst <- Map(fread, header=FALSE, list.files(path = p6, pattern = "*.csv", full.names=T))
-#FHA.lst <- Map(fread, header=FALSE, list.files(path = p7, pattern = "*.csv", full.names=T))
-#FHM.lst <- Map(fread, header=FALSE, list.files(path = p8, pattern = "*.csv", full.names=T))
-#RSA.lst <- Map(fread, header=FALSE, list.files(path = p9, pattern = "*.csv", full.names=T))
-#RSM.lst <- Map(fread, header=FALSE, list.files(path = p10, pattern = "*.csv", full.names=T))
-#RHA.lst <- Map(fread, header=FALSE, list.files(path = p11, pattern = "*.csv", full.names=T))
-#RHM.lst <- Map(fread, header=FALSE, list.files(path = p12, pattern = "*.csv", full.names=T))
-#
-## Assign names to dfs in list
-#p1 <- "/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Salmon/Age_Matched/Gene/"
-#ESA.lst <- Map(fread, header=FALSE, list.files(path = p1, pattern = "*.csv", full.names=T))
-#names(ESA.lst) <- c("Amygdala", "Anterior", "Caudate", "Cerebellar", "Cerebellum", "Cortex",
-#                 "Frontal_Cortex", "Hippocampus", "Hypothalamus", "Nucleus_Accumbens", 
-#                 "Putamen", "Spinal_Cord", "Substantia_Nigra")
-#
-## Name items in list, name the df columns then drop last two cols by name
-#Name_Drop <- function(x){
-#    x <- data.frame(x)
-#    colnames(x) <- c("gene_ID", "logFC", "logCPM", "PValue")
-#    drp <- c("logFC", "PValue")
-#    x <- x[,!colnames(x) %in% drp]
-#    return(x)
-#}    
-#ESA.lst<- lapply(ESA.lst, Name_Drop)
-#
-## Left join list of dfs by gene_ID col; if row (gene ID) not present in a df, fill with zero
-## After joining by gene_ID col, set it as rowname and drop col (this is how the example df looks) 
-#ESA.df <- Reduce(function(df1, df2) merge(df1, df2, by="gene_ID", all=TRUE), ESA.lst)
-#rownames(ESA.df) <- ESA.df[["gene_ID"]]
-#ESA.df[["gene_ID"]] <- NULL
-#colnames(ESA.df)[1:ncol(ESA.df)] <- names(ESA.lst)
-#ESA.df[is.na(ESA.df)] <- 0
-#
-#print(head(ESA.df))
-#
-## Check for missing or non-finite values
-#any(is.nan(ESA.df$logFC)) # No NANs
-#all(is.finite(ESA.df$logFC)) # All values are finite
-#
-## Convert df to matrix (mash_set_data() only accepts matrices) 
-#ESA.m <- as.matrix(ESA.df)
-
-
-
-# ________________________________________________________________________________________________________  
-# Convert test results (csv files) into effect matrices
-# ________________________________________________________________________________________________________  
-# Read in tables with logFC and make the effect matrix
-# Cols: gene ID followed by tissue type, Rows: gene, Values: logFC
-# Paths to csv files
-# Salmon, Exact
-p1 <- "/scratch/mjpete11/GTEx/Differential_Expression/Exact_Test/Salmon/Age_Matched/Gene"
-
-# Read in csv files as list of dfs (they are actually tab delim...);,pass list of file names with list.files
-ESA.lst <- Map(fread, header=FALSE, list.files(path = p1, pattern = "*.csv", full.names=T))
+# Read in csv files in directory as list of data frames
+Limma.lst <- Map(fread, header=FALSE, list.files(path = p1, pattern = "*.csv", full.names=T))
 
 # Assign names to dfs in list
-names(ESA.lst) <- c("Amygdala", "Anterior", "Caudate", "Cerebellar", "Cerebellum", "Cortex",
+names(Limma.lst) <- c("Amygdala", "Anterior", "Caudate", "Cerebellar", "Cerebellum", "Cortex",
                  "Frontal_Cortex", "Hippocampus", "Hypothalamus", "Nucleus_Accumbens", 
                  "Putamen", "Spinal_Cord", "Substantia_Nigra")
 
-# Name items in list, name the df columns then drop last two cols by name
-Name_Drop <- function(x){
+# Combine the first column on every df in list into one matrix 
+# Name columns in each df, then choose which to drop 
+Name_Drop <- function(x, d){
     x <- data.frame(x)
-    colnames(x) <- c("gene_ID", "logFC", "logCPM", "PValue")
-    drp <- c("logFC", "PValue")
+    colnames(x) <- c("gene_ID", "Male_Beta", "s2.Prior")
+    drp <- c(d)
     x <- x[,!colnames(x) %in% drp]
     return(x)
 }    
-ESA.lst<- lapply(ESA.lst, Name_Drop)
+Effect.lst <- Map(Name_Drop, x=Limma.lst, d="s2.Prior")
+s2.lst <- Map(Name_Drop, x=Limma.lst, d="Male_Beta")
 
-# Left join list of dfs by gene_ID col; if row (gene ID) not present in a df, fill with zero
-# After joining by gene_ID col, set it as rowname and drop col (this is how the example df looks) 
-ESA.df <- Reduce(function(df1, df2) merge(df1, df2, by="gene_ID", all=TRUE), ESA.lst)
-rownames(ESA.df) <- ESA.df[["gene_ID"]]
-ESA.df[["gene_ID"]] <- NULL
-colnames(ESA.df)[1:ncol(ESA.df)] <- names(ESA.lst)
-ESA.df[is.na(ESA.df)] <- 0
-
-print(head(ESA.df))
-
-# Check for missing or non-finite values
-any(is.nan(ESA.df$logFC)) # No NANs
-all(is.finite(ESA.df$logFC)) # All values are finite
-
-# Convert df to matrix (mash_set_data() only accepts matrices) 
-ESA.m <- as.matrix(ESA.df)
+# Iteratively join dfs in list by gene_ID col
+Lst_To_Mat <- function(l){
+    # supress warning about duplicate cols when merging; keep all rows, including those not present in both
+    x <- suppressWarnings(Reduce(function(df1, df2) merge(df1, df2, by="gene_ID", all=TRUE), l))
+    rownames(x) <- x[["gene_ID"]] # join by gene_ID col, then drop
+    x[["gene_ID"]] <- NULL
+    colnames(x)[1:ncol(x)] <- names(l) # explicitly name conditions
+    x[is.na(x)] <- 0 # Replace NA (row present in a df but not in all others) with 0
+    x <- as.matrix(x) # mashr only accepts matrices
+    print(head(x)) # visually inspect df
+    print(tail(x))
+    return(x)
+}
+Effect.mat <- Lst_To_Mat(l=Effect.lst)
+s2.mat <- Lst_To_Mat(l=s2.lst)
 
 # ________________________________________________________________________________________________________  
-# Mashr analysis 
+# Sanity checks 
 # ________________________________________________________________________________________________________  
-# Step 1: Select strong signals
-# Create mashr object using option to automatically generate the standard error matrix (fill with 1s)
-mash.ESA <- mash_set_data(Bhat=ESA.m, Shat=1)
+Sanity <- function(e, s){
+    # Do effect and s2 matrices have same nrow and rownames in same order?
+    print(nrow(s) == nrow(e)) # TRUE
+    print(identical(rownames(s), rownames(e))) # TRUE
 
-# Run a condition-by-condition analysis on all the data
-m.1by1 <- mash_1by1(mash.ESA)
+    # Check for missing values
+    print(any(sapply(e, function(x) any(is.nan(x))))) # FALSE = No cols contain missing values
+    print(all(sapply(e, function(x) all(is.finite(x))))) # TRUE= All cols contain finite entries
 
-# Selected strong signals; i.e. indices where the lfsr < 0.05
-strong <- get_significant_results(m.1by1, 0.05)
+    print(any(sapply(s, function(x) any(is.nan(x))))) # FALSE = No cols contain missing values
+    print(all(sapply(s, function(x) all(is.finite(x))))) # TRUE= All cols contain finite entries
 
-# Step 2: Obtain initial data-driven covariance matrices
-U.pca <- cov_pca(mash.ESA, 5, subset=strong)
+    # Check for missing or non-finite values
+    print(any(sapply(e, function(x) any(is.nan(x))))) # FALSE = No cols contain missin values
+    print(all(sapply(e, function(x) all(is.finite(x))))) # TRUE= All cols contain finite entries
 
-# Step 3: Extreme deconvolution of principle components with strong signals only
-U.ed <- cov_ed(mash.ESA, U.pca, subset=strong)
+    print(any(sapply(s, function(x) any(is.nan(x))))) # FALSE = No cols contain missin values
+    print(all(sapply(s, function(x) all(is.finite(x))))) # TRUE= All cols contain finite entries
+}
+# 2 T, alternate F/T 
+Sanity(e=Effect.mat, s=s2.mat)
 
-# Step 4: Run mash
-# Crucial! Must fit mash to all tests, not just the strong subset
-m.ed <- mash(mash.ESA, U.ed)
-get_loglik(m.ed) # -433173.4
+# ________________________________________________________________________________________________________  
+# Mashr analysis; NSM lab approach
+# ________________________________________________________________________________________________________  
+# Create the mashr data object
+mash.Limma <- mash_set_data(Bhat=Effect.mat, Shat=s2.mat)
 
-# Compare to results using cononical covariance matrix
-U.c <- cov_canonical(mash.ESA)
-m.c <- mash(mash.ESA, U.c)
-get_loglik(m.c) #-404642.2
+# Apply multivariate adaptive shrinkage method in initial mode ("naive" run)
+# Compute canonical covariance matrix
+U.c <- cov_canonical(mash.Limma)
+m.c <- mash(mash.Limma, U.c)
 
-# Extract posterior summaries
-Tissues <- c("Amygdala", "Anterior", "Caudate", "Cerebellar", "Cerebellum", "Cortex",
-             "Frontal_Cortex", "Hippocampus", "Hypothalamus", "Nucleus_Accumbens", 
-             "Putamen", "Spinal_Cord", "Substantia_Nigra")
+# Save initial results and pairwise sharing matrix
+strong.Limma <- get_significant_results(m.c, thresh=0.05, sig_fn=ashr::get_lfdr)
+shared.Limma <- get_pairwise_sharing(m.c, factor=0.05)
 
-# Barplot of estimated mixture proportions of the data-driven covariance and canonical covar
-tiff("data_driven_barplot.tiff")
-par(mar=c(10,3,2,1)) # bottom, left, top, right
-barplot(get_estimated_pi(m.ed), las=2)
-dev.off()
+# Get a randomized set of results with the same length as the significant results
+random.Limma <- sample(1:nrow(mash.Limma$Bhat), length(strong.Limma))
 
-tiff("canonical_barplot.tiff")
-par(mar=c(10,3,2,1)) # bottom, left, top, right
-barplot(get_estimated_pi(m.c), las=2)
-dev.off()
+# Estimate null correlation on random subset of the data
+# The resulting correlation matrix (Vhat.Limma) will be used to construct the "random" and "strong"mashr datasets
+temp.Limma <- mash_set_data(mash.Limma$Bhat[random.Limma,], mash.Limma$Shat[random.Limma,])
+temp.U.c.Limma <- cov_canonical(temp.Limma)
+Vhat.Limma <- estimate_null_correlation(temp.Limma, temp.U.c.Limma)
 
-# Metaplot based on posterior means and posterior effects for both covar matrices
-tiff("data_driven_metaplot.tiff")
-mash_plot_meta(m.ed, get_significant_results(m.ed)[1], labels=Tissues)
-dev.off()
+# Test if this works on the full data set; Fails
+estimate_null_correlation(mash.Limma, U.c)
 
-tiff("canonical_metaplot.tiff")
-mash_plot_meta(m.c, get_significant_results(m.c)[1], labels=Tissues)
-dev.off()
+# Create mashr datasets on the sig results ("strong" set) and random results ("random" set)
+mash.Limma.random <- mash_set_data(mash.Limma$Bhat[random.Limma,],mash.Limma$Shat[random.Limma,],V=Vhat.Limma)
+mash.Limma.strong <- mash_set_data(mash.Limma$Bhat[strong.Limma,],mash.Limma$Shat[strong.Limma,],V=Vhat.Limma)
 
+# Perform PCA and extreme deconvolution
+U.pca.Limma <- cov_pca(strong.Limma, 5)
+U.ed.Limma <- cov_ed(strong.Limma, U.pca.Limma)
 
+# Compute canonical covariance matrix on random subset
+U.c.random <- cov_canonical(mash.Limma.random)
 
+# Perform mashr on random subset for the purpose of estimating g
+# In contrast to the earlier "naive" model, empirical covariance matrices from the extreme deconvolution and canonical methods are used
+m.Limma <- mash(mash.Limma.random, Ulist=c(U.ed.Limma, U.c.random), outputlevel=1)
 
+# Now run mashr on the strong subset, this time substituting the empirical value of g
+m2.Limma <- mash(mash.Limma.strong, g=get_fitted_g(m.age), fixg=TRUE)
+
+# Calculate pairwise sharing
+Limma.share <- get_pairwise_sharing(m2.Limma, factor=0.5)
+colnames(Limma.share) <- rownames(Limma.share) <- calls
+
+# Set a flase sign rate cutoff
+fsr.cutoff <- 0.2
+
+# Get number of significant genes in each region
+apply(get_lfsr(m2.Limma), 2, function(x) sum(x < fsr.cutoff))
+
+# Get posterior values
+# Posterior betas
+beta.Limma <- get_pm(m2.Limma)
+
+# Posterior local false sign rate
+lfsr.Limma <- get_lfsr(m2.Limma)
 
