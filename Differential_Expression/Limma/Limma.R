@@ -1,14 +1,14 @@
 #!/usr/bin/env Rscript
 
-# DGX with limma-voom
+#---------------------------------------------------------------------------------------------------------------------
+# Differential gene expression with limma-voom 
+#---------------------------------------------------------------------------------------------------------------------
 
 #Load packages                                                                 
 library(limma)
 library(edgeR) 
 library(readr)
 library(stringr)
-library(rjson)
-library(dplyr)
 
 # Constants
 METADATA = "/scratch/mjpete11/GTEx/Metadata/Metadata.csv"
