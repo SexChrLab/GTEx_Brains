@@ -1,12 +1,12 @@
+#!/usr/bin/env Rscript
+
 # DGX with limma-voom
 
 #Load packages                                                                 
 library(limma)
-library(GenomicFeatures)                                                        
 library(edgeR) 
 library(readr)
 library(stringr)
-library(gridExtra)
 library(rjson)
 library(dplyr)
 
@@ -124,13 +124,13 @@ Keep <- lapply(DGE_Lst, function(x){rowSums(cpm(x[['counts']]) > 1) >= ceiling(n
 # Do all genes pass filter?
 all(lapply(Keep, function(x) all(x) == TRUE)) # FALSE
 
-# How many are left after applying filter?
+# Range of genes left across conditions
 sapply(Keep, function(x) sum(x)) # 16,486-18,273 
 
-# How many genes are left that have cpm > 1 in all samples?
+# How many genes are left is I use a more stringent filter: cpm > 1 in all samples 
 Keep.test <- lapply(DGE_Lst, function(x){rowSums(cpm(x[['counts']]) > 1) >= ceiling(ncol(x[['counts']]))})
 
-# How many are left after applying more stringent filter?
+# Range of genes left across conditions after applying more stringent filter
 sapply(Keep.test, function(x) sum(x)) # 10-12,539 
 
 # Apply filter (cpm >1 in at least half the samples) to list of DGEList object
@@ -154,12 +154,12 @@ Voom_Func <- function(x, d){
 }
 Voom_Res <- Map(Voom_Func, x=DGE_Lst, d=Design)
 
-# Combine the male beta coefficient (second col in coeff matrix) with the standard error (var^2)
+# Combine the betas (second col in coeff matrix) with the standard error (var^2)
 Make_Tables <- function(x){
     cts_lst <- data.frame(Beta=x[['coefficients']][,2], SE=x[['s2.post']])
     return(cts_lst)
 }
 Table_Lst <- lapply(Voom_Res, Make_Tables)
 
-# Write cts_lstults
+# Write tables 
 sapply(names(Table_Lst), function(x) write.table(Table_Lst[[x]], file=paste(x, "csv", sep="."))) 
