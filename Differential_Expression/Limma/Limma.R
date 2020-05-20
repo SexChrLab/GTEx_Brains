@@ -15,7 +15,7 @@ METADATA = "/scratch/mjpete11/GTEx/Metadata/Metadata.csv"
 COUNTS = "/scratch/mjpete11/GTEx/Count_Matrices/Salmon/Gene_Salmon_CountMatrix.tsv"
 
 #---------------------------------------------------------------------------------------------------------------------
-# Data Preprocessing, experimental design, and normalization 
+# Data Preprocessing and normalization 
 #---------------------------------------------------------------------------------------------------------------------
 # Read Metadata CSV.                                                            
 Samples <- read.csv(METADATA, header = TRUE, stringsAsFactors=FALSE)
@@ -36,9 +36,6 @@ colnames(cts) <- str_replace_all(colnames(cts),pattern = "\\.","-")
 setdiff(Samples$Sample, colnames(cts)) # "GTEX-13N2G-0011-R2a-SM-5MR4Q"
 Samples <- Samples[!grepl("GTEX-13N2G-0011-R2a-SM-5MR4Q", Samples$Sample),]
 
-# Remove sample counts that do not have metadata
-# cts <- cts[intersect(colnames(cts), as.character(Samples$Sample))]
-
 # Number of samples with count data after subsetting with metadata
 ncol(cts) == nrow(Samples) # 1,340 samples total
 
@@ -54,87 +51,89 @@ Tissues <- names(Meta)
 
 Split_Cols <- function(w, z){
   names <- which(colnames(w) %in% subset(Samples[['Sample']], Samples[['Tissue']] == z))
-  res <- cts[, names]
-  return(res)
+  cts_lst <- cts[, names]
+  return(cts_lst)
 }
 
 # Split count matrix into list of dfs
-res <- list()
+cts_lst <- list()
 for (i in Tissues){
-      res[[i]] <- Split_Cols(w=cts, z=i)
+      cts_lst[[i]] <- Split_Cols(w=cts, z=i)
 }
 
+#---------------------------------------------------------------------------------------------------------------------
+# Sanity check; make sure samples are in same order in count dfs and metadata dfs
+#---------------------------------------------------------------------------------------------------------------------
+Check_Order <- function(x, z){
+    cts_lst <- identical(colnames(x), rownames(z))
+    return(cts_lst)
+}
+all(Map(Check_Order, x=cts_lst, z=Meta)) # TRUE
+
+# Sort cols in cts in same order as rows in metadata anyways, just to be safe
+# If the order of samples in metadata and count data don't match, 
+# samples will be labelled incorrectly in the design matrix
+Sort_Cols <- function(x, z){
+    x <- x[, match(rownames(z), colnames(x))]
+    return(x)
+}
+cts_lst <- Map(Sort_Cols, x=cts_lst, z=Meta)
+all(Map(Check_Order, x=cts_lst, z=Meta)) # TRUE
+
+#---------------------------------------------------------------------------------------------------------------------
+# Make list of DGEList objects with corresponding design matrix 
+#---------------------------------------------------------------------------------------------------------------------
 # Create design matrix: Step 1
-# Create sex and tissue factor
+# Create sex factor
 Factor_Func <- function(x){
-  res <- factor(paste(x$Tissue, x$Sex, sep="."))
-  return(res)
+  cts_lst <- factor(x[['Sex']])
+  return(cts_lst)
 }
 Groups <- lapply(Meta, Factor_Func)
 
-# Add column with new factor
-Col_Bind <- function(df, fc){
-      cbind(df, fc)
+# Combine count dfs and factors to make list of DGEList objects; 
+# required object class for limma
+DGE_Func <- function(d, l){
+    cts_lst <- DGEList(d, group=l)
+    return(cts_lst)
 }
-Meta <- Map(Col_Bind, Meta, Groups)
-
-# Check that the count samples are in the same order as the metadata 
-Check_Order <- function(x, z){
-    res <- identical(colnames(x), rownames(z))
-    return(res)
-}
-all(Map(Check_Order, x=res, z=Meta)) # TRUE
-
-# Sort cols in cts in same order as rows in Meta
-Sort_Cols <- function(x, z){
-  x <- x[, match(rownames(z), colnames(x))]
-  return(x)
-}
-cts <- Map(Sort_Cols, x=res, z=Meta)
-
-# Create list of DGEList objects
-DGE_Func <- function(df, lst){
-      res <- DGEList(df, group=lst)
-  return(res)
-}
-DGE_Lst <- Map(DGE_Func, cts, Groups)
+DGE_Lst <- Map(DGE_Func, d=cts_lst, l=Groups)
 
 # Create design matrix: Step 2; Part 1
-Model_Func <- function(fc, df){
-      res <- model.matrix(~0 + fc, data = df$samples)
-  return(res)
+Model_Func <- function(fc, d){
+    x <- model.matrix(~0 + fc, data = d[['samples']])
+    colnames(x) <- gsub("fc", "", colnames(x)) # adds var name to col name; drop it
+    return(x)
 }
-Design <- Map(Model_Func, Groups, DGE_Lst)
-
-# Remove "fc" from colnames
-Rename_Cols <- function(x){
-      colnames(x) <- gsub("fc", "", colnames(x))
-  return(x)
-}
-Design <- lapply(Design, Rename_Cols)
+Design <- Map(Model_Func, fc=Groups, d=DGE_Lst)
 
 # Create design matrix: Step 2; Part 2
 Set_Levels <- function(x, z){
-      colnames(x) <- levels(z$samples$group)
-  return(x)
+    colnames(x) <- levels(z[['samples']][['group']])
+    return(x)
 }
 Design <- Map(Set_Levels, x=Design, z=DGE_Lst)
 
-# Keep only genes expressed in at least half the samples for each tissue type
+#---------------------------------------------------------------------------------------------------------------------
+# Filter genes by cpm expression level 
+#---------------------------------------------------------------------------------------------------------------------
+# Keep only genes with cpm > 1 in at least half the samples for each tissue type
 # How many cols have cpm > 1 in each row; return TRUE if that value >= half the number of samples 
 Keep <- lapply(DGE_Lst, function(x){rowSums(cpm(x[['counts']]) > 1) >= ceiling(ncol(x[['counts']])/2)})
 
-# Every single gene passed the filter...
-# Are all values in each list TRUE?
-all(lapply(Keep, function(x) all(x) == TRUE)) # TRUE
+# Do all genes pass filter?
+all(lapply(Keep, function(x) all(x) == TRUE)) # FALSE
 
-# Do all genes pass the filter if they mucst be expressed in all samples?
+# How many are left after applying filter?
+sapply(Keep, function(x) sum(x)) # 16,486-18,273 
+
+# How many genes are left that have cpm > 1 in all samples?
 Keep.test <- lapply(DGE_Lst, function(x){rowSums(cpm(x[['counts']]) > 1) >= ceiling(ncol(x[['counts']]))})
 
-# Are all values in each list TRUE?
-all(lapply(Keep.test, function(x) all(x) == TRUE)) # FALSE
+# How many are left after applying more stringent filter?
+sapply(Keep.test, function(x) sum(x)) # 10-12,539 
 
-# Apply expression threshold filter
+# Apply filter (cpm >1 in at least half the samples) to list of DGEList object
 Filter_Func <- function(x, k){
       x <- x[k, , keep.lib.sizes=FALSE]
 }
@@ -157,10 +156,10 @@ Voom_Res <- Map(Voom_Func, x=DGE_Lst, d=Design)
 
 # Combine the male beta coefficient (second col in coeff matrix) with the standard error (var^2)
 Make_Tables <- function(x){
-    res <- data.frame(Beta=x[['coefficients']][,2], SE=x[['s2.post']])
-    return(res)
+    cts_lst <- data.frame(Beta=x[['coefficients']][,2], SE=x[['s2.post']])
+    return(cts_lst)
 }
 Table_Lst <- lapply(Voom_Res, Make_Tables)
 
-# Write results
+# Write cts_lstults
 sapply(names(Table_Lst), function(x) write.table(Table_Lst[[x]], file=paste(x, "csv", sep="."))) 
