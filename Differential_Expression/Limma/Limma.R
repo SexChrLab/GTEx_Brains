@@ -13,6 +13,7 @@ library(stringr)
 # Constants
 METADATA = "/scratch/mjpete11/GTEx/Metadata/Metadata.csv"
 COUNTS = "/scratch/mjpete11/GTEx/Count_Matrices/Salmon/Gene_Salmon_CountMatrix.tsv"
+DIR = "/scratch/mjpete11/GTEx/Differential_Expression/Limma/Current/"
 
 #---------------------------------------------------------------------------------------------------------------------
 # Data Preprocessing and normalization 
@@ -70,26 +71,12 @@ Check_Order <- function(x, z){
 }
 all(Map(Check_Order, x=cts_lst, z=Meta)) # TRUE
 
-# Sort cols in cts in same order as rows in metadata anyways, just to be safe
-# If the order of samples in metadata and count data don't match, 
-# samples will be labelled incorrectly in the design matrix
-Sort_Cols <- function(x, z){
-    x <- x[, match(rownames(z), colnames(x))]
-    return(x)
-}
-cts_lst <- Map(Sort_Cols, x=cts_lst, z=Meta)
-all(Map(Check_Order, x=cts_lst, z=Meta)) # TRUE
-
 #---------------------------------------------------------------------------------------------------------------------
 # Make list of DGEList objects with corresponding design matrix 
 #---------------------------------------------------------------------------------------------------------------------
 # Create design matrix: Step 1
-# Create sex factor
-Factor_Func <- function(x){
-  cts_lst <- factor(x[['Sex']])
-  return(cts_lst)
-}
-Groups <- lapply(Meta, Factor_Func)
+# Make list of factors
+Groups <- lapply(Meta, function(x) factor(x[['Sex']]))
 
 # Combine count dfs and factors to make list of DGEList objects; 
 # required object class for limma
@@ -107,13 +94,6 @@ Model_Func <- function(fc, d){
 }
 Design <- Map(Model_Func, fc=Groups, d=DGE_Lst)
 
-# Create design matrix: Step 2; Part 2
-Set_Levels <- function(x, z){
-    colnames(x) <- levels(z[['samples']][['group']])
-    return(x)
-}
-Design <- Map(Set_Levels, x=Design, z=DGE_Lst)
-
 #---------------------------------------------------------------------------------------------------------------------
 # Filter genes by cpm expression level 
 #---------------------------------------------------------------------------------------------------------------------
@@ -122,7 +102,7 @@ Design <- Map(Set_Levels, x=Design, z=DGE_Lst)
 Keep <- lapply(DGE_Lst, function(x){rowSums(cpm(x[['counts']]) > 1) >= ceiling(ncol(x[['counts']])/2)})
 
 # Do all genes pass filter?
-all(lapply(Keep, function(x) all(x) == TRUE)) # FALSE
+all(sapply(Keep, function(x) all(x) == TRUE)) # FALSE
 
 # Range of genes left across conditions
 sapply(Keep, function(x) sum(x)) # 16,486-18,273 
@@ -149,7 +129,7 @@ DGE_Lst <- lapply(DGE_Lst, calcNormFactors)
 Voom_Func <- function(x, d){
     v <- voom(x, d, plot=TRUE)
     fit <- lmFit(v, d)
-    fit <- eBayes(fit)
+    fit <- eBayes(fit) # compute t-stat, f-stat, and log-odds of DE
     return(fit)
 }
 Voom_Res <- Map(Voom_Func, x=DGE_Lst, d=Design)
@@ -162,4 +142,4 @@ Make_Tables <- function(x){
 Table_Lst <- lapply(Voom_Res, Make_Tables)
 
 # Write tables 
-sapply(names(Table_Lst), function(x) write.table(Table_Lst[[x]], file=paste(x, "csv", sep="."))) 
+sapply(names(Table_Lst), function(x) write.table(Table_Lst[[x]], file=paste0(DIR, x, ".csv"))) 
