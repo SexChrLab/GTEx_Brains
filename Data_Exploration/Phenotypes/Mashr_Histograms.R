@@ -1,9 +1,10 @@
+#!/usr/bin/Rscript
+
 # Histograms for data used in mashr analysis
 setwd("/scratch/mjpete11/GTEx/Data_Exploration/Phenotypes")
 
 library(dplyr)
 library(ggplot2)
-library(MatchIt)
 
 # Constants
 METADATA = "/scratch/mjpete11/GTEx/Metadata/Metadata.csv"
@@ -16,6 +17,9 @@ ETH_HIST <- "Ethnicity_Histograms.pdf"
 # Organize samples by tissue type into list of dfs for plotting
 # Read Metadata CSV.                                                            
 Samples <- read.csv(METADATA, header = TRUE, stringsAsFactors=FALSE)
+
+# One sample has metadata but no corresponding Salmon count data; dropping from metadata
+Samples <- Samples[!grepl("GTEX-13N2G-0011-R2a-SM-5MR4Q", Samples$Sample),]
 
 # Set rownames of metadata object equal to sample names.                        
 rownames(Samples) <- Samples$Sample   
@@ -37,17 +41,20 @@ Old_Meta <- lapply(Meta, function(x) x[x$Age >= 55,])
 Tissues <- names(Meta)
 
 #-----------------------------------------------------------------------------------------------------
-# Density plots
+# Tables to summarize number of samples in each tissue
 #-----------------------------------------------------------------------------------------------------
-# Overlaid density plots for all samples
-Overlaid_Density <- function(meta, lab){
-    ggplot(meta, aes(x=meta$Age, fill=meta$Sex)) +
-    geom_density(alpha=.3) + ggtitle(y) +
-    xlab("Age") + ylab("Density") + scale_fill_manual(name = "Sex", values=c("blue", "green"))
-}
-pdf("test.pdf")
-Map(Overlaid_Density, x=Meta, y="Age Distribution of All Samples")
-dev.off()
+# All samples
+Tab1 <- Samples%>%
+            group_by(Tissue)%>%
+                summarise(Male=length(Sex[which(Sex=="Male")]),Female=length(Sex[which(Sex=="Female")]))
+write.table(Tab1, file=paste0(PLOT_ALL,"All_Samples.csv"), sep=",", row.names=FALSE)
+
+# >= 55 only
+Tab2 <- Samples%>%
+            group_by(Tissue)%>%
+                 filter(Age >= 55)%>%
+                     summarise(Male=length(Sex[which(Sex=="Male")]),Female=length(Sex[which(Sex=="Female")]))
+write.table(Tab2, file=paste0(PLOT_55,"Above_55_Samples.csv"), sep=",", row.names=FALSE)
 
 #-----------------------------------------------------------------------------------------------------
 # Histograms
