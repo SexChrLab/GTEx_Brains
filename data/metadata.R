@@ -103,9 +103,9 @@ Reps <- Meta %>%
 Missing(Reps)
 
 # Summarize how many f/m samples have replicates per tissue
-Summary_Reps <- Reps %>% 
-					group_by(Individual_ID, Tissue, Sex) %>%
-					tally()
+Reps %>% 
+	group_by(Individual_ID, Tissue, Sex) %>%
+	tally()
 
 #______________________________________________________________________________________________________
 # Samples minus cell lines and sample replicates
@@ -139,6 +139,23 @@ nrow(Brain)
 
 # RIN: 2.23%
 Missing(Brain)
+
+# Summarize how many f/m samples have replicates per tissue
+# Excluding replicates (Cerebellum and Cortex)
+Brain_Reps <- Reps %>%
+				filter(grepl("Brain", Tissue)) %>%
+				filter(!grepl("Cerebellum|Cortex", Tissue)) %>%
+				group_by(Individual_ID, Tissue, Sex) %>%
+				tally() %>% 
+				filter(n>1) %>%
+				ungroup()
+
+# How many females have replicates of brain tissues (excluding Cerebellum and Cortex)?
+F_Reps <- Brain_Reps %>% filter(Sex=='Female') %>% group_by(Individual_ID) %>% tally()
+
+# How many males have replicates of brain tissues (excluding Cerebellum and Cortex)?
+M_Reps <- Brain_Reps %>% filter(Sex=='Male') %>% group_by(Individual_ID) %>% tally()
+print(M_Reps, n=23)
 
 #______________________________________________________________________________________________________
 # Samples minus cell lines, replicates, and non-brain tissue, and individual < 55 years old
