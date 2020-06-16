@@ -130,7 +130,29 @@ nrow(Old_Meta)
 Missing(Old_Meta)
 
 #______________________________________________________________________________________________________
-# Write to file the last two sample sets
+# Samples minus cell lines, replicates, and non-brain tissue 
 #______________________________________________________________________________________________________
-write.csv(Meta, file.path(BASE, "output/metadata.csv"), row.names=FALSE)
-write.csv(Old_Meta, file.path(BASE, "output/older_metadata.csv"), row.names=FALSE)
+Brain <- Meta[grepl("Brain", Meta$Tissue),]
+
+# 2,862 samples
+nrow(Brain)
+
+# RIN: 2.23%
+Missing(Brain)
+
+#______________________________________________________________________________________________________
+# Samples minus cell lines, replicates, and non-brain tissue, and individual < 55 years old
+#______________________________________________________________________________________________________
+Old_Brain <- Old_Meta[grepl("Brain", Old_Meta$Tissue),]
+
+# 2,450
+nrow(Old_Brain)
+
+# RIN: 2.12% 
+Missing(Old_Brain)
+
+#______________________________________________________________________________________________________
+# Write to file 
+#______________________________________________________________________________________________________
+write.csv(Brain, file.path(BASE, "output/metadata.csv"), row.names=FALSE)
+write.csv(Old_Brain, file.path(BASE, "output/older_metadata.csv"), row.names=FALSE)
