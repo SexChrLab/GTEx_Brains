@@ -54,7 +54,7 @@ Meta <- cbind(Meta, "Sex"=Sex)
 Meta$Age <- Phenotypes$AGE[match(Meta$Individual_ID, Phenotypes$SUBJID)]
 
 # Rearrange column order
-Meta <- Meta %>% select(Individual_ID, Sex, Age, Tissue, Ischemic_Time, RIN)
+Meta <- Meta %>% select(Individual_ID, Sex, Age, Tissue, Sample_ID, Ischemic_Time, RIN)
 
 # Drop rows missing values
 Meta <- Meta %>% drop_na()
