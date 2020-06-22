@@ -58,15 +58,8 @@ Meta$Age <- Phenotypes$AGE[match(Meta$Individual_ID, Phenotypes$SUBJID)]
 # Rearrange column order
 Meta <- Meta %>% select(Individual_ID, Sex, Age, Tissue, Ischemic_Time, RIN)
 
-# Quick view
-head(Meta)
-tail(Meta)
-
-#______________________________________________________________________________________________________
-# Full samples set (no filtering)
-#______________________________________________________________________________________________________
-# How many samples are in the unfiltered metadata?
-nrow(Meta) # 22,951
+# Drop rows missing values
+Meta <- Meta %>% drop_na()
 
 # Function to summarise percent missing values
 Missing <- function(x){
@@ -75,98 +68,30 @@ Missing <- function(x){
 		  	 summarise_all(list(~sum(is.na(.))))/nrow(x) * 100
 }
 
-#______________________________________________________________________________________________________
-# Samples minus cell lines
-#______________________________________________________________________________________________________
-# Drop cell line samples; expression is unstable
-Meta <- Meta[!grepl("Cells", Meta$Tissue),]
-
-# 22,015 non-unique samples
-nrow(Meta) 
-
-# What are the tissue type categories remaining?
-levels(as_factor(Meta$Tissue))
-
-# ISC: 0.28%, RIN: 13.33%
+# Check that all samples missing values were removed
 Missing(Meta)
 
-#______________________________________________________________________________________________________
-# Samples replicates minus cell lines
-#______________________________________________________________________________________________________
+# Quick view
+head(Meta)
+tail(Meta)
+
 # Subset sample replicates
 Reps <- Meta %>%
 		    group_by(Individual_ID, Tissue) %>%
 		    filter(n() > 1) %>%
 			ungroup()
 
-# ISC: 0.90%, RIN: 43.48% 
-Missing(Reps)
-
-# Summarize how many f/m samples have replicates per tissue
-Reps %>% 
-	group_by(Individual_ID, Tissue, Sex) %>%
-	tally()
-
-#______________________________________________________________________________________________________
-# Samples minus cell lines and sample replicates
-#______________________________________________________________________________________________________
-Meta <- Meta %>% distinct(Individual_ID, Tissue, .keep_all=TRUE)
-
-# 17,827 unique samples
-nrow(Meta)
-
-# ISC: 0.08%, RIN: 5.85%
-Missing(Meta)
-
-#______________________________________________________________________________________________________
-# Samples minus cell lines, sample replicates, and individuals < 55 years old
-#______________________________________________________________________________________________________
-Old_Meta <- Meta %>% filter(Age >= 50)
-
-# 12,413 unique samples
-nrow(Old_Meta)
-
-# ISC: 0.04%, RIN: 5.76%
-Missing(Old_Meta)
-
-#______________________________________________________________________________________________________
-# Samples minus cell lines, replicates, and non-brain tissue 
-#______________________________________________________________________________________________________
+# Samples minus replicates and non-brain tissue 
 Brain <- Meta[grepl("Brain", Meta$Tissue),]
 
-# 2,862 samples
+# 3,192 samples
 nrow(Brain)
 
-# RIN: 2.23%
-Missing(Brain)
+# Subset samples >= 50; re-do once I get the metadata with the exact ages and not just decade intervals
+Old_Brain <- Brain %>% filter(Age >= 50)
 
-# Summarize how many f/m samples have replicates per tissue
-# Excluding replicates (Cerebellum and Cortex)
-Brain_Reps <- Reps %>%
-				filter(grepl("Brain", Tissue)) %>%
-				filter(!grepl("Cerebellum|Cortex", Tissue)) %>%
-				group_by(Individual_ID, Tissue, Sex) %>%
-				tally() %>% 
-				filter(n>1) %>%
-				ungroup()
-
-# How many females have replicates of brain tissues (excluding Cerebellum and Cortex)?
-F_Reps <- Brain_Reps %>% filter(Sex=='Female') %>% group_by(Individual_ID) %>% tally()
-
-# How many males have replicates of brain tissues (excluding Cerebellum and Cortex)?
-M_Reps <- Brain_Reps %>% filter(Sex=='Male') %>% group_by(Individual_ID) %>% tally()
-print(M_Reps, n=23)
-
-#______________________________________________________________________________________________________
-# Samples minus cell lines, replicates, and non-brain tissue, and individual < 55 years old
-#______________________________________________________________________________________________________
-Old_Brain <- Old_Meta[grepl("Brain", Old_Meta$Tissue),]
-
-# 2,450
+# 2,701
 nrow(Old_Brain)
-
-# RIN: 2.12% 
-Missing(Old_Brain)
 
 #______________________________________________________________________________________________________
 # Write to file 
