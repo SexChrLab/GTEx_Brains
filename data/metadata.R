@@ -40,8 +40,6 @@ Meta[["Individual_ID"]] <- str_extract(Meta$Sample_ID, "GTEX-[0-9A-Z]+")
 
 # Reformat tissue names to be contain only '_' between words 
 Meta$Tissue <- str_replace_all(Meta$Tissue, c("-" = "", " " = "_", "__" = "_"))
-head(Meta)
-tail(Meta)
 
 # Get list of female IDs
 Fems <- Phenotypes$SUBJID[which(Phenotypes$SEX==2)]
@@ -84,14 +82,26 @@ Reps <- Meta %>%
 # Samples minus replicates and non-brain tissue 
 Brain <- Meta[grepl("Brain", Meta$Tissue),]
 
-# 3,192 samples
-nrow(Brain)
+# Remove the tissue replciates (Cerebellum/Cortex are replicates of Cerebellar/Frontal_Cortex)
+Brain <- Brain[!grepl("Cerebellum|Brain_Cortex", Brain$Tissue),]
 
 # Subset samples >= 50; re-do once I get the metadata with the exact ages and not just decade intervals
 Old_Brain <- Brain %>% filter(Age >= 50)
 
+# 3,192 samples
+nrow(Brain)
+
 # 2,701
 nrow(Old_Brain)
+
+# Summary stats: how many tissues per sex
+Summary_Stat <- function(x){
+	x %>% group_by(Tissue, Sex) %>% tally()
+}
+
+# In the full sample set
+print(Summary_Stat(Brain), n=22)
+print(Summary_Stat(Old_Brain), n=22)
 
 #______________________________________________________________________________________________________
 # Write to file 
