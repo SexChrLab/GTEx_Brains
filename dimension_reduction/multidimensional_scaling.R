@@ -28,25 +28,36 @@ counts <- counts[,3:ncol(counts)]
 colnames(counts) <- str_replace_all(colnames(counts),pattern = "\\.","-")
 
 # Drop samples in metadata that do not have count data
-select_samples<-colnames(counts)[colnames(counts)%in%meta$Sample_ID]
+select_samples <- colnames(counts)[colnames(counts)%in%meta$Sample_ID]
 meta <- meta[meta$Sample_ID %in% select_samples,]
-
-# Subset counts to only samples present in metadata
-counts <- counts[,select_samples]
-
-# Remove genes with cpm < 1 in each sex
-group <- factor(meta$Sex)
-counts <- DGEList(counts, group=group)
-keep <- filterByExpr(counts, design=group, min.count=1, min.prop=0.5)
-counts <- counts[keep, ,keep.lib.sizes=FALSE]
-
-# limma-voom normalization
-counts <- voom(counts, design=group)
 
 # Set rownames of metadata object equal to sample names
 rownames(meta) <- meta$Sample_ID
 
+# Subset counts to only samples present in metadata
+counts <- counts[,select_samples]
+
+# check that the count and meta data have the same samples in the same order
+identical(colnames(counts), rownames(meta)) # TRUE
+
+# make factor indicating sex of samples for filtering
+sex <- factor(meta$Sex)
+
+# make design matrix to use with voom
+design <- model.matrix(~meta$Sex)
+rownames(design) <- colnames(counts)
+
+# Remove genes with cpm < 1 in each sex
+counts <- DGEList(counts, group=sex)
+keep <- filterByExpr(counts, design=design, min.count=1, min.prop=0.5)
+counts <- counts[keep, ,keep.lib.sizes=FALSE]
+
+# limma-voom normalization
+counts <- voom(counts, design=design)
+
 # Make list of lists of samples for each tissue
+meta$Tissue <- factor(meta$Tissue)
+
 Tissue_Lst <- list()
 for(i in 1:length(levels(meta$Tissue))){
 		  Tissue_Lst[[i]] <- as.vector(meta[meta$Tissue == levels(meta$Tissue)[i], "Sample_ID"])
