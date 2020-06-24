@@ -7,7 +7,11 @@
 BASE <- "/scratch/mjpete11/human_monkey_brain"
 METADATA <- file.path(BASE, "data/output/metadata.csv")
 COUNTS <- file.path(BASE, "data/input/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct")
-MDS <- file.path(BASE, "dimension_reduction/MDS_plots/MDS.pdf")
+SEX_DIM12 <- file.path(BASE, "dimension_reduction/MDS_plots/Sex_Dim12.pdf")
+RIN_DIM12 <- file.path(BASE, "dimension_reduction/MDS_plots/RIN_Dim12.pdf")
+RIN_DIM34 <- file.path(BASE, "dimension_reduction/MDS_plots/RIN_Dim34.pdf")
+ISC_DIM12 <- file.path(BASE, "dimension_reduction/MDS_plots/Isc_Dim12.pdf")
+ISC_DIM34 <- file.path(BASE, "dimension_reduction/MDS_plots/Isc_Dim34.pdf")
 
 # Load packages
 library(data.table)
@@ -48,9 +52,7 @@ rownames(design) <- colnames(counts)
 nrow(counts)
 
 # Remove genes with cpm < 1 in each sex
-#counts <- DGEList(counts, group=sex)
 keep <- filterByExpr(counts, design=design, min.count=1, min.prop=0.5)
-#counts <- counts[keep, ,keep.lib.sizes=FALSE] 
 counts <- counts[keep, ]
 
 # How many genes are left after filtering?
@@ -99,9 +101,10 @@ Res_2 <- Map(Match_Check, a=meta, b=tissue_count)
 all(Res_2==TRUE)
 
 # MDS plots on one page
+# Color samples by sex
 sex_colors <- c("blue", "darkgreen")
 
-MDS_Plot <- function(DGE, NAME, META, TITLE) {
+Sex_Dim12 <- function(DGE, NAME, META, TITLE) {
   plt <- plotMDS(DGE,
                  gene.selection = "common",
                  top = 100, 
@@ -116,26 +119,115 @@ MDS_Plot <- function(DGE, NAME, META, TITLE) {
   		 return(plt)
 }
 
-pdf(MDS)
+pdf(SEX_DIM12)
 # margins: c(bottom, left, top, right)
 par(mfrow = c(4, 3), cex=0.4, mar = c(3, 2, 2, 2), oma =c(5, 5, 6, 2), xpd=TRUE) 
-Map(MDS_Plot, 
+Map(Sex_Dim12, 
 	DGE = tissue_count, 
 	NAME = names(tissue_count), 
 	META = meta_lst, 
 	TITLE='GTEx v8 MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes')
-# female will be blue because color in plot/legend assigned alphabetically
-#legend(10.0, 2.5, inset=0, legend=levels(meta$Sex), pch=16, cex=2.0, col=colors, xpd=NA)
+legend(6.0, 2.5, inset=0, legend=c("female", "male"), pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
-# test plot
-pdf(MDS)
-plotMDS(tissue_count[[1]], 
-		gene.selection = "common",
-		top = 100,
-		pch = 16,
-		cex = 1,
-		dim.plot = c(1,2),
-		col = sex_colors[as.factor(meta[['Sex']])],
-		main = "Amygdala")
+# Color plots by RIN; dim 1 and 2
+RIN_Dim12 <- function(DGE, NAME, META){
+  plt <- plotMDS(DGE,
+                 gene.selection = "common",
+                 top = 100, 
+                 pch = 16, 
+                 cex = 1, 
+                 dim.plot = c(1,2), 
+                 col = 1:length(as.factor(META[['RIN']])),
+                 main = NAME)
+ 		 mtext('GTEx v8 MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes', side=3, outer=TRUE, line=3)
+ 		 mtext('Dimension 1', side = 1, outer = TRUE, line=1)
+  	 	 mtext('Dimension 2', side = 2, outer = TRUE, line=2)
+  		 return(plt)
+}
+
+# Plot
+pdf(RIN_DIM12)
+par(mfrow = c(4, 3), cex=0.4, mar = c(3, 2, 2, 2), oma =c(5, 5, 6, 2), xpd=TRUE) 
+Map(RIN_Dim12, 
+	DGE = tissue_count, 
+	NAME = names(tissue_count), 
+	META = meta_lst) 
+dev.off()
+
+# Color plots by RIN; dim 3 and 4
+RIN_Dim34 <- function(DGE, NAME, META){
+  plt <- plotMDS(DGE,
+                 gene.selection = "common",
+                 top = 100, 
+                 pch = 16, 
+                 cex = 1, 
+                 dim.plot = c(3,4), 
+                 col = 1:length(as.factor(META[['RIN']])),
+                 main = NAME)
+ 		 mtext('GTEx v8 MDS Plots: Dimensions 3 and 4; Top 100 Most Variable Genes', side=3, outer=TRUE, line=3)
+ 		 mtext('Dimension 3', side = 1, outer = TRUE, line=1)
+  	 	 mtext('Dimension 4', side = 2, outer = TRUE, line=2)
+  		 return(plt)
+}
+
+# Plot
+pdf(RIN_DIM34)
+par(mfrow = c(4, 3), cex=0.4, mar = c(3, 2, 2, 2), oma =c(5, 5, 6, 2), xpd=TRUE) 
+Map(RIN_Dim34, 
+	DGE = tissue_count, 
+	NAME = names(tissue_count), 
+	META = meta_lst) 
+dev.off()
+
+# Color plots by ischemic time; dim 1 and 2
+Isc_Dim12 <- function(DGE, NAME, META){
+  plt <- plotMDS(DGE,
+                 gene.selection = "common",
+                 top = 100, 
+                 pch = 16, 
+                 cex = 1, 
+                 dim.plot = c(1,2), 
+                 col = 1:length(as.factor(META[['Ischemic_Time']])),
+                 main = NAME)
+ 		 mtext('GTEx v8 MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes',
+				side=3, outer=TRUE, line=3)
+ 		 mtext('Dimension 1', side = 1, outer = TRUE, line=1)
+  	 	 mtext('Dimension 2', side = 2, outer = TRUE, line=2)
+  		 return(plt)
+}
+
+# Plot
+pdf(ISC_DIM12)
+par(mfrow = c(4, 3), cex=0.4, mar = c(3, 2, 2, 2), oma =c(5, 5, 6, 2), xpd=TRUE) 
+Map(Isc_Dim12, 
+	DGE = tissue_count, 
+	NAME = names(tissue_count), 
+	META = meta_lst)
+dev.off()
+
+# Color plots by ischemic time; dim 3 and 4
+Isc_Dim34 <- function(DGE, NAME, META){
+  plt <- plotMDS(DGE,
+                 gene.selection = "common",
+                 top = 100, 
+                 pch = 16, 
+                 cex = 1, 
+                 dim.plot = c(3,4), 
+                 col = 1:length(as.factor(META[['Ischemic_Time']])),
+                 main = NAME)
+ 		 mtext('GTEx v8 MDS Plots: Dimensions 3 and 4; Top 100 Most Variable Genes',
+				side=3, outer=TRUE, line=3)
+ 		 mtext('Dimension 3', side = 1, outer = TRUE, line=1)
+  	 	 mtext('Dimension 4', side = 2, outer = TRUE, line=2)
+  		 return(plt)
+}
+
+# Plot
+pdf(ISC_DIM34)
+par(mfrow = c(4, 3), cex=0.4, mar = c(3, 2, 2, 2), oma =c(5, 5, 6, 2), xpd=TRUE) 
+Map(Isc_Dim34, 
+	DGE = tissue_count, 
+	NAME = names(tissue_count), 
+	META = meta_lst)
 dev.off()
