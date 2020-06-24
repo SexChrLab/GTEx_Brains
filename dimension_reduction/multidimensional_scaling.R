@@ -11,10 +11,7 @@ MDS <- file.path(BASE, "dimension_reduction/MDS_plots/MDS.pdf")
 
 # Load packages
 library(data.table)
-#library(readr)
 library(stringr)
-#library(dplyr)
-#library(limma)
 library(edgeR)
 
 # Read in files                                                            
@@ -37,20 +34,27 @@ rownames(meta) <- meta$Sample_ID
 # Subset counts to only samples present in metadata
 counts <- counts[,select_samples]
 
-# check that the count and meta data have the same samples in the same order
+# Check that the count and meta data have the same samples in the same order
 identical(colnames(counts), rownames(meta)) # TRUE
 
-# make factor indicating sex of samples for filtering
+# Make factor indicating sex of samples for filtering
 sex <- factor(meta$Sex)
 
-# make design matrix to use with voom
+# Make design matrix to use with voom
 design <- model.matrix(~meta$Sex)
 rownames(design) <- colnames(counts)
 
+# How many genes are there before filtering?
+nrow(counts)
+
 # Remove genes with cpm < 1 in each sex
-counts <- DGEList(counts, group=sex)
+#counts <- DGEList(counts, group=sex)
 keep <- filterByExpr(counts, design=design, min.count=1, min.prop=0.5)
-counts <- counts[keep, ,keep.lib.sizes=FALSE]
+#counts <- counts[keep, ,keep.lib.sizes=FALSE] 
+counts <- counts[keep, ]
+
+# How many genes are left after filtering?
+nrow(counts) # 35,610
 
 # limma-voom normalization
 counts <- voom(counts, design=design)
@@ -58,44 +62,44 @@ counts <- voom(counts, design=design)
 # Make list of lists of samples for each tissue
 meta$Tissue <- factor(meta$Tissue)
 
-Tissue_Lst <- list()
+tissue_lst <- list()
 for(i in 1:length(levels(meta$Tissue))){
-		  Tissue_Lst[[i]] <- as.vector(meta[meta$Tissue == levels(meta$Tissue)[i], "Sample_ID"])
+		  tissue_lst[[i]] <- as.vector(meta[meta$Tissue == levels(meta$Tissue)[i], "Sample_ID"])
 }
 
 # Rename lists in list as tissue names
-names(Tissue_Lst) <- levels(meta$Tissue)
+names(tissue_lst) <- levels(meta$Tissue)
 
 # Split counts into list of dfs by tissue
-Tissue_Count <- list()
-for(i in 1:length(Tissue_Lst)){
-		  Tissue_Count[[i]] <- counts[,which(colnames(counts) %in% Tissue_Lst[[i]])]
+tissue_count <- list()
+for(i in 1:length(tissue_lst)){
+		  tissue_count[[i]] <- counts[,which(colnames(counts) %in% tissue_lst[[i]])]
 }
-names(Tissue_Count) <- levels(meta$Tissue)
+names(tissue_count) <- levels(meta$Tissue)
 
 # metadata split into list of dfs by tissue
-meta_Lst <- list()
+meta_lst <- list()
 for(i in 1:length(levels(meta$Tissue))){
-		  meta_Lst[[i]] <- meta[meta$Tissue == levels(meta$Tissue)[i],]
+		  meta_lst[[i]] <- meta[meta$Tissue == levels(meta$Tissue)[i],]
 }
-names(meta_Lst) <- levels(meta$Tissue)
+names(meta_lst) <- levels(meta$Tissue)
 
 # Check that rownames equals colnames 
 Check <- function(a, b){
 	all(rownames(a) %in% colnames(b))
 }
-Res_1 <- Map(Check, a=meta, b=Tissue_Count)
+Res_1 <- Map(Check, a=meta, b=tissue_count)
 all(Res_1==TRUE)
 
 # Check that order matches
 Match_Check <- function(a, b){
 	 Match <- all(rownames(a) == colnames(b))
 }
-Res_2 <- Map(Match_Check, a=meta, b=Tissue_Count)
+Res_2 <- Map(Match_Check, a=meta, b=tissue_count)
 all(Res_2==TRUE)
 
 # MDS plots on one page
-colors <- c("blue", "darkgreen")
+sex_colors <- c("blue", "darkgreen")
 
 MDS_Plot <- function(DGE, NAME, META, TITLE) {
   plt <- plotMDS(DGE,
@@ -104,22 +108,34 @@ MDS_Plot <- function(DGE, NAME, META, TITLE) {
                  pch = 16, 
                  cex = 1, 
                  dim.plot = c(1,2), 
-                 col = colors[META[['Sex']]],
+                 col = sex_colors[as.factor(META[['Sex']])],
                  main = NAME)
  		 mtext(TITLE, side=3, outer=TRUE, line=3)
  		 mtext('Dimension 1', side = 1, outer = TRUE, line=1)
   	 	 mtext('Dimension 2', side = 2, outer = TRUE, line=2)
   		 return(plt)
 }
+
 pdf(MDS)
 # margins: c(bottom, left, top, right)
 par(mfrow = c(4, 3), cex=0.4, mar = c(3, 2, 2, 2), oma =c(5, 5, 6, 2), xpd=TRUE) 
 Map(MDS_Plot, 
-	DGE = Tissue_Count, 
-	NAME = names(Tissue_Count), 
-	META = meta_Lst, 
+	DGE = tissue_count, 
+	NAME = names(tissue_count), 
+	META = meta_lst, 
 	TITLE='GTEx v8 MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes')
 # female will be blue because color in plot/legend assigned alphabetically
-legend(10.0, 2.5, inset=0, legend=levels(meta$Sex), pch=16, cex=2.0, col=colors, xpd=NA)
+#legend(10.0, 2.5, inset=0, legend=levels(meta$Sex), pch=16, cex=2.0, col=colors, xpd=NA)
 dev.off()
 
+# test plot
+pdf(MDS)
+plotMDS(tissue_count[[1]], 
+		gene.selection = "common",
+		top = 100,
+		pch = 16,
+		cex = 1,
+		dim.plot = c(1,2),
+		col = sex_colors[as.factor(meta[['Sex']])],
+		main = "Amygdala")
+dev.off()
