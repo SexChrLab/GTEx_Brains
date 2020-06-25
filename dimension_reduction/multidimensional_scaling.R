@@ -17,6 +17,7 @@ ISC_DIM34 <- file.path(BASE, "dimension_reduction/MDS_plots/Isc_Dim34.pdf")
 library(data.table)
 library(stringr)
 library(edgeR)
+library(colorRamps)
 
 # Read in files                                                            
 meta <- read.table(METADATA, header = TRUE, sep=",", stringsAsFactors=FALSE)
@@ -126,11 +127,13 @@ Map(Sex_Dim12,
 	DGE = tissue_count, 
 	NAME = names(tissue_count), 
 	META = meta_lst, 
-	TITLE='GTEx v8 MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes')
+	TITLE='Sex MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes')
 legend(6.0, 2.5, inset=0, legend=c("female", "male"), pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
 # Color plots by RIN; dim 1 and 2
+plot_colors <- colorRampPalette(c('green','blue'))
+
 RIN_Dim12 <- function(DGE, NAME, META){
   plt <- plotMDS(DGE,
                  gene.selection = "common",
@@ -138,9 +141,10 @@ RIN_Dim12 <- function(DGE, NAME, META){
                  pch = 16, 
                  cex = 1, 
                  dim.plot = c(1,2), 
-                 col = 1:length(as.factor(META[['RIN']])),
+				 col = plot_colors(length(unique((META[['RIN']])/max(META[['RIN']])))),
                  main = NAME)
- 		 mtext('GTEx v8 MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes', side=3, outer=TRUE, line=3)
+ 		 mtext('RIN Value MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes', 
+				side=3, outer=TRUE, line=3)
  		 mtext('Dimension 1', side = 1, outer = TRUE, line=1)
   	 	 mtext('Dimension 2', side = 2, outer = TRUE, line=2)
   		 return(plt)
@@ -163,9 +167,9 @@ RIN_Dim34 <- function(DGE, NAME, META){
                  pch = 16, 
                  cex = 1, 
                  dim.plot = c(3,4), 
-                 col = 1:length(as.factor(META[['RIN']])),
+				 col = plot_colors(length(unique((META[['RIN']])/max(META[['RIN']])))),
                  main = NAME)
- 		 mtext('GTEx v8 MDS Plots: Dimensions 3 and 4; Top 100 Most Variable Genes', side=3, outer=TRUE, line=3)
+ 		 mtext('RIN value MDS Plots: Dimensions 3 and 4; Top 100 Most Variable Genes', side=3, outer=TRUE, line=3)
  		 mtext('Dimension 3', side = 1, outer = TRUE, line=1)
   	 	 mtext('Dimension 4', side = 2, outer = TRUE, line=2)
   		 return(plt)
@@ -188,9 +192,9 @@ Isc_Dim12 <- function(DGE, NAME, META){
                  pch = 16, 
                  cex = 1, 
                  dim.plot = c(1,2), 
-                 col = 1:length(as.factor(META[['Ischemic_Time']])),
+				 col = plot_colors(length(unique((META[['Ischemic_Time']])/max(META[['Ischemic_Time']])))),
                  main = NAME)
- 		 mtext('GTEx v8 MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes',
+ 		 mtext('Ischemic Time MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes',
 				side=3, outer=TRUE, line=3)
  		 mtext('Dimension 1', side = 1, outer = TRUE, line=1)
   	 	 mtext('Dimension 2', side = 2, outer = TRUE, line=2)
@@ -214,9 +218,9 @@ Isc_Dim34 <- function(DGE, NAME, META){
                  pch = 16, 
                  cex = 1, 
                  dim.plot = c(3,4), 
-                 col = 1:length(as.factor(META[['Ischemic_Time']])),
+				 col = plot_colors(length(unique((META[['Ischemic_Time']])/max(META[['Ischemic_Time']])))),
                  main = NAME)
- 		 mtext('GTEx v8 MDS Plots: Dimensions 3 and 4; Top 100 Most Variable Genes',
+ 		 mtext('Ischemic Time MDS Plots: Dimensions 3 and 4; Top 100 Most Variable Genes',
 				side=3, outer=TRUE, line=3)
  		 mtext('Dimension 3', side = 1, outer = TRUE, line=1)
   	 	 mtext('Dimension 4', side = 2, outer = TRUE, line=2)
