@@ -5,85 +5,120 @@
 
 # Constants
 BASE <- "/scratch/mjpete11/human_monkey_brain"
+
+# Input
 METADATA <- file.path(BASE, "data/output/metadata.csv")
 COUNTS <- file.path(BASE, "data/input/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct")
+CHRX <- file.path(BASE, "data/dimension_reduction/gencodeGenes_Xchr.txt")
+CHRY <- file.path(BASE, "data/dimension_reduction/gencodeGenes_Ychr.txt")
+
+# Output
 SEX_DIM12 <- file.path(BASE, "dimension_reduction/MDS_plots/Sex_Dim12.pdf")
 RIN_DIM12 <- file.path(BASE, "dimension_reduction/MDS_plots/RIN_Dim12.pdf")
 RIN_DIM34 <- file.path(BASE, "dimension_reduction/MDS_plots/RIN_Dim34.pdf")
 ISC_DIM12 <- file.path(BASE, "dimension_reduction/MDS_plots/Isc_Dim12.pdf")
 ISC_DIM34 <- file.path(BASE, "dimension_reduction/MDS_plots/Isc_Dim34.pdf")
 
-# Load packages
+# Packages
 library(data.table)
 library(stringr)
 library(edgeR)
 library(colorRamps)
 
 # Read in files                                                            
+xchr <- read.table(CHRX, sep = "")
+ychr <- read.table(CHRY, sep = "")
 meta <- read.table(METADATA, header = TRUE, sep=",", stringsAsFactors=FALSE)
-counts <- data.frame(fread(COUNTS))
+gene_counts <- data.frame(fread(COUNTS))
 
-# Drop gene name and ID from counts df
-counts <- counts[,3:ncol(counts)]
+#_______________________________________________________________________________
+# Drop X and Y-linked genes to check if clustering is driven by sex-linked loci
+#_______________________________________________________________________________
+# Original number of genes
+nrow(gene_counts) # 56,200
+
+# Remove X and Y-linked genes
+rows_to_drop <- intersect(xchr$V6, gene_counts$Name)
+rows_to_drop <- c(rows_to_drop, intersect(ychr$V6, gene_counts$Name))
+
+gene_counts <- gene_counts[-which(gene_counts[,1] %in% rows_to_drop),]
+
+# Are the expected number of genes remaining?; Yes
+nrow(gene_counts) # 53,325 
+nrow(xchr) + nrow(ychr) # 2,875
+
+#_______________________________________________________________________________
+# Sample pre-processing
+#_______________________________________________________________________________
+
+# Drop gene name and ID from gene_counts df
+gene_counts <- gene_counts[,3:ncol(gene_counts)]
 
 # Replace . to - in colnames
-colnames(counts) <- str_replace_all(colnames(counts),pattern = "\\.","-")
+colnames(gene_counts) <- str_replace_all(colnames(gene_counts),pattern = "\\.","-")
 
 # Drop samples in metadata that do not have count data
-select_samples <- colnames(counts)[colnames(counts)%in%meta$Sample_ID]
+select_samples <- colnames(gene_counts)[colnames(gene_counts)%in%meta$Sample_ID]
 meta <- meta[meta$Sample_ID %in% select_samples,]
 
 # Set rownames of metadata object equal to sample names
 rownames(meta) <- meta$Sample_ID
 
-# Subset counts to only samples present in metadata
-counts <- counts[,select_samples]
+# Subset gene_counts to only samples present in metadata
+gene_counts <- gene_counts[,select_samples]
 
 # Check that the count and meta data have the same samples in the same order
-identical(colnames(counts), rownames(meta)) # TRUE
+identical(colnames(gene_counts), rownames(meta)) # TRUE
 
+#_______________________________________________________________________________
+# Filter genes by expression in each sex and voom normalize 
+#_______________________________________________________________________________
 # Make factor indicating sex of samples for filtering
 sex <- factor(meta$Sex)
 
 # Make design matrix to use with voom
 design <- model.matrix(~meta$Sex)
-rownames(design) <- colnames(counts)
+rownames(design) <- colnames(gene_counts)
 
 # How many genes are there before filtering?
-nrow(counts)
+nrow(gene_counts)
 
 # Remove genes with cpm < 1 in each sex
-keep <- filterByExpr(counts, design=design, min.count=1, min.prop=0.5)
-counts <- counts[keep, ]
+keep <- filterByExpr(gene_counts, design=design, min.count=1, min.prop=0.5)
+gene_counts <- gene_counts[keep, ]
 
 # How many genes are left after filtering?
-nrow(counts) # 35,610
+nrow(gene_counts) # 35,610
 
 # limma-voom normalization
-counts <- voom(counts, design=design)
+gene_counts <- voom(gene_counts, design=design)
 
+#_______________________________________________________________________________
+# Organize gene_counts and metadata by tissue type 
+#_______________________________________________________________________________
 # Make list of lists of samples for each tissue
 meta$Tissue <- factor(meta$Tissue)
 
 tissue_lst <- list()
 for(i in 1:length(levels(meta$Tissue))){
-		  tissue_lst[[i]] <- as.vector(meta[meta$Tissue == levels(meta$Tissue)[i], "Sample_ID"])
+	tissue_lst[[i]] <- as.vector(meta[meta$Tissue == 
+								 levels(meta$Tissue)[i], "Sample_ID"])
 }
 
 # Rename lists in list as tissue names
 names(tissue_lst) <- levels(meta$Tissue)
 
-# Split counts into list of dfs by tissue
+# Split gene_counts into list of dfs by tissue
 tissue_count <- list()
 for(i in 1:length(tissue_lst)){
-		  tissue_count[[i]] <- counts[,which(colnames(counts) %in% tissue_lst[[i]])]
+	tissue_count[[i]] <- gene_counts[,which(colnames(gene_counts) %in% tissue_lst[[i]])]
 }
 names(tissue_count) <- levels(meta$Tissue)
 
 # metadata split into list of dfs by tissue
 meta_lst <- list()
 for(i in 1:length(levels(meta$Tissue))){
-		  meta_lst[[i]] <- meta[meta$Tissue == levels(meta$Tissue)[i],]
+	meta_lst[[i]] <- meta[meta$Tissue == levels(meta$Tissue)[i],]
 }
 names(meta_lst) <- levels(meta$Tissue)
 
@@ -96,12 +131,14 @@ all(Res_1==TRUE)
 
 # Check that order matches
 Match_Check <- function(a, b){
-	 Match <- all(rownames(a) == colnames(b))
+	Match <- all(rownames(a) == colnames(b))
 }
 Res_2 <- Map(Match_Check, a=meta, b=tissue_count)
 all(Res_2==TRUE)
 
+#_______________________________________________________________________________
 # MDS plots on one page
+#_______________________________________________________________________________
 # Color samples by sex
 sex_colors <- c("blue", "darkgreen")
 
@@ -128,7 +165,8 @@ Map(Sex_Dim12,
 	NAME = names(tissue_count), 
 	META = meta_lst, 
 	TITLE='Sex MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes')
-legend(6.0, 2.5, inset=0, legend=c("female", "male"), pch=16, cex=2.0, col=sex_colors, xpd=NA)
+legend(6.0, 2.5, inset=0, legend=c("female", "male"), 
+	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
 # Color plots by RIN; dim 1 and 2
@@ -169,7 +207,8 @@ RIN_Dim34 <- function(DGE, NAME, META){
                  dim.plot = c(3,4), 
 				 col = plot_colors(length(unique((META[['RIN']])/max(META[['RIN']])))),
                  main = NAME)
- 		 mtext('RIN value MDS Plots: Dimensions 3 and 4; Top 100 Most Variable Genes', side=3, outer=TRUE, line=3)
+ 		 mtext('RIN value MDS Plots: Dimensions 3 and 4; Top 100 Most Variable Genes', 
+				side=3, outer=TRUE, line=3)
  		 mtext('Dimension 3', side = 1, outer = TRUE, line=1)
   	 	 mtext('Dimension 4', side = 2, outer = TRUE, line=2)
   		 return(plt)
