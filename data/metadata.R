@@ -9,9 +9,9 @@
 
 # Constants
 BASE <- "/scratch/mjpete11/human_monkey_brain/data"
-COUNTS <- file.path(BASE, "input/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct")
-ATTRIBUTES <- file.path(BASE, "input/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt")
-PHENOTYPES <- file.path(BASE, "input/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")
+COUNTS <- file.path(BASE, "counts/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct")
+ATTRIBUTES <- file.path(BASE, "metadata/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt")
+PHENOTYPES <- file.path(BASE, "metadata/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")
 
 # Libraries
 library(tidyverse)
