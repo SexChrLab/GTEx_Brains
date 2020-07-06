@@ -7,10 +7,10 @@
 BASE <- "/scratch/mjpete11/human_monkey_brain"
 
 # Input
-METADATA <- file.path(BASE, "data/output/metadata.csv")
-COUNTS <- file.path(BASE, "data/input/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct")
-CHRX <- file.path(BASE, "data/dimension_reduction/gencodeGenes_Xchr.txt")
-CHRY <- file.path(BASE, "data/dimension_reduction/gencodeGenes_Ychr.txt")
+METADATA <- file.path(BASE, "data/metadata/metadata.csv")
+COUNTS <- file.path(BASE, "data/counts/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct")
+CHRX <- file.path(BASE, "data/gene_annotation/gencodeGenes_Xchr.txt")
+CHRY <- file.path(BASE, "data/gene_annotation/gencodeGenes_Ychr.txt")
 
 # Output
 SEX_DIM12 <- file.path(BASE, "dimension_reduction/MDS_plots/Sex_Dim12.pdf")
@@ -50,7 +50,6 @@ nrow(xchr) + nrow(ychr) # 2,875
 #_______________________________________________________________________________
 # Sample pre-processing
 #_______________________________________________________________________________
-
 # Drop gene name and ID from gene_counts df
 gene_counts <- gene_counts[,3:ncol(gene_counts)]
 
@@ -81,14 +80,14 @@ design <- model.matrix(~meta$Sex)
 rownames(design) <- colnames(gene_counts)
 
 # How many genes are there before filtering?
-nrow(gene_counts)
+nrow(gene_counts) # 53,325
 
 # Remove genes with cpm < 1 in each sex
 keep <- filterByExpr(gene_counts, design=design, min.count=1, min.prop=0.5)
 gene_counts <- gene_counts[keep, ]
 
 # How many genes are left after filtering?
-nrow(gene_counts) # 35,610
+nrow(gene_counts) # 34,341 
 
 # limma-voom normalization
 gene_counts <- voom(gene_counts, design=design)
