@@ -136,6 +136,81 @@ Res_2 <- Map(Match_Check, a=meta, b=tissue_count)
 all(Res_2==TRUE)
 
 #_______________________________________________________________________________
+# Plot the PCs 1 through 4 vs RIN and ischemic time  
+#_______________________________________________________________________________
+# Get the PCs 1 through 4 by generating an MDS object with plotMDS
+
+# I don't think I need any of the plot related parameters...
+MDS_obj <- plotMDS(tissue_count[[1]],
+               gene.selection = "common",
+               top = 100, 
+               dim.plot = c(1,2), 
+			   plot = FALSE) # Do not write to graphics device
+
+class(MDS_obj)
+
+# Extract PC 1
+head(MDS_obj$x)
+
+# Make matrix: rownames are the samples and cols are their corresponding RIN and PC1 
+# Get the RIN values and sample IDs for only the Amygdala samples
+mat <- cbind(MDS_obj$x, meta_lst[[1]]$RIN)
+rownames(mat) <- meta_lst[[1]]$Sample_ID
+colnames(mat) <- c("PC1", "RIN")
+head(mat)
+
+sex_colors <- c("blue", "darkgreen")
+pdf("test.pdf")
+plot(mat,
+   	pch = 16, 
+	cex = 1, 
+    col = sex_colors[as.factor(meta[['Sex']])],
+    main = "Do I need a title?")
+dev.off()
+
+# Repeat, but scale up 
+# Function to generate MDS objects containing PCs
+do_MDS <- function(DGE){
+	obj <- plotMDS(DGE,
+				   gene.selection = "common",
+				   top = 100,
+				   dim.plot = c(1,2),
+				   plot = FALSE) # Do not write to graphics device
+	return(obj)
+}
+MDS_lst <- lapply(tissue_count, do_MDS)
+
+length(MDS_lst)
+head(MDS_lst[[1]])
+
+# Function to make matrices for plotting
+# make list of matrices; rows are samples from same tissue type;
+# cols are their correspinding RIN and PC1 values
+make_matrix <- function(MDS_OBJ, META){
+	mat <- cbind(MDS_OBJ$x, META$RIN)
+	rownames(mat) <- META$Sample_ID
+	colnames(mat) <- c("PC1", "RIN")
+	return(mat)
+}
+mat_lst <- Map(make_matrix, MDS_OBJ=MDS_lst, META=meta_lst)
+
+length(mat_lst)
+head(mat_lst[[11]])
+
+# Function to plot matrices
+sex_colors <- c("blue", "darkgreen")
+pdf("test.pdf")
+plot_func <- function(){
+	plot(mat,
+	   	pch = 16, 
+		cex = 1, 
+   	    col = sex_colors[as.factor(meta[['Sex']])],
+    main = "Do I need a title?")
+dev.off()
+
+
+
+#_______________________________________________________________________________
 # MDS plots on one page
 #_______________________________________________________________________________
 # Color samples by sex
