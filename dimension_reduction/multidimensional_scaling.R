@@ -13,7 +13,7 @@ CHRX <- file.path(BASE, "data/gene_annotation/gencodeGenes_Xchr.txt")
 CHRY <- file.path(BASE, "data/gene_annotation/gencodeGenes_Ychr.txt")
 
 # Output
-#SEX_DIM12 <- file.path(BASE, "dimension_reduction/MDS_plots/Sex_Dim12.pdf")
+SEX_DIM12 <- file.path(BASE, "dimension_reduction/New_MDS_plots/Sex_Dim12.pdf")
 RIN_DIM1 <- file.path(BASE, "dimension_reduction/New_MDS_plots/RIN_Dim1.pdf")
 RIN_DIM2 <- file.path(BASE, "dimension_reduction/New_MDS_plots/RIN_Dim2.pdf")
 RIN_DIM3 <- file.path(BASE, "dimension_reduction/New_MDS_plots/RIN_Dim3.pdf")
@@ -141,10 +141,40 @@ Res_2 <- Map(Match_Check, a=meta, b=tissue_count)
 all(Res_2==TRUE)
 
 #_______________________________________________________________________________
+# MDS by tissue; samples labeled by sex 
+#_______________________________________________________________________________
+sex_colors <- c("blue", "darkgreen")
+
+Sex_Dim12 <- function(DGE, NAME, META){
+	plt <- plotMDS(DGE,
+                 gene.selection = "common",
+                 top = 100, 
+                 pch = 16, 
+                 cex = 1, 
+                 dim.plot = c(1,2), 
+                 col = sex_colors[as.factor(META[['Sex']])],
+                 main = NAME)
+ 	       mtext('Sex MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes', side=3, outer=TRUE, line=3)
+  	   	   mtext('Dimension 1', side = 1, outer = TRUE, line=1)
+   	 	   mtext('Dimension 2', side = 2, outer = TRUE, line=2)
+	return(plt)
+}
+
+pdf(SEX_DIM12)
+par(mfrow = c(4, 3), cex=0.4, mar = c(3, 2, 2, 2), oma =c(5, 5, 6, 2), xpd=TRUE) 
+Map(Sex_Dim12, 
+	DGE = tissue_count, 
+	NAME = names(tissue_count), 
+	META = meta_lst) 
+legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
+   	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
+dev.off()
+
+#_______________________________________________________________________________
 # RIN and Ischemic time vs PC1:4
 #_______________________________________________________________________________
 # Function to generate MDS objects containing PCs
-do_MDS <- function(DGE, DIM){
+make_MDS <- function(DGE, DIM){
 	obj <- plotMDS(DGE,
 				   gene.selection = "common",
 				   top = 100,
@@ -153,9 +183,9 @@ do_MDS <- function(DGE, DIM){
 	return(obj)
 }
 # MDS object with PCs 1 and 2
-PC_12<- pmap(list(DGE=tissue_count), do_MDS, DIM=c(1,2))
+PC_12<- pmap(list(DGE=tissue_count), make_MDS, DIM=c(1,2))
 # MDS object with PCs 3 and 4
-PC_34<- pmap(list(DGE=tissue_count), do_MDS, DIM=c(3,4))
+PC_34<- pmap(list(DGE=tissue_count), make_MDS, DIM=c(3,4))
 
 # Function to make matrices for plotting
 # make list of matrices; rows are samples from same tissue type;
@@ -171,30 +201,28 @@ mat_lst1 <- pmap(list(MDS_OBJ=PC_12, META=meta_lst), make_matrix,
 				 COLS=c("PC1", "RIN"), PC="x", VAL="RIN")
 # List of matrices of PC2 and RIN value for each sample of same tissue type
 mat_lst2 <- pmap(list(MDS_OBJ=PC_12, META=meta_lst), make_matrix, 
-				 COLS=c("PC1", "RIN"), PC="y", VAL="RIN")
+				 COLS=c("PC2", "RIN"), PC="y", VAL="RIN")
 # List of matrices of PC3 and RIN value for each sample of same tissue type
 mat_lst3 <- pmap(list(MDS_OBJ=PC_34, META=meta_lst), make_matrix, 
-				 COLS=c("PC1", "RIN"), PC="x", VAL="RIN")
+				 COLS=c("PC3", "RIN"), PC="x", VAL="RIN")
 # List of matrices of PC4 and RIN value for each sample of same tissue type
 mat_lst4 <- pmap(list(MDS_OBJ=PC_34, META=meta_lst), make_matrix, 
-				 COLS=c("PC1", "RIN"), PC="y", VAL="RIN")
+				 COLS=c("PC4", "RIN"), PC="y", VAL="RIN")
 
 # List of matrices of PC1 and ischemic time for each sample of same tissue type
 mat_lst5 <- pmap(list(MDS_OBJ=PC_12, META=meta_lst), make_matrix, 
 				 COLS=c("PC1", "RIN"), PC="x", VAL="Ischemic_Time")
 # List of matrices of PC2 and ischemic time for each sample of same tissue type
 mat_lst6 <- pmap(list(MDS_OBJ=PC_12, META=meta_lst), make_matrix, 
-				 COLS=c("PC1", "RIN"), PC="y", VAL="Ischemic_Time")
+				 COLS=c("PC2", "RIN"), PC="y", VAL="Ischemic_Time")
 # List of matrices of PC3 and ischemic time for each sample of same tissue type
 mat_lst7 <- pmap(list(MDS_OBJ=PC_34, META=meta_lst), make_matrix, 
-				 COLS=c("PC1", "RIN"), PC="x", VAL="Ischemic_Time")
+				 COLS=c("PC3", "RIN"), PC="x", VAL="Ischemic_Time")
 # List of matrices of PC4 and ischemic time for each sample of same tissue type
 mat_lst8 <- pmap(list(MDS_OBJ=PC_34, META=meta_lst), make_matrix, 
-				 COLS=c("PC1", "RIN"), PC="y", VAL="Ischemic_Time")
+				 COLS=c("PC4", "RIN"), PC="y", VAL="Ischemic_Time")
 
 # Function to plot matrices
-sex_colors <- c("blue", "darkgreen")
-
 plot_func <- function(MAT, META, NAME, TITLE, XAXIS, YAXIS){
 	plt <- plot(MAT,
 			   	pch = 16, 
@@ -217,7 +245,7 @@ pmap(list(MAT = mat_lst1,
 	TITLE = "Dimension 1 vs RIN by tissue type",
     XAXIS = "Dimension 1",
 	YAXIS = "RIN")
-legend(6.0, 2.5, inset=0, legend=c("female", "male"), 
+legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
 	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
@@ -230,7 +258,7 @@ pmap(list(MAT = mat_lst2,
 	TITLE = "Dimension 2 vs RIN by tissue type",
     XAXIS = "Dimension 2",
 	YAXIS = "RIN")
-legend(6.0, 2.5, inset=0, legend=c("female", "male"), 
+legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
 	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
@@ -243,7 +271,7 @@ pmap(list(MAT = mat_lst3,
 	TITLE = "Dimension 3 vs RIN by tissue type",
     XAXIS = "Dimension 3",
 	YAXIS = "RIN")
-legend(6.0, 2.5, inset=0, legend=c("female", "male"), 
+legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
 	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
@@ -256,7 +284,7 @@ pmap(list(MAT = mat_lst4,
 	TITLE = "Dimension 4 vs RIN by tissue type",
     XAXIS = "Dimension 4",
 	YAXIS = "RIN")
-legend(6.0, 2.5, inset=0, legend=c("female", "male"), 
+legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
 	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
@@ -269,7 +297,7 @@ pmap(list(MAT = mat_lst5,
 	TITLE = "Dimension 1 vs ischemic time by tissue type",
     XAXIS = "Dimension 1",
 	YAXIS = "Ischemic time")
-legend(6.0, 2.5, inset=0, legend=c("female", "male"), 
+legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
 	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
@@ -280,9 +308,9 @@ pmap(list(MAT = mat_lst6,
 	NAME = names(tissue_count)),
 	plot_func, 
 	TITLE = "Dimension 2 vs ischemic time by tissue type",
-    XAXIS = "Dimension 3",
+    XAXIS = "Dimension 2",
 	YAXIS = "Ischemic time")
-legend(6.0, 2.5, inset=0, legend=c("female", "male"), 
+legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
 	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
@@ -295,7 +323,7 @@ pmap(list(MAT = mat_lst7,
 	TITLE = "Dimension 3 vs ischemic time by tissue type",
     XAXIS = "Dimension 3",
 	YAXIS = "Ischemic time")
-legend(6.0, 2.5, inset=0, legend=c("female", "male"), 
+legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
 	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
@@ -308,7 +336,7 @@ pmap(list(MAT = mat_lst8,
 	TITLE = "Dimension 4 vs ischemic time by tissue type",
     XAXIS = "Dimension 4",
 	YAXIS = "Ischemic time")
-legend(6.0, 2.5, inset=0, legend=c("female", "male"), 
+legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
 	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
