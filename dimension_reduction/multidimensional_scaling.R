@@ -5,6 +5,7 @@
 
 # Constants
 BASE <- "/scratch/mjpete11/human_monkey_brain"
+PLOT <- "dimension_reduction/New_MDS_Plots"
 
 # Input
 METADATA <- file.path(BASE, "data/metadata/metadata.csv")
@@ -13,15 +14,15 @@ CHRX <- file.path(BASE, "data/gene_annotation/gencodeGenes_Xchr.txt")
 CHRY <- file.path(BASE, "data/gene_annotation/gencodeGenes_Ychr.txt")
 
 # Output
-SEX_DIM12 <- file.path(BASE, "dimension_reduction/New_MDS_plots/Sex_Dim12.pdf")
-RIN_DIM1 <- file.path(BASE, "dimension_reduction/New_MDS_plots/RIN_Dim1.pdf")
-RIN_DIM2 <- file.path(BASE, "dimension_reduction/New_MDS_plots/RIN_Dim2.pdf")
-RIN_DIM3 <- file.path(BASE, "dimension_reduction/New_MDS_plots/RIN_Dim3.pdf")
-RIN_DIM4 <- file.path(BASE, "dimension_reduction/New_MDS_plots/RIN_Dim4.pdf")
-ISC_DIM1 <- file.path(BASE, "dimension_reduction/New_MDS_plots/Isc_Dim1.pdf")
-ISC_DIM2 <- file.path(BASE, "dimension_reduction/New_MDS_plots/Isc_Dim2.pdf")
-ISC_DIM3 <- file.path(BASE, "dimension_reduction/New_MDS_plots/Isc_Dim3.pdf")
-ISC_DIM4 <- file.path(BASE, "dimension_reduction/New_MDS_plots/Isc_Dim4.pdf")
+SEX_DIM12 <- file.path(BASE, PLOT, "Sex_Dim12.pdf")
+RIN_DIM1 <- file.path(BASE, PLOT, "RIN_Dim1.pdf")
+RIN_DIM2 <- file.path(BASE, PLOT, "RIN_Dim2.pdf")
+RIN_DIM3 <- file.path(BASE, PLOT, "RIN_Dim3.pdf")
+RIN_DIM4 <- file.path(BASE, PLOT, "RIN_Dim4.pdf")
+ISC_DIM1 <- file.path(BASE, PLOT, "Isc_Dim1.pdf")
+ISC_DIM2 <- file.path(BASE, PLOT, "Isc_Dim2.pdf")
+ISC_DIM3 <- file.path(BASE, PLOT, "Isc_Dim3.pdf")
+ISC_DIM4 <- file.path(BASE, PLOT, "Isc_Dim4.pdf")
 
 # Packages
 library(data.table)
@@ -154,7 +155,8 @@ Sex_Dim12 <- function(DGE, NAME, META){
                  dim.plot = c(1,2), 
                  col = sex_colors[as.factor(META[['Sex']])],
                  main = NAME)
- 	       mtext('Sex MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes', side=3, outer=TRUE, line=3)
+ 	       mtext('Sex MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes', 
+				  side=3, outer=TRUE, line=3)
   	   	   mtext('Dimension 1', side = 1, outer = TRUE, line=1)
    	 	   mtext('Dimension 2', side = 2, outer = TRUE, line=2)
 	return(plt)
@@ -176,7 +178,7 @@ dev.off()
 # Function to generate MDS objects containing PCs
 make_MDS <- function(DGE, DIM){
 	obj <- plotMDS(DGE,
-				   gene.selection = "common",
+       			   gene.selection = "common",
 				   top = 100,
 				   dim.plot = DIM,
 				   plot = FALSE) # Do not write to graphics device
