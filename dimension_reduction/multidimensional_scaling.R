@@ -1,7 +1,8 @@
 #!/usr/bin/env Rscript
 
 # MDS: distances correspond to leading log-fold-changes between each pair of RNA samples.
-# Leading log-fold-change is the average (root-mean-square) of the largest absolute log-fold changes between each pair of samples.
+# Leading log-fold-change is the average (root-mean-square) of the 
+# largest absolute log-fold changes between each pair of samples.
 
 # Constants
 BASE <- "/scratch/mjpete11/human_monkey_brain"
@@ -31,10 +32,10 @@ library(edgeR)
 library(colorRamps)
 library(purrr)
 
-# Read in files                                                            
+# Read in files                                                           
 xchr <- read.table(CHRX, sep = "")
 ychr <- read.table(CHRY, sep = "")
-meta <- read.table(METADATA, header = TRUE, sep=",", stringsAsFactors=FALSE)
+meta <- read.table(METADATA, header = TRUE, sep = ",", stringsAsFactors = FALSE)
 gene_counts <- data.frame(fread(COUNTS))
 
 #_______________________________________________________________________________
@@ -47,36 +48,36 @@ nrow(gene_counts) # 56,200
 rows_to_drop <- intersect(xchr$V6, gene_counts$Name)
 rows_to_drop <- c(rows_to_drop, intersect(ychr$V6, gene_counts$Name))
 
-gene_counts <- gene_counts[-which(gene_counts[,1] %in% rows_to_drop),]
+gene_counts <- gene_counts[-which(gene_counts[, 1] %in% rows_to_drop), ]
 
 # Are the expected number of genes remaining?; Yes
-nrow(gene_counts) # 53,325 
+nrow(gene_counts) # 53,325
 nrow(xchr) + nrow(ychr) # 2,875
 
 #_______________________________________________________________________________
 # Sample pre-processing
 #_______________________________________________________________________________
 # Drop gene name and ID from gene_counts df
-gene_counts <- gene_counts[,3:ncol(gene_counts)]
+gene_counts <- gene_counts[, 3:ncol(gene_counts)]
 
 # Replace . to - in colnames
-colnames(gene_counts) <- str_replace_all(colnames(gene_counts),pattern = "\\.","-")
+colnames(gene_counts) <- str_replace_all(colnames(gene_counts), pattern = "\\.","-")
 
 # Drop samples in metadata that do not have count data
-select_samples <- colnames(gene_counts)[colnames(gene_counts)%in%meta$Sample_ID]
-meta <- meta[meta$Sample_ID %in% select_samples,]
+select_samples <- colnames(gene_counts)[colnames(gene_counts) %in% meta$Sample_ID]
+meta <- meta[meta$Sample_ID %in% select_samples, ]
 
 # Set rownames of metadata object equal to sample names
 rownames(meta) <- meta$Sample_ID
 
 # Subset gene_counts to only samples present in metadata
-gene_counts <- gene_counts[,select_samples]
+gene_counts <- gene_counts[, select_samples]
 
 # Check that the count and meta data have the same samples in the same order
 identical(colnames(gene_counts), rownames(meta)) # TRUE
 
 #_______________________________________________________________________________
-# Filter genes by expression in each sex and voom normalize 
+# Filter genes by expression in each sex and voom normalize
 #_______________________________________________________________________________
 # Make factor indicating sex of samples for filtering
 sex <- factor(meta$Sex)
@@ -89,14 +90,14 @@ rownames(design) <- colnames(gene_counts)
 nrow(gene_counts) # 53,325
 
 # Remove genes with cpm < 1 in each sex
-keep <- filterByExpr(gene_counts, design=design, min.count=1, min.prop=0.5)
+keep <- filterByExpr(gene_counts, design = design, min.count = 1, min.prop = 0.5)
 gene_counts <- gene_counts[keep, ]
 
 # How many genes are left after filtering?
-nrow(gene_counts) # 34,341 
+nrow(gene_counts) # 34,341
 
 # limma-voom normalization
-gene_counts <- voom(gene_counts, design=design)
+gene_counts <- voom(gene_counts, design = design)
 
 #_______________________________________________________________________________
 # Organize gene_counts and metadata by tissue type 
@@ -105,9 +106,9 @@ gene_counts <- voom(gene_counts, design=design)
 meta$Tissue <- factor(meta$Tissue)
 
 tissue_lst <- list()
-for(i in 1:length(levels(meta$Tissue))){
-	tissue_lst[[i]] <- as.vector(meta[meta$Tissue == 
-								 levels(meta$Tissue)[i], "Sample_ID"])
+for (i in 1:seq_len(levels(meta$Tissue))) {
+    tissue_lst[[i]] <- as.vector(meta[meta$Tissue ==
+                                 levels(meta$Tissue)[i], "Sample_ID"])
 }
 
 # Rename lists in list as tissue names
@@ -115,31 +116,32 @@ names(tissue_lst) <- levels(meta$Tissue)
 
 # Split gene_counts into list of dfs by tissue
 tissue_count <- list()
-for(i in 1:length(tissue_lst)){
-	tissue_count[[i]] <- gene_counts[,which(colnames(gene_counts) %in% tissue_lst[[i]])]
+for (i in 1:seq_len(tissue_lst)) {
+    tissue_count[[i]] <- gene_counts[, which(colnames(gene_counts)
+                                             %in% tissue_lst[[i]])]
 }
 names(tissue_count) <- levels(meta$Tissue)
 
 # metadata split into list of dfs by tissue
 meta_lst <- list()
-for(i in 1:length(levels(meta$Tissue))){
-	meta_lst[[i]] <- meta[meta$Tissue == levels(meta$Tissue)[i],]
+for (i in 1:seq_len(levels(meta$Tissue))) {
+    meta_lst[[i]] <- meta[meta$Tissue == levels(meta$Tissue)[i], ]
 }
 names(meta_lst) <- levels(meta$Tissue)
 
-# Check that rownames equals colnames 
-Check <- function(a, b){
-	all(rownames(a) %in% colnames(b))
+# Check that rownames equals colnames
+check <- function(a, b) {
+    all(rownames(a) %in% colnames(b))
 }
-Res_1 <- Map(Check, a=meta, b=tissue_count)
-all(Res_1==TRUE)
+res_1 <- Map(check, a=meta, b=tissue_count)
+all(res_1= = TRUE)
 
 # Check that order matches
-Match_Check <- function(a, b){
-	Match <- all(rownames(a) == colnames(b))
+match_check <- function(a, b){
+	match <- all(rownames(a) == colnames(b))
 }
-Res_2 <- Map(Match_Check, a=meta, b=tissue_count)
-all(Res_2==TRUE)
+res_2 <- Map(match_check, a = meta, b = tissue_count)
+all(res_2 = TRUE)
 
 #_______________________________________________________________________________
 # MDS by tissue; samples labeled by sex 
@@ -341,5 +343,3 @@ pmap(list(MAT = mat_lst8,
 legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
 	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
-
-
