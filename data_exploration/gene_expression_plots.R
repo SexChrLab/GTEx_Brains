@@ -1,8 +1,9 @@
 #!/usr/bin/env Rscript
 
 # Purpose:
-# 1) Filter gene expression matrix by various methods 
-# 2) Plot histograms of gene TPMs to determine filtering parameters
+# 1) Filter samples with TPM > 1 in each sex separately
+# 2) Filter samples by regions with TPM > 1, 5, and 10
+# 3) Plot frequency of log10(median(TPM)) 
 
 # Load libraries
 library(data.table)
@@ -75,10 +76,8 @@ fem_samples <- meta$Sample_ID[which(meta$Sex == "Female")]
 male_samples <- meta$Sample_ID[which(meta$Sex == "Male")]
 
 # Split expression matrix into two by sex
-fem_counts <- unfiltered_mat[, c(which(colnames(unfiltered_mat) 
-											%in% fem_samples))]
-male_counts <- unfiltered_mat[, c(which(colnames(unfiltered_mat) 
-											 %in% male_samples))]
+fem_counts <- unfiltered_mat[, c(which(colnames(unfiltered_mat) %in% fem_samples))]
+male_counts <- unfiltered_mat[, c(which(colnames(unfiltered_mat) %in% male_samples))]
 
 # Function to filter rows that do not meet condition
 filter_func <- function(DF, TPM) {
@@ -96,8 +95,8 @@ nrow(male_counts) # 6,136
 
 # Make a gene expression matrix that is the union of m/f genes remaining
 # Use zoo to combine dfs with different num rows and different cols
-sex_filtered_mat <- data.frame(fem_counts, cbind(zoo(1:nrow(fem_counts)), 
-							   as.zoo(male_counts)))
+sex_filtered_mat <- data.frame(fem_counts, cbind(zoo(1:nrow(fem_counts)),
+                                                 as.zoo(male_counts)))
 
 #_______________________________________________________________________________
 # Plot histogram of the median log(TPM) across all regions 
@@ -118,7 +117,7 @@ types <- unique(meta$Tissue)
 
 tissue_lst <- list()
 for (i in types) {
-		tissue_lst[[i]] <- meta[meta$Tissue == i,]
+    tissue_lst[[i]] <- meta[meta$Tissue == i,]
 }
 
 # Sort expression mat into list of dfs by tissue type
