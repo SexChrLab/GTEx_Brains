@@ -1,8 +1,8 @@
 #!/usr/bin/env Rscript
 
 # Purpose:
-# 1) Filter samples with TPM > 1 in each sex separately
-# 2) Filter samples by regions with TPM > 1, 5, and 10
+# 1) Filter samples with meidan(TPM > 1) in each sex separately
+# 2) Filter samples by regions with median(TPM > 1, 5, and 10)
 # 3) Plot frequency of log10(median(TPM)) 
 
 # Load libraries
@@ -82,8 +82,8 @@ male_counts <- unfiltered_mat[, c(which(colnames(unfiltered_mat) %in% male_sampl
 
 # Median filter: Function to filter rows that do not have a median >= condition
 median_filter <- function(DF, TPM) {
-		DF <- DF[apply(DF, 1, function(x) median(x >= TPM)),]
-		return(DF)
+    DF <- DF[which(apply(DF[, -c(1:2)], 1, median) > TPM), ]
+    return(DF)
 }
 
 # Remove genes with TPM < 1
@@ -99,7 +99,6 @@ nrow(male_counts) # 15,569
 sex_filtered_mat <- data.frame(fem_counts, cbind(zoo(, 1:nrow(fem_counts)),
                                                  as.zoo(male_counts)))
 
-
 # Check for the expected number og rows/cols
 nrow(sex_filtered_mat) == nrow(fem_counts) # TRUE 
 ncol(sex_filtered_mat) == ncol(fem_counts) + ncol(male_counts) # TRUE
@@ -110,7 +109,7 @@ ncol(sex_filtered_mat) == ncol(fem_counts) + ncol(male_counts) # TRUE
 # Plot
 pdf(SEX_PLT)
 hist(log10(apply(sex_filtered_mat, 1, median)), 100,
-	main = "Histogram of gene expression with TPM > 1 filtered by sex across all regions", 
+	main = "Histogram of gene expression with median(TPM > 1) filtered by sex", 
    	xlab = "Mean log10(TPM)",
 	ylab = "Frequency")
 dev.off()
@@ -151,7 +150,7 @@ res3 <- lapply(TPM_10, nrow)
 
 # Write to file
 res <- do.call(rbind, Map(data.frame, medTPM_1=res1, medTPM_5=res2, medTPM_10=res3))
-write.table(res, file = TABLE, sep = " ")
+write.csv(res, file = TABLE)
 
 #_______________________________________________________________________________
 # Plot histogram of the median log(TPM) in each region separately 
