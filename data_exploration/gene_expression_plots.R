@@ -23,7 +23,7 @@ SEX_PLT <- file.path(BASE, "data_exploration/plots/sex_filtered_hist.pdf")
 REGION_PLT_1 <- file.path(BASE, "data_exploration/plots/region_TPM1_hist.pdf")
 REGION_PLT_5 <- file.path(BASE, "data_exploration/plots/region_TPM5_hist.pdf")
 REGION_PLT_10 <- file.path(BASE, "data_exploration/plots/region_TPM10_hist.pdf")
-TABLE <- file.path(BASE, "data_exploration/plots/filter_by_region.tsv")
+TABLE <- file.path(BASE, "data_exploration/plots/filter_by_region.csv")
 
 # Read in files
 meta <- read.table(METADATA, header = TRUE, sep = ",", stringsAsFactors = FALSE)
@@ -91,8 +91,8 @@ fem_counts <- median_filter(DF = fem_counts, TPM = 1)
 male_counts <- median_filter(DF = male_counts, TPM = 1)
 
 # How many genes are left after filtering in each sex?
-nrow(fem_counts) # 15,611
-nrow(male_counts) # 15,569
+nrow(fem_counts) # 15,604
+nrow(male_counts) # 15,568
 
 # Make a gene expression matrix that is the union of m/f genes remaining
 # Use zoo to combine dfs with different num rows and different cols
@@ -109,13 +109,13 @@ ncol(sex_filtered_mat) == ncol(fem_counts) + ncol(male_counts) # TRUE
 # Plot
 pdf(SEX_PLT)
 hist(log10(apply(sex_filtered_mat, 1, median)), 100,
-	main = "Histogram of gene expression with median(TPM > 1) filtered by sex", 
-   	xlab = "Mean log10(TPM)",
+	main = "Histogram of gene expression with median TPM >= 1 filtered by sex", 
+   	xlab = "Median log10(TPM)",
 	ylab = "Frequency")
 dev.off()
 
 #_______________________________________________________________________________
-# Filter genes by expression (TPM > 1, 5, 10) in each region 
+# Keep genes with median TPM >= 1, 5, 10 in each region 
 #_______________________________________________________________________________
 # For each tissue, make a df of samples from that tissue and store in a list
 types <- unique(meta$Tissue)
@@ -149,7 +149,7 @@ res2 <- lapply(TPM_5, nrow)
 res3 <- lapply(TPM_10, nrow)
 
 # Write to file
-res <- do.call(rbind, Map(data.frame, medTPM_1=res1, medTPM_5=res2, medTPM_10=res3))
+res <- do.call(rbind, Map(data.frame, thresh_1=res1, thresh_5=res2, thresh_10=res3))
 write.csv(res, file = TABLE)
 
 #_______________________________________________________________________________
@@ -158,7 +158,7 @@ write.csv(res, file = TABLE)
 # Function to plot histograms on one page
 plot_func <- function(mat, tissue, thresh) {
 	hist(log10(apply(mat, 1, median)), 100, main = tissue)
-    mtext(paste("Histogram of gene expression with TPM >", thresh, "filtered by region"), 
+    mtext(paste("Histograms of gene expression with median TPM >=", thresh, "filtered by region"), 
 		  side = 3, outer = TRUE,  cex=1.2, line=3)
 	mtext("Median log10(TPM)", side = 1, outer = TRUE, cex = 0.8, line = 1)
 	mtext("Frequency", side = 2, outer = TRUE, cex = 0.8, line = 2)
