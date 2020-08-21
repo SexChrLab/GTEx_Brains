@@ -11,19 +11,17 @@ library(stringr)
 library(zoo)
 library(purrr)
 
-# Constants
-BASE <- "/scratch/mjpete11/human_monkey_brain"
-
+# Snakemake constants
 # Input
-METADATA <- file.path(BASE, "data/metadata/metadata.csv")
-TPM <- file.path(BASE, "data/counts/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct")
+METADATA <- snakemake@input[[1]]
+TPM <- snakemake@input[[2]]
 
 # Output
-SEX_PLT <- file.path(BASE, "data_exploration/plots/sex_filtered_hist.pdf")
-REGION_PLT_1 <- file.path(BASE, "data_exploration/plots/region_TPM1_hist.pdf")
-REGION_PLT_5 <- file.path(BASE, "data_exploration/plots/region_TPM5_hist.pdf")
-REGION_PLT_10 <- file.path(BASE, "data_exploration/plots/region_TPM10_hist.pdf")
-TABLE <- file.path(BASE, "data_exploration/plots/filter_by_region.csv")
+SEX_PLT <- snakemake@output[[1]]
+REGION_PLT_1 <- snakemake@output[[2]]
+REGION_PLT_5 <- snakemake@output[[3]]
+REGION_PLT_10 <- snakemake@output[[4]]
+TABLE <- snakemake@output[[5]]
 
 # Read in files
 meta <- read.table(METADATA, header = TRUE, sep = ",", stringsAsFactors = FALSE)
@@ -148,7 +146,7 @@ res1 <- lapply(TPM_1, nrow)
 res2 <- lapply(TPM_5, nrow)
 res3 <- lapply(TPM_10, nrow)
 
-# Write to file
+# Write summary to file
 res <- do.call(rbind, Map(data.frame, thresh_1=res1, thresh_5=res2, thresh_10=res3))
 write.csv(res, file = TABLE)
 
