@@ -23,6 +23,7 @@ TPM <- file.path(BASE, "data/counts/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_ge
 DF1 <- file.path(BASE, "data/expression_matrices/output/filtered_by_sex.csv")
 DF2 <- file.path(BASE, "data/expression_matrices/output/region_tally.csv")
 DF3 <- file.path(BASE, "data/expression_matrices/output/filtered_by_region.csv")
+DF4 <- file.path(BASE, "data/expression_matrices/output/union_region_filtered.csv")
 
 # Read in files
 meta <- read.table(METADATA, header = TRUE, sep = ",", stringsAsFactors = FALSE)
@@ -177,3 +178,11 @@ result <- do.call(rbind, lapply(1:11, function(i){
 
 colnames(result) <- c("gene_id", "gene_name", "region")
 write.csv(result, DF3, row.names=FALSE)
+
+#_______________________________________________________________________________
+# Write df of the union of genes with TPM >= 5 across regions 
+#_______________________________________________________________________________
+lst <- lapply(TPM_5, function(x) x$Name)
+res <- Reduce(union, lst)
+res <- data.frame(gene_id = res)
+write.csv(res, DF4, row.names=FALSE)
