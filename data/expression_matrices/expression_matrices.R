@@ -1,173 +1,122 @@
 #!/usr/bin/env Rscript
 
-# Purpose:
-# 1) Filter samples by sex with median(TPM >= 1)
-# 2) Filter samples by regions with median(TPM >= 1, 5, and 10)
-# 3) Write df with list of genes to drop depending on filtering method;
-#    Will use this to drop genes if analyzing count data
+# Purpose: Generate filtered and normalized  count matrices
+# Write two expression matrices, with and without sex chr linked genes
 
 # Load libraries
 library(data.table)
 library(stringr)
-library(zoo)
-library(purrr)
+library(edgeR)
 
 # Constants
 BASE <- "/scratch/mjpete11/human_monkey_brain"
 
 # Input
 METADATA <- file.path(BASE, "data/metadata/metadata.csv")
-TPM <- file.path(BASE, "data/counts/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct")
+COUNTS <- file.path(BASE, "data/counts/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct")
+CHRX <- file.path(BASE, "data/gene_annotation/gencodeGenes_Xchr.txt")
+CHRY <- file.path(BASE, "data/gene_annotation/gencodeGenes_Ychr.txt")
+REGION <- file.path(BASE, "data/expression_matrices/output/union_region_filtered.csv")
+# SEX <- file.path(BASE, "data/expression_matrices/output/filtered_by_sex.csv")
 
 # Output
-DF1 <- file.path(BASE, "data/expression_matrices/output/filtered_by_sex.csv")
-DF2 <- file.path(BASE, "data/expression_matrices/output/filtered_by_region.csv")
+TABLE1 <- file.path(BASE, "data/expression_matrices/output/processed_counts_with_sex_chr.csv")
+TABLE2 <- file.path(BASE, "data/expression_matrices/output/processed_counts_no_sex_chr.csv")
 
-# Read in files
+# Read in data
+xchr <- read.table(CHRX, sep = "")
+ychr <- read.table(CHRY, sep = "")
 meta <- read.table(METADATA, header = TRUE, sep = ",", stringsAsFactors = FALSE)
-unfiltered_mat <- data.frame(fread(TPM))
+gene_counts <- data.frame(fread(COUNTS))
+region <- read.csv(REGION)
+# sex <- read.csv(SEX) # In case we want to filter by sex instead
+
+#_______________________________________________________________________________
+# Drop X and Y-linked genes to check if clustering is driven by sex-linked loci
+#_______________________________________________________________________________
+# Original number of genes
+nrow(gene_counts) # 56,200
+
+# Remove X and Y-linked genes
+rows_to_drop <- intersect(xchr$V6, gene_counts$Name)
+rows_to_drop <- c(rows_to_drop, intersect(ychr$V6, gene_counts$Name))
+
+counts_no_sex <- gene_counts[-which(gene_counts[, 1] %in% rows_to_drop), ]
+
+# Are the expected number of genes remaining?; Yes
+nrow(counts_no_sex) # 53,325
+nrow(xchr) + nrow(ychr) # 2,875
 
 #_______________________________________________________________________________
 # Sample pre-processing
 #_______________________________________________________________________________
-# Store gene name and ID columns (will be dropped and needs to be appended)
-genes <- unfiltered_mat[,1:2]
+# Drop gene name and ID from gene_counts df
+#gene_counts <- gene_counts[, 3:ncol(gene_counts)]
+#counts_no_sex <- counts_no_sex[, 3:ncol(counts_no_sex)]
 
 # Replace . to - in colnames
-colnames(unfiltered_mat) <- str_replace_all(colnames(unfiltered_mat), pattern = "\\.", "-")
+colnames(gene_counts) <- str_replace_all(colnames(gene_counts),
+                                         pattern = "\\.", "-")
+colnames(counts_no_sex) <- str_replace_all(colnames(counts_no_sex),
+                                         pattern = "\\.", "-")
 
 # Number of samples in count df
-ncol(unfiltered_mat) # 17,384
+ncol(gene_counts) # 17,382
+ncol(counts_no_sex) # 17,382
 
 # Number of samples in meta (brain only)
-nrow(meta) # 2,570
-
-# Drop samples in metadata that do not have count data
-select_samples <- colnames(unfiltered_mat)[colnames(unfiltered_mat) %in% meta$Sample_ID]
-meta <- meta[meta$Sample_ID %in% select_samples, ]
-
-# Number of samples in meta
 nrow(meta) # 2,146
+
+# Define samples to keep from metadata
+select_samples <- c("Name", "Description", colnames(gene_counts)[colnames(gene_counts) %in% meta$Sample_ID])
 
 # Set rownames of metadata object equal to sample names
 rownames(meta) <- meta$Sample_ID
 
-# Subset unfiltered_mat to only samples present in metadata
-unfiltered_mat <- unfiltered_mat[, select_samples]
+# Subset gene_counts to only samples present in metadata
+gene_counts <- gene_counts[, select_samples]
+counts_no_sex <- counts_no_sex[, select_samples]
 
 # Number of samples
-ncol(unfiltered_mat) # 2,146
+ncol(gene_counts) - 2 # 2,146
+ncol(counts_no_sex) - 2 # 2,146
 
 # Check that the count and meta data have the same samples in the same order
-identical(colnames(unfiltered_mat), rownames(meta)) # TRUE
-
-# Append gene name and gene ID columns back to the expression matrix
-unfiltered_mat <- cbind(genes, unfiltered_mat)
+identical(colnames(gene_counts)[-c(1,2)], rownames(meta)) # TRUE
+identical(colnames(counts_no_sex)[-c(1,2)], rownames(meta)) # TRUE
 
 #_______________________________________________________________________________
-# Filter genes by expression in each sex 
+# Filter genes by expression in each sex and voom normalize
 #_______________________________________________________________________________
-# How many genes  are there before filtering?
-nrow(unfiltered_mat) # 56,200
+# Make design matrix to use with voom
+sex_design <- model.matrix(~meta$Sex)
+no_sex_design <- model.matrix(~meta$Sex)
+rownames(sex_design) <- colnames(gene_counts)[-c(1,2)]
+rownames(no_sex_design) <- colnames(counts_no_sex)[-c(1,2)]
 
-# Get list of female sample IDs 
-fem_samples <- meta$Sample_ID[which(meta$Sex == "Female")]
-male_samples <- meta$Sample_ID[which(meta$Sex == "Male")]
+# How many genes are there before filtering?
+nrow(gene_counts) # 56,200
+nrow(counts_no_sex) # 53,325
 
-# Split expression matrix into two by sex
-fem_counts <- unfiltered_mat[, c(1:2, which(colnames(unfiltered_mat) %in% fem_samples))]
-male_counts <- unfiltered_mat[, c(1:2, which(colnames(unfiltered_mat) %in% male_samples))]
+# Originally used cpm to filter; keeping in case I need it...
+# Remove genes with cpm < 1 in each sex
+# keep <- filterByExpr(gene_counts, design = design,
+#                     min.count = 1, min.prop = 0.5)
+#gene_counts <- gene_counts[keep, ]
 
-# Median filter: Function to filter rows that have a median >= condition
-median_filter <- function(DF, TPM) {
-    DF <- DF[which(apply(DF[, -c(1:2)], 1, median) >= TPM), ]
-    return(DF)
-}
+# Use predefined lists of genes to keep to filter
+gene_counts <- gene_counts[which(gene_counts$Name %in% region$gene_id), ]
+counts_no_sex <- counts_no_sex[which(counts_no_sex$Name %in% region$gene_id), ]
 
-# Remove genes with TPM < 5
-fem_counts <- median_filter(DF = fem_counts, TPM = 1)
-male_counts <- median_filter(DF = male_counts, TPM = 1)
+# How many genes are left after filtering?
+nrow(gene_counts) # 13,955
+nrow(counts_no_sex) # 13,468
 
-# How many genes are left after filtering in each sex?
-nrow(fem_counts) # 9,446
-nrow(male_counts) # 9,454
-
-#_______________________________________________________________________________
-# Make df listing genes to drop depending on filter 
-#_______________________________________________________________________________
-# Make df of gene name and ID to drop in each sex 
-fem_genes_id <- fem_counts$Name
-fem_genes_name <- fem_counts$Description
-male_genes_id <- male_counts$Name
-male_genes_name <- male_counts$Description
-
-# Set all vectors to the max vector length;
-# This will allow cbind to fill empty cells with NA 
-n <- max(length(fem_genes_id), length(male_genes_id))
-length(fem_genes_id) <- n
-length(fem_genes_name) <- n
-length(male_genes_id) <- n
-length(male_genes_name) <- n
-sex_filtered_genes <- cbind(fem_genes_id, fem_genes_name,
-                            male_genes_id, male_genes_name)
-# Write filtered_by_sex.csv
-write.csv(sex_filtered_genes, DF1, row.names=FALSE)
-
-#_______________________________________________________________________________
-# In case I want the TPM gene expression matrix of union of both sexes  
-#_______________________________________________________________________________
-# Make a gene expression matrix that is the union of m/f genes remaining
-# Use zoo to combine dfs with different num rows and different cols
-# The larger df has to go first
-sex_filtered_mat <- data.frame(fem_counts, cbind(zoo(, 1:nrow(fem_counts)),
-                                                 as.zoo(male_counts)))
-
-# Replace . to - in colnames
-colnames(sex_filtered_mat) <- str_replace_all(colnames(sex_filtered_mat), 
-                                              pattern = "\\.", "-")
-
-# Check for the expected number og rows/cols
-nrow(sex_filtered_mat) == nrow(fem_counts) # TRUE 
-ncol(sex_filtered_mat) == ncol(fem_counts) + ncol(male_counts) # TRUE
+# limma-voom normalization
+gene_counts <- voom(gene_counts[3:ncol(gene_counts)], design = sex_design)
+counts_no_sex <- voom(counts_no_sex[3:ncol(counts_no_sex)], design = no_sex_design)
 
 # Write to file
-# write.csv(sex_filtered_mat, 
-#            "/scratch/mjpete11/human_monkey_brain/data/expression_matrices/output/filtered_by_sex.csv")
+write.csv(gene_counts$E, TABLE1, row.names = FALSE)
+write.csv(counts_no_sex$E, TABLE2, row.names = FALSE)
 
-#_______________________________________________________________________________
-# Keep genes with median TPM >= 1, 5, 10 in each region 
-#_______________________________________________________________________________
-# For each tissue, make a df of samples from that tissue and store in a list
-types <- unique(meta$Tissue)
-
-tissue_lst <- list()
-for (i in types) {
-    tissue_lst[[i]] <- meta[meta$Tissue == i,]
-}
-
-# Sort expression mat into list of dfs by tissue type
-sort_counts <- function(x) {
-	lst <- which(colnames(unfiltered_mat) %in% x$Sample_ID)
-	res <- unfiltered_mat[, c(1:2, lst)]
-	return(res)
-}
-counts_by_tissue <- lapply(tissue_lst, sort_counts)
-
-# Apply filtering threshold
-TPM_5 <- Map(median_filter, TPM = 5, counts_by_tissue)
-
-# Name each df in list by  which tissue type it is
-names(TPM_5) <- names(tissue_lst)
-
-# Code to write results to file, in case I want it at some point
-# sapply(names(TPM_5), function(x) write.table(TPM_5[[x]], 
-#       file=paste0("/scratch/mjpete11/human_monkey_brain/data/expression_matrices/output", x, ".csv"))) 
-
-#_______________________________________________________________________________
-# Write df where cols list which genes to keep in each region with TPM >= 5 
-#_______________________________________________________________________________
-result <- do.call(rbind, lapply(1:11, function(i){
-				  data.frame(TPM_5[[i]][1], TPM_5[[i]][2], names(TPM_5)[i])}))
-
-colnames(result) <- c("gene_id", "gene_name", "region")
-write.csv(result, DF2, row.names=FALSE)
