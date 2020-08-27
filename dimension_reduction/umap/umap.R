@@ -13,20 +13,45 @@ BASE <- "/scratch/mjpete11/human_monkey_brain"
 
 # Input
 METADATA <- file.path(BASE, "data/metadata/metadata.csv")
-COUNTS <- file.path(BASE, "data/expression_matrices/output/processed_counts_with_sex_chr.csv")
-PROJECTION <- file.path(BASE, "dimension_reduction/umap/projections/umap_with_sex_chr.txt")
+SEX_COUNTS <- file.path(BASE, "data/expression_matrices/output/processed_counts_with_sex_chr.csv")
+NO_SEX_COUNTS <- file.path(BASE, "data/expression_matrices/output/processed_counts_no_sex_chr.csv")
 
 # Output
-PLOT1 <- file.path(BASE, "dimension_reduction/umap/sex_chr/umap_tissue.pdf")
-PLOT2 <- file.path(BASE, "dimension_reduction/umap/sex_chr/umap_sex.pdf")
-PLOT3 <- file.path(BASE, "dimension_reduction/umap/sex_chr/umap_age.pdf")
-PLOT4 <- file.path(BASE, "dimension_reduction/umap/sex_chr/umap_isc.pdf")
-PLOT5 <- file.path(BASE, "dimension_reduction/umap/sex_chr/umap_rin.pdf")
+SEX_PROJ <- file.path(BASE, "dimension_reduction/umap/sex_chr/sex_projection.csv")
+NO_SEX_PROJ <- file.path(BASE, "dimension_reduction/umap/no_sex/no_sex_projection.csv")
 
 # Read in files
 meta <- read.table(METADATA, header = TRUE, sep = ",", stringsAsFactors = FALSE)
-#counts <- read.csv(COUNTS)
-a <- read.table(PROJECTION, sep = " ")
+sex_counts <- read.table(SEX_COUNTS, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+no_sex_counts <- read.table(NO_SEX_COUNTS, header =TRUE, sep = ",", stringsAsFactors = FALSE)
+
+#_______________________________________________________________________________
+# umap
+#_______________________________________________________________________________
+# Replaces '.' to '-' in the sample IDs for the projections
+colnames(sex_counts) <- str_replace_all(colnames(sex_counts), pattern = "\\.", "-")
+colnames(no_sex_counts) <- str_replace_all(colnames(no_sex_counts), pattern = "\\.", "-")
+
+# Convert gene_counts to matrix and transpose for use w/ umap
+sex_matrix <- as.matrix(t(sex_counts))
+no_sex_matrix <- as.matrix(t(no_sex_counts))
+
+# Apply umap to an expression matrix: genes as rows and samples as columns.
+# processed count matrix with sex chr
+start_t <- Sys.time()
+sex_umap <- umap(sex_matrix, n_neighbors = 50, min_dist = 0.5)
+end_t <- Sys.time()
+print(paste("Elapsed time to do umap with sex chr counts:", end_t - start_t))
+
+# processed count matrix without sex chr
+start_t <- Sys.time()
+no_sex_umap <- umap(no_sex_matrix, n_neighbors = 50, min_dist = 0.5)
+end_t <- Sys.time()
+print(paste("Elapsed time to do umap without sex chr counts:", end_t - start_t))
+
+# Make df of projections from umap object
+sex_proj <- data.frame(sex_umap$layout)
+no_sex_proj <- data.frame(no_sex_umap$layout)
 
 #_______________________________________________________________________________
 # Sanity check 
@@ -35,89 +60,14 @@ a <- read.table(PROJECTION, sep = " ")
 nrow(meta) # 2,146
 
 # Number of samples in projection
-nrow(counts) # 13,955
+nrow(sex_proj) == nrow(meta) # TRUE
+nrow(no_sex_proj) == nrow(meta) # TRUE
 
-# Convert gene_counts (EList object) to matrix for use w/ umap
-counts <- data.matrix(counts)
+# Check that the samples in the projections are in the same order as in meta
+identical(row.names(sex_proj), meta$Sample_ID) # TRUE
+identical(row.names(no_sex_proj), meta$Sample_ID) # TRUE
 
-#_______________________________________________________________________________
-# umap
-#_______________________________________________________________________________
-# gene_counts is an expression matrix: genes as rows and samples as columns.
-start_t <- Sys.time()
-a <- umap(t(counts), n_neighbors = 50, min_dist = 0.5)
-end_t <- Sys.time()
-print(paste("Elapsed time:", end_t - start_t))
+# Write umap objects to file
+write.csv(sex_proj, file = SEX_PROJ, row.names = TRUE)
+write.csv(no_sex_proj, file = NO_SEX_PROJ, row.names = TRUE)
 
-# Write umap object to file
-write.table(a$layout, file = PROJECTION, sep = " ")
-
-# Read in projection
-#a <- read.table(PROJECTION, sep = " ")
-head(a)
-nrow(a)
-colnames(a) <- c('X1', 'X2')
-
-# extract the projections (a$layout) and join it with metadata (particularly the 'meta.Tissue' column)
-#full.covariates is a vector of model covariate names (in case you want to plot by those as well)
-a.umap = data.frame(a, meta$Tissue, meta$Sex, meta$Age, meta$RIN, meta$Ischemic_Time)
-
-#_______________________________________________________________________________
-# Plots 
-#_______________________________________________________________________________
-# Function to plot color points by one feature
-umap_plot <- function(x, y){
-	p = ggplot(a.umap, aes_string('X1','X2', color=x)) +
-		geom_point(size=0.5) +
-	#	scale_color_manual(values=region.colors) +
-		theme_classic(base_size=18) +
-		xlab('UMAP 1') +
-		ylab('UMAP 2') +
-		coord_fixed() +
-		theme(axis.ticks=element_blank(), axis.text=element_blank())
-	p <- p + labs(fill = y) 
-	p <- p + guides(shape = guide_legend(override.aes = list(size = 3))) 
-	p <- p + guides(color = guide_legend(override.aes = list(size = 3))) 
-	p <- p + theme(legend.title = element_text(size = 8), 
-				   legend.text = element_text(size = 6))
-	return(p)
-}
-# Color by tissue
-ggsave(umap_plot(x = 'meta.Tissue', y = 'Tissue'), file = PLOT1, useDingbats = FALSE)
-
-# Color by sex
-ggsave(umap_plot(x = 'meta.Sex', y= 'Sex'), file = PLOT2, useDingbats = FALSE)
-
-# Color by age
-ggsave(umap_plot(x = 'meta.Age', y = 'Age'), file = PLOT3, useDingbats = FALSE)
-
-# Color by ischemic time
-ggsave(umap_plot(x = 'meta.Ischemic_Time', y = 'Ischemic time'), file = PLOT4, useDingbats = FALSE)
-
-# Color by RIN
-ggsave(umap_plot(x = 'meta.RIN', y = 'RIN'), file = PLOT5, useDingbats = FALSE)
-
-##################### Kenny's example code ##################################
-## Redo the plot, this time without highlighting batch
-#p = ggplot(a.umap,aes_string('X1','X2',color='meta.Tissue')) +
-#	geom_point(size=1.25) +
-##	scale_color_manual(values=region.colors) +
-#	theme_classic(base_size=18) +
-#	xlab('UMAP 1') +
-#	ylab('UMAP 2') +
-#	coord_fixed() +
-#	theme(axis.ticks=element_blank(),axis.text=element_blank())
-#ggsave(p, file = PLOT2, useDingbats = FALSE)
-#
-## Redo the plot, this time showing color AND shape to better differentiate points since many colors look similar
-#p = ggplot(a.umap,aes_string('X1','X2',color='meta.Tissue',shape='meta.Tissue')) +
-#	geom_point(size=1.25) +
-##	scale_color_manual(values=region.colors) +
-##	scale_shape_manual(values=region.shapes) +
-#	theme_classic(base_size=18) +
-#	xlab('UMAP 1') +
-#	ylab('UMAP 2') +
-#	coord_fixed() +
-#	guides(shape = guide_legend(override.aes = list(size = 3))) +
-#	theme(axis.ticks=element_blank(),axis.text=element_blank())
-#ggsave(p, file = PLOT3, useDingbats = FALSE)
