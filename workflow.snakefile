@@ -1,10 +1,11 @@
-# snakefile to execute all scripts
+# Snakefile to execute all scripts
 
 import os
 
 # Constants
 BASE = "/scratch/mjpete11/human_monkey_brain/"
 
+# Output
 rule all:
 	input: 
 		os.path.join(BASE, "dimension_reduction/umap/no_sex/umap_indiv.pdf")
@@ -35,11 +36,34 @@ rule plot_genes:
 	script:
 		"/scratch/mjpete11/human_monkey_brain/data_exploration/gene_expression_plots.R"
 
-# Rule 4: Write list of genes determined via various filtering thresholds
+# Rule 3: Write list of genes determined via various filtering thresholds
+ rule write_genes:
+ 	input:
+		os.path.join(BASE, "data/metadata/metadata.csv"),
+		os.path.join(BASE, "data/expression_matrices/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct")
+	output:
+		os.path.join(BASE, "data/expression_matrices/output/filtered_by_sex.csv")
+		os.path.join(BASE, "data/expression_matrices/output/region_tally.csv")
+		os.path.join(BASE, "data/expression_matrices/output/filtered_by_region.csv")
+		os.path.join(BASE, "data/expression_matrices/output/union_region_filtered.csv")
+	script:
+		"/scratch/mjpete11/human_monkey_brain/data/expression_matrices/tpm_filtering.R"
+		
+# Rule 4: Write filtered/normalized count expression matrices 
+rule process_counts:
+	input:
+		os.path.join(BASE, "data/metadata/metadata.csv")
+		os.path.join(BASE, "data/counts/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct")
+		os.path.join(BASE, "data/gene_annotation/gencodeGenes_Xchr.txt")
+		os.path.join(BASE, "data/gene_annotation/gencodeGenes_Ychr.txt")
+		os.path.join(BASE, "data/expression_matrices/output/union_region_filtered.csv")
+	output:
+		os.path.join(BASE, "data/expression_matrices/output/processed_counts_with_sex_chr.csv")
+		os.path.join(BASE, "data/expression_matrices/output/processed_counts_no_sex_chr.csv")
+	script:
+		"scratch/mjpete11/human_monkey_brain/data/expression_matrices/expression_matrices.R""
 
-# Rule 5: Write filtered/normalized count expression matrices 
-
-# Rule 6: multidimensional scaling with sex chr
+# Rule 5: multidimensional scaling with sex chr
 rule mds_with_sex:
 	input:
 		os.path.join(BASE, "data/metadata/metadata.csv"),
@@ -57,7 +81,7 @@ rule mds_with_sex:
 	script:
 		"/scratch/mjpete11/human_monkey_brain/dimension_reduction/multidimensional_scaling/multidimensional_scaling.R"
 
-# Rule 7: multidimensional scaling without sex chr
+# Rule 6: multidimensional scaling without sex chr
 rule mds_no_sex:
 	input:
 		os.path.join(BASE, "data/metadata/metadata.csv"),
@@ -75,7 +99,7 @@ rule mds_no_sex:
 	script:
 		"/scratch/mjpete11/human_monkey_brain/dimension_reduction/multidimensional_scaling/multidimensional_scaling.R"
 
-# Rule 5: uniform manifold approximation and projection; write projections
+# Rule 7: umap; write projections from counts with sex chr
 rule umap_with_sex:
 	input:
 		os.path.join(BASE, "data/metadata/metadata.csv"),
@@ -85,6 +109,7 @@ rule umap_with_sex:
 	script:
 		"/scratch/mjpete11/human_monkey_brain/dimension_reduction/umap/umap.R"
 
+# Rule 8: umap; write projections from counts without sex chr
 rule umap_no_sex:
 	input:
 		os.path.join(BASE, "data/metadata/metadata.csv"),
@@ -94,7 +119,7 @@ rule umap_no_sex:
 	script:
 		"/scratch/mjpete11/human_monkey_brain/dimension_reduction/umap/umap.R"
 
-# Rule 6: umap plots
+# Rule 9: umap plots; with and without sex chr; color each point be feature
 rule umap_plots:
 	input:
 		os.path.join(BASE, "data/metadata/metadata.csv"),
@@ -116,8 +141,7 @@ rule umap_plots:
 	script:
 		"/scratch/mjpete11/human_monkey_brain/dimension_reduction/umap/umap_plots.R"
 
-
-# Rule 6: limma
+# Rule 10: limma
 # This produces 11 tables
 rule limma:
 	input:
@@ -127,7 +151,7 @@ rule limma:
 	script:
 		"/scratch/mjpete11/human_monkey_brain/limma/limma.R"
 
-#  Rule 7: multivariate adaptive shrinkage
+#  Rule 11: multivariate adaptive shrinkage
 # rule mashr:
 # 	input: 
 
