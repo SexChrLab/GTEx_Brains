@@ -7,7 +7,7 @@ BASE = "/scratch/mjpete11/human_monkey_brain/"
 
 rule all:
 	input: 
-		os.path.join(BASE, "dimension_reduction/umap/no_sex/no_sex_projection.csv") 
+		os.path.join(BASE, "dimension_reduction/umap/no_sex/umap_indiv.pdf")
 
 # Rules
 # Rule 1: Generate metadata to use to subset counts

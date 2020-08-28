@@ -12,23 +12,23 @@ library(edgeR)
 BASE <- "/scratch/mjpete11/human_monkey_brain"
 
 # Input
-METADATA <- file.path(BASE, "data/metadata/metadata.csv")
-SEX_PROJ <- file.path(BASE, "dimension_reduction/umap/sex_chr/sex_projection.csv")
-NO_SEX_PROJ <- file.path(BASE, "dimension_reduction/umap/no_sex/no_sex_projection.csv")
+METADATA <- snakemake@input[[1]] 
+SEX_PROJ <- snakemake@input[[2]]
+NO_SEX_PROJ <- snakemake@input[[3]]
  
 # Output
-PLOT1 <- file.path(BASE, "dimension_reduction/umap/sex_chr/umap_tissue.pdf")
-PLOT2 <- file.path(BASE, "dimension_reduction/umap/no_sex/umap_tissue.pdf")
-PLOT3 <- file.path(BASE, "dimension_reduction/umap/sex_chr/umap_sex.pdf")
-PLOT4 <- file.path(BASE, "dimension_reduction/umap/no_sex/umap_sex.pdf")
-PLOT5 <- file.path(BASE, "dimension_reduction/umap/sex_chr/umap_age.pdf")
-PLOT6 <- file.path(BASE, "dimension_reduction/umap/no_sex/umap_age.pdf")
-PLOT7 <- file.path(BASE, "dimension_reduction/umap/sex_chr/umap_isc.pdf")
-PLOT8 <- file.path(BASE, "dimension_reduction/umap/no_sex/umap_isc.pdf")
-PLOT9 <- file.path(BASE, "dimension_reduction/umap/sex_chr/umap_rin.pdf")
-PLOT10<- file.path(BASE, "dimension_reduction/umap/no_sex/umap_rin.pdf")
-PLOT11 <- file.path(BASE, "dimension_reduction/umap/sex_chr/umap_indiv.pdf")
-PLOT12 <- file.path(BASE, "dimension_reduction/umap/no_sex/umap_indiv.pdf")
+PLOT1 <- snakemake@output[[1]] 
+PLOT2 <- snakemake@output[[2]]
+PLOT3 <- snakemake@output[[3]]
+PLOT4 <- snakemake@output[[4]]
+PLOT5 <- snakemake@output[[5]]
+PLOT6 <- snakemake@output[[6]]
+PLOT7 <- snakemake@output[[7]]
+PLOT8 <- snakemake@output[[8]]
+PLOT9 <- snakemake@output[[9]]
+PLOT10 <- snakemake@output[[10]]
+PLOT11 <- snakemake@output[[11]]
+PLOT12 <- snakemake@output[[12]]
 
 # Read in files
 meta <- read.csv(METADATA, header = TRUE, stringsAsFactors = FALSE)
