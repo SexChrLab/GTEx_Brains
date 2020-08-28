@@ -8,8 +8,6 @@
 # Input
 METADATA <- snakemake@input[[1]]
 COUNTS <- snakemake@input[[2]]
-CHRX <- snakemake@input[[3]]
-CHRY <- snakemake@input[[4]]
 
 # Output
 SEX_DIM12 <- snakemake@output[[1]]
@@ -26,79 +24,18 @@ ISC_DIM4 <- snakemake@output[[9]]
 library(data.table)
 library(stringr)
 library(edgeR)
-library(colorRamps)
 library(purrr)
 
 # Read in files                                                           
-xchr <- read.table(CHRX, sep = "")
-ychr <- read.table(CHRY, sep = "")
-meta <- read.table(METADATA, header = TRUE, sep = ",", stringsAsFactors = FALSE)
-gene_counts <- data.frame(fread(COUNTS))
+meta <- read.csv(METADATA, header = TRUE, stringsAsFactors = FALSE)
+counts <- read.csv(COUNTS, header = TRUE, stringsAsFactors = FALSE)
 
 #_______________________________________________________________________________
-# Drop X and Y-linked genes to check if clustering is driven by sex-linked loci
+# Organize counts and metadata by tissue type 
 #_______________________________________________________________________________
-# Original number of genes
-nrow(gene_counts) # 56,200
+# Replaces '.' to '-' in the sample IDs for the projections
+colnames(counts) <- str_replace_all(colnames(counts), pattern = "\\.", "-")
 
-# Remove X and Y-linked genes
-rows_to_drop <- intersect(xchr$V6, gene_counts$Name)
-rows_to_drop <- c(rows_to_drop, intersect(ychr$V6, gene_counts$Name))
-
-gene_counts <- gene_counts[-which(gene_counts[, 1] %in% rows_to_drop), ]
-
-# Are the expected number of genes remaining?; Yes
-nrow(gene_counts) # 53,325
-nrow(xchr) + nrow(ychr) # 2,875
-
-#_______________________________________________________________________________
-# Sample pre-processing
-#_______________________________________________________________________________
-# Drop gene name and ID from gene_counts df
-gene_counts <- gene_counts[, 3:ncol(gene_counts)]
-
-# Replace . to - in colnames
-colnames(gene_counts) <- str_replace_all(colnames(gene_counts), pattern = "\\.","-")
-
-# Drop samples in metadata that do not have count data
-select_samples <- colnames(gene_counts)[colnames(gene_counts) %in% meta$Sample_ID]
-meta <- meta[meta$Sample_ID %in% select_samples, ]
-
-# Set rownames of metadata object equal to sample names
-rownames(meta) <- meta$Sample_ID
-
-# Subset gene_counts to only samples present in metadata
-gene_counts <- gene_counts[, select_samples]
-
-# Check that the count and meta data have the same samples in the same order
-identical(colnames(gene_counts), rownames(meta)) # TRUE
-
-#_______________________________________________________________________________
-# Filter genes by expression in each sex and voom normalize
-#_______________________________________________________________________________
-# Make factor indicating sex of samples for filtering
-sex <- factor(meta$Sex)
-
-# Make design matrix to use with voom
-design <- model.matrix(~meta$Sex)
-rownames(design) <- colnames(gene_counts)
-
-# How many genes are there before filtering?
-nrow(gene_counts) # 53,325
-
-# Remove genes with cpm < 1 in each sex
-keep <- filterByExpr(gene_counts, design = design, min.count = 1, min.prop = 0.5)
-gene_counts <- gene_counts[keep, ]
-
-# How many genes are left after filtering?
-nrow(gene_counts) # 34,341
-
-# limma-voom normalization
-gene_counts <- voom(gene_counts, design = design)
-
-#_______________________________________________________________________________
-# Organize gene_counts and metadata by tissue type 
-#_______________________________________________________________________________
 # Make list of lists of samples for each tissue
 meta$Tissue <- factor(meta$Tissue)
 
@@ -110,10 +47,10 @@ for (i in seq_len(length(levels(meta$Tissue)))) {
 # Rename lists in list as tissue names
 names(tissue_lst) <- levels(meta$Tissue)
 
-# Split gene_counts into list of dfs by tissue
+# Split counts into list of dfs by tissue
 tissue_count <- list()
 for (i in seq_len(length(tissue_lst))) {
-    tissue_count[[i]] <- gene_counts[, which(colnames(gene_counts)
+    tissue_count[[i]] <- counts[, which(colnames(counts)
                                              %in% tissue_lst[[i]])]
 }
 names(tissue_count) <- levels(meta$Tissue)
@@ -153,10 +90,10 @@ Sex_Dim12 <- function(DGE, NAME, META){
                  dim.plot = c(1,2), 
                  col = sex_colors[as.factor(META[['Sex']])],
                  main = NAME)
- 	       mtext('Sex MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes', 
-				  side=3, outer=TRUE, line=3)
-  	   	   mtext('Dimension 1', side = 1, outer = TRUE, line=1)
-   	 	   mtext('Dimension 2', side = 2, outer = TRUE, line=2)
+           mtext('Sex MDS Plots: Dimensions 1 and 2; Top 100 Most Variable Genes', 
+                 side=3, outer=TRUE, line=3)
+           mtext('Dimension 1', side = 1, outer = TRUE, line=1)
+           mtext('Dimension 2', side = 2, outer = TRUE, line=2)
 	return(plt)
 }
 
@@ -167,7 +104,7 @@ Map(Sex_Dim12,
 	NAME = names(tissue_count), 
 	META = meta_lst) 
 legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
-   	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
+       pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
 #_______________________________________________________________________________
@@ -176,10 +113,10 @@ dev.off()
 # Function to generate MDS objects containing PCs
 make_MDS <- function(DGE, DIM){
 	obj <- plotMDS(DGE,
-       			   gene.selection = "common",
-				   top = 100,
-				   dim.plot = DIM,
-				   plot = FALSE) # Do not write to graphics device
+                   gene.selection = "common",
+                   top = 100,
+                   dim.plot = DIM,
+                   plot = FALSE) # Do not write to graphics device
 	return(obj)
 }
 # MDS object with PCs 1 and 2
@@ -225,14 +162,14 @@ mat_lst8 <- pmap(list(MDS_OBJ=PC_34, META=meta_lst), make_matrix,
 # Function to plot matrices
 plot_func <- function(MAT, META, NAME, TITLE, XAXIS, YAXIS){
 	plt <- plot(MAT,
-			   	pch = 16, 
-				cex = 1, 
-   	   	   	    col = sex_colors[as.factor(META[['Sex']])],
-	       	    main = NAME)
-			mtext(TITLE, side=3, outer=TRUE, line=3)
-		    mtext(XAXIS, side = 1, outer = TRUE, line=1)
-			mtext(YAXIS, side = 2, outer = TRUE, line=2)
-	return(plt)
+                pch = 16, 
+                cex = 1, 
+                col = sex_colors[as.factor(META[['Sex']])],
+                main = NAME)
+            mtext(TITLE, side=3, outer=TRUE, line=3)
+            mtext(XAXIS, side = 1, outer = TRUE, line=1)
+            mtext(YAXIS, side = 2, outer = TRUE, line=2)
+    return(plt)
 }
 
 # Plot
@@ -246,7 +183,7 @@ pmap(list(MAT = mat_lst1,
     XAXIS = "Dimension 1",
 	YAXIS = "RIN")
 legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
-	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
+       pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
 pdf(RIN_DIM2)
@@ -259,7 +196,7 @@ pmap(list(MAT = mat_lst2,
     XAXIS = "Dimension 2",
 	YAXIS = "RIN")
 legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
-	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
+       pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
 pdf(RIN_DIM3)
@@ -272,7 +209,7 @@ pmap(list(MAT = mat_lst3,
     XAXIS = "Dimension 3",
 	YAXIS = "RIN")
 legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
-	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
+       pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
 pdf(RIN_DIM4)
@@ -285,7 +222,7 @@ pmap(list(MAT = mat_lst4,
     XAXIS = "Dimension 4",
 	YAXIS = "RIN")
 legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
-	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
+       pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
 pdf(ISC_DIM1)
@@ -298,7 +235,7 @@ pmap(list(MAT = mat_lst5,
     XAXIS = "Dimension 1",
 	YAXIS = "Ischemic time")
 legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
-	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
+       pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
 pdf(ISC_DIM2)
@@ -311,7 +248,7 @@ pmap(list(MAT = mat_lst6,
     XAXIS = "Dimension 2",
 	YAXIS = "Ischemic time")
 legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
-	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
+       pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
 pdf(ISC_DIM3)
@@ -324,7 +261,7 @@ pmap(list(MAT = mat_lst7,
     XAXIS = "Dimension 3",
 	YAXIS = "Ischemic time")
 legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
-	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
+       pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
 
 pdf(ISC_DIM4)
@@ -337,5 +274,5 @@ pmap(list(MAT = mat_lst8,
     XAXIS = "Dimension 4",
 	YAXIS = "Ischemic time")
 legend(4.0, 4.0, inset=0, legend=c("female", "male"), 
-	   pch=16, cex=2.0, col=sex_colors, xpd=NA)
+       pch=16, cex=2.0, col=sex_colors, xpd=NA)
 dev.off()
