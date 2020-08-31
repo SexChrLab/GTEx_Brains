@@ -24,10 +24,7 @@ p1 <- "/scratch/mjpete11/human_monkey_brain/limma/tables"
 limma_lst <- Map(fread, header=TRUE, list.files(path = p1, pattern = "*.csv", full.names=T))
 
 # Assign names to dfs in list
-#names(limma_lst) <- c("Amygdala", "Anterior", "Caudate", "Cerebellar", "Cerebellum", "Cortex",
-#                      "Frontal_Cortex", "Hippocampus", "Hypothalamus", "Nucleus_Accumbens", 
-#                      "Putamen", "Spinal_Cord", "Substantia_Nigra")
-names(limma_lst) <- levels(as.factor(meta$Tissues))
+names(limma_lst) <- levels(as.factor(meta$Tissue))
 names(limma_lst)
 
 # Add gene name and id column
@@ -45,27 +42,15 @@ name_drop <- function(x, d){
 effect_lst <- Map(name_drop, x=limma_lst, d="sqrt_SE")
 sqrt_s2_lst <- Map(name_drop, x=limma_lst, d="beta")
 
-# Iteratively join dfs in list by gene_ID col
-# supress warning about duplicate cols when merging; keep all rows, including those not present in both
-# extremely hacky
-lst_to_mat <- function(l, m){
-    # supress warning about duplicate cols when merging; keep all rows, including those not present in both
-    x <- suppressWarnings(Reduce(function(df1, df2) merge(df1, df2, by="V1", all=TRUE), l))
-    rownames(x) <- x[["V1"]] # join by gene_ID col, then drop
-    x[["V1"]] <- NULL
-#    colnames(x)[1:ncol(x)] <- levels(as.factor(meta$Tissue)) # explicitly name conditions
-    x[is.na(x)] <- m # Replace NA (row present in a df but not in all others) with value of choice
-    x <- as.matrix(x) # mashr only accepts matrices
-    print(head(x)) # visually inspect df
-    print(tail(x))
-    return(x)
-}
-effect_mat <- lst_to_mat(l=effect_lst, m=0)
-sqrt_s2_mat <- lst_to_mat(l=sqrt_s2_lst, m=100)
+# Combine the betas into one matrix
+effect_df <- Reduce(function(...) merge(..., by = "V1", all = TRUE), effect_lst)
+colnames(effect_df) <- c("gene_ID", levels(as.factor(meta$Tissue)))
+effect_mat <- as.matrix(effect_df[, 2:ncol(effect_df)])
 
-# temporary hack
-effect_mat <- apply(effect_mat, 2, as.numeric)
-head(effect_mat)
+# Cobine the sqrt(SEs) into one matrix
+sqrt_s2_df <- Reduce(function(...) merge(..., by = "V1", all = TRUE), sqrt_s2_lst)
+colnames(sqrt_s2_df) <- c("gene_ID", levels(as.factor(meta$Tissue)))
+sqrt_s2_mat <- as.matrix(sqrt_s2_df[, 2:ncol(sqrt_s2_df)])
 
 # ________________________________________________________________________________________________________  
 # sanity check 
@@ -92,59 +77,66 @@ sanity(e=effect_mat, s=sqrt_s2_mat)
 # Mashr analysis; NSM lab approach
 # ________________________________________________________________________________________________________  
 # Create the mashr data object
-mash.Limma <- mash_set_data(Bhat=effect_mat, Shat=sqrt_s2_mat)
+mash_limma <- mash_set_data(Bhat=effect_mat, Shat=sqrt_s2_mat)
 
 # Apply multivariate adaptive shrinkage method in initial mode ("naive" run)
 # Compute canonical covariance matrix
-U.c <- cov_canonical(mash.Limma)
-m.c <- mash(mash.Limma, U.c) # error: chol(): decompisition failed
+U_c <- cov_canonical(mash_limma)
+m_c <- mash(mash_limma, U_c) 
 
 # Save initial results and pairwise sharing matrix
-strong.Limma <- get_significant_results(m.c, thresh=0.05, sig_fn=ashr::get_lfdr)
-shared.Limma <- get_pairwise_sharing(m.c, factor=0.05)
+strong_limma <- get_significant_results(m_c, thresh=0.05, sig_fn=ashr::get_lfdr)
+shared_limma <- get_pairwise_sharing(m_c, factor=0.05)
 
 # Get a randomized set of results with the same length as the significant results
-random.Limma <- sample(1:nrow(mash.Limma$Bhat), length(strong.Limma))
+random_limma <- sample(1:nrow(mash_limma$Bhat), length(strong_limma))
 
 # Estimate null correlation on random subset of the data
-# The resulting correlation matrix (Vhat.Limma) will be used to construct the "random" and "strong"mashr datasets
-temp.Limma <- mash_set_data(mash.Limma$Bhat[random.Limma,], mash.Limma$Shat[random.Limma,])
-temp.U.c.Limma <- cov_canonical(temp.Limma)
-Vhat.Limma <- estimate_null_correlation(temp.Limma, temp.U.c.Limma)
+# The resulting correlation matrix (vhat_limma) will be used to construct the "random" and "strong"mashr datasets
+temp_limma <- mash_set_data(mash_limma$Bhat[random_limma,], mash_limma$Shat[random_limma,])
+temp_U_c_limma <- cov_canonical(temp_limma)
+vhat_limma <- estimate_null_correlation(temp_limma, temp_U_c_limma)
 
 # This step was failing...works with new values for missing values
-estimate_null_correlation(mash.Limma, U.c)
+estimate_null_correlation(mash_limma, U_c)
 
 # Create mashr datasets on the sig results ("strong" set) and random results ("random" set)
-mash.Limma.random <- mash_set_data(mash.Limma$Bhat[random.Limma,],mash.Limma$Shat[random.Limma,],V=Vhat.Limma)
-mash.Limma.strong <- mash_set_data(mash.Limma$Bhat[strong.Limma,],mash.Limma$Shat[strong.Limma,],V=Vhat.Limma)
+mash_limma_random <- mash_set_data(mash_limma$Bhat[random_limma,],mash_limma$Shat[random_limma,],V=vhat_limma)
+mash_limma_strong <- mash_set_data(mash_limma$Bhat[strong_limma,],mash_limma$Shat[strong_limma,],V=vhat_limma)
 
 # Perform PCA and extreme deconvolution
-U.pca.Limma <- cov_pca(mash.Limma.strong, 5)
-U.ed.Limma <- cov_ed(mash.Limma.strong, U.pca.Limma)
+U_pca_limma <- cov_pca(mash_limma_strong, 5)
+U_ed_limma <- cov_ed(mash_limma_strong, U_pca_limma)
 
 # Compute canonical covariance matrix on random subset
-U.c.random <- cov_canonical(mash.Limma.random)
+U_c_random <- cov_canonical(mash_limma_random)
 
 # Perform mashr on random subset for the purpose of estimating g
 # In contrast to the earlier "naive" model, empirical covariance matrices from the extreme deconvolution and canonical methods are used
-m.Limma <- mash(mash.Limma.random, Ulist=c(U.ed.Limma, U.c.random), outputlevel=1)
+m_limma <- mash(mash_limma_random, Ulist=c(U_ed_limma, U_c_random), outputlevel=1)
 
 # Now run mashr on the strong subset, this time substituting the empirical value of g
-m2.Limma <- mash(mash.Limma.strong, g=get_fitted_g(m.Limma), fixg=TRUE)
+m2_limma <- mash(mash_limma_strong, g=get_fitted_g(m_limma), fixg=TRUE)
 
 # Calculate pairwise sharing
-Limma.share <- get_pairwise_sharing(m2.Limma, factor=0.5)
+limma_share <- get_pairwise_sharing(m2_limma, factor=0.5)
 
 # Set a flase sign rate cutoff
-fsr.cutoff <- 0.2
+fsr_cutoff <- 0.2
 
 # Get number of significant genes in each region
-apply(get_lfsr(m2.Limma), 2, function(x) sum(x < fsr.cutoff))
+sig_genes <- apply(get_lfsr(m2_limma), 2, function(x) sum(x < fsr_cutoff))
+sig_genes <- data.frame(region = names(sig_genes), num_sig_genes = sig_genes) 
 
 # Get posterior values
 # Posterior betas
-beta.Limma <- get_pm(m2.Limma)
+beta_limma <- as.data.frame(get_pm(m2_limma))
 
 # Posterior local false sign rate
-lfsr.Limma <- get_lfsr(m2.Limma)
+lfsr_limma <- get_lfsr(m2_limma)
+
+# Write to file
+write.csv(limma_share, file = "/scratch/mjpete11/human_monkey_brain/mashr/output/limma_share.csv")
+write.csv(sig_genes, file = "/scratch/mjpete11/human_monkey_brain/mashr/output/sig_genes.csv", row.names = FALSE)
+write.csv(beta_limma, file = "/scratch/mjpete11/human_monkey_brain/mashr/output/beta_limma.csv")
+write.csv(lfsr_limma, file = "/scratch/mjpete11/human_monkey_brain/mashr/output/lfsr_limma.csv")
