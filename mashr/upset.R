@@ -65,6 +65,15 @@ keep_genes <- lapply(tmp,function(i){row.names(mash_lfsr[i,])})
 names(keep_genes) <- colnames(mash_lfsr)
 str(keep_genes)
 
+# Write to file list of genes that past filtering in each region
+# First, reshape object (list of vectors of different lengths) into df
+n_obs <- sapply(keep_genes, length)
+seq_max <- seq_len(max(n_obs))
+mat <- sapply(keep_genes, "[", i=seq_max)
+dim(mat)
+mat[1:5,1:5]
+write.csv(mat, '/scratch/mjpete11/human_monkey_brain/mashr/output/keep_genes.csv')
+
 # How many genes are significant in n regions
 table(apply(mash_lfsr, 1, function(x) sum(x < fsr_cutoff)))
 
@@ -119,8 +128,6 @@ ylimit = ceiling(with(model.counts.combined,max(abs(value)))/500) * 500
 #_____________________________________________________________________________
 # My model_counts_combines object 
 #_____________________________________________________________________________
-
-
 # Note that the code below will only format correctly with ggplot >= 3.3.0
 if (packageVersion('ggplot2') < 3.3) warning('Some plots may not display correctly with ggplot2 version < 3.3.0')
 
