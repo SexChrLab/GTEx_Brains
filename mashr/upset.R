@@ -7,44 +7,11 @@ library(reshape2)
 library(mashr)
 
 #_____________________________________________________________________________
-# Kenny's OG code 
-#_____________________________________________________________________________
-#source('/scratch/mjpete11/human_monkey_brain/mashr/kennys_example/_include_options.R')
-#
-##e.keep = readRDS('checkpoints/filtered_expression_matrix.rds')
-#
-#k_mash_results = readRDS('/scratch/mjpete11/human_monkey_brain/mashr/kennys_example/mashr_results.rds')
-#emma.results = readRDS('/scratch/mjpete11/human_monkey_brain/mashr/kennys_example/emma_100_genes.rds')
-keep.genes = readRDS('/scratch/mjpete11/human_monkey_brain/mashr/kennys_example/keep_genes.rds')
-#
-#mash_beta = get_pm(mash_results)
-#mash.sbet = get_pm(mash.results) / get_psd(mash.results)
-#mash.lfsr = get_lfsr(mash.results)
-#
-## Significant genes per region
-#apply(emma.qval,2,function(x) sum(x < fsr.cutoff,na.rm=TRUE))
-#apply(mash.lfsr,2,function(x) sum(x < fsr.cutoff))
-#
-## How many genes are significant in n regions
-#table(apply(mash.lfsr,1,function(x) sum(x < fsr.cutoff)))
-#
-## Genes that are significant in just one region
-#apply(mash.lfsr[apply(mash.lfsr,1,function(x) sum(x < fsr.cutoff)) == 1,],2,function(x) sum(x < fsr.cutoff))
-#
-#_____________________________________________________________________________
 # Read in files/ generate summary stats
 #_____________________________________________________________________________
 source('/scratch/mjpete11/human_monkey_brain/mashr/kennys_example/_include_options.R')
 
-# I don't think this is used anywhere`
-#e.keep = readRDS('checkpoints/filtered_expression_matrix.rds')
-
 mash_results = readRDS('/scratch/mjpete11/human_monkey_brain/mashr/output/mashr_results.rds')
-
-# I don't have the equivalent of these files...
-#emma_results = readRDS('/scratch/mjpete11/human_monkey_brain/mashr/kennys_example/emma_100_genes.rds')
-#keep_genes = readRDS('/scratch/mjpete11/human_monkey_brain/mashr/kennys_example/keep_genes.rds')
-
 mash_beta = get_pm(mash_results)
 mash_sbet = get_pm(mash_results) / get_psd(mash_results)
 mash_lfsr = get_lfsr(mash_results)
@@ -52,7 +19,6 @@ mash_lfsr = get_lfsr(mash_results)
 # Significant genes per region
 fsr_cutoff <- 0.2
 
-#apply(emma_qval, 2, function(x) sum(x < fsr_cutoff, na.rm=TRUE))
 apply(mash_lfsr, 2, function(x) sum(x < fsr_cutoff))
  
 res <- apply(mash_lfsr, 2, function(x) x < fsr_cutoff)
@@ -109,57 +75,6 @@ p = ggplot(melt(tapply(b_mash$qval,b_mash$Var2,function(x) sum(x < fsr.cutoff,na
 	ylab('Number of genes')
 ggsave(p,file=paste0('/scratch/mjpete11/human_monkey_brain/mashr/output/plot2.pdf'),width=7,height=3,useDingbats=FALSE)
 
-b_emma$qval_signed = with(b_emma,ifelse(beta>0,1,-1) * qval)
-b_mash$qval_signed = with(b_mash,ifelse(beta>0,1,-1) * qval)
-
-#_____________________________________________________________________________
-# Kenny's OG code 
-#_____________________________________________________________________________
-# Put together longform data frame with gene counts (up vs. downregulated, split by method)
-model.counts.combined = rbind(
-	within(melt(tapply(b.emma$qval.signed,b.emma$Var2,function(x) -sum(abs(x) < fsr.cutoff & x < 0,na.rm=TRUE))), {method='EMMA'; direction='down'} ),
-	within(melt(tapply(b.emma$qval.signed,b.emma$Var2,function(x) sum(abs(x) < fsr.cutoff & x >= 0,na.rm=TRUE))), {method='EMMA'; direction='up'} ),
-	within(melt(tapply(b.mash$qval.signed,b.mash$Var2,function(x) -sum(abs(x) < fsr.cutoff & x < 0,na.rm=TRUE))), {method='mashr'; direction='down'} ),
-	within(melt(tapply(b.mash$qval.signed,b.mash$Var2,function(x) sum(abs(x) < fsr.cutoff & x >= 0,na.rm=TRUE))), {method='mashr'; direction='up'} )
-)
-
-ylimit = ceiling(with(model.counts.combined,max(abs(value)))/500) * 500
-
-#_____________________________________________________________________________
-# My model_counts_combines object 
-#_____________________________________________________________________________
-# Note that the code below will only format correctly with ggplot >= 3.3.0
-if (packageVersion('ggplot2') < 3.3) warning('Some plots may not display correctly with ggplot2 version < 3.3.0')
-
-p = ggplot(model.counts.combined,aes(Var1,value,fill=Var1,alpha=direction)) +
-	geom_bar(stat='identity') +
-	scale_fill_manual(name='Region',values=region.colors) +
-	scale_alpha_manual(values=c(0.75,1)) +
-	scale_y_continuous(
-		limits = c(-ylimit,ylimit),
-		breaks = c(-ylimit,-ylimit*0.5,0,ylimit*0.5,ylimit),
-		labels = c(formatC(ylimit,width=5,flag=' '),'Decrease',formatC(0,width=5,flag=' '),'Increase',formatC(ylimit,width=5,flag=' '))
-	) +
-	theme_classic(base_size=12) +
-	theme(
-		axis.ticks.y = element_line(linetype=c(1,0,1,0,1)),
-		axis.title.x = element_blank(),
-		axis.title.y = element_text(),
-		axis.text.x = element_text(
-			angle = -45, hjust = 0, vjust = 1
-		),
-		axis.text.y=element_text(
-			face = c('plain','bold','plain','bold','plain'),
-#			size = axis.text.size * c(1,2,1,2,1),
-			angle = c(0,90,0,90,0), hjust=0.5
-		)
-	) +
-	facet_wrap(~method,nrow=2) +
-	theme(legend.position='none') +
-	ylab('Number of genes')
-ggsave(p,file=paste0('figures/model_results_beta_count_comparison_',tolower(predictor.label),'.pdf'),width=7,height=5,useDingbats=FALSE)
-
-# pair.share = get_pairwise_sharing(mash.results, factor = 0.5)
 
 #_____________________________________________________________________________
 # Plot for poster 
