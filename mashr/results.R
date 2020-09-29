@@ -5,17 +5,23 @@
 library(mashr)
 
 # Input
-#_____________________________________________________________________________
-# Read in files/ generate summary stats
-#_____________________________________________________________________________
 source('/scratch/mjpete11/human_monkey_brain/mashr/kennys_example/_include_options.R')
-
 mash_results = readRDS('/scratch/mjpete11/human_monkey_brain/mashr/output/mashr_results.rds')
 mash_beta = get_pm(mash_results)
 mash_sbet = get_pm(mash_results) / get_psd(mash_results)
 mash_lfsr = get_lfsr(mash_results)
 
-# Significant genes per region
+# Output
+KEEP_GENES <- '/scratch/mjpete11/human_monkey_brain/mashr/output/keep_genes.csv'
+NREGION <- '/scratch/mjpete11/human_monkey_brain/mashr/output/sig_n_regions.csv'
+LONLEY_SIG <- '/scratch/mjpete11/human_monkey_brain/mashr/output/sig_1_region.csv'
+BIAS <- '/scratch/mjpete11/human_monkey_brain/mashr/output/bias_per_region.csv'
+TOTAL_BIAS <- '/scratch/mjpete11/human_monkey_brain/mashr/output/total_bias.csv'
+
+#_____________________________________________________________________________ 
+# Summary of absolute number of sDEGs
+#_____________________________________________________________________________ 
+# Significance threshold 
 fsr_cutoff <- 0.2
 
 # Table: total number of significant genes in each region
@@ -39,25 +45,25 @@ seq_max <- seq_len(max(n_obs))
 mat <- sapply(keep_genes, "[", i=seq_max)
 dim(mat)
 mat[1:5,1:5]
-write.csv(mat, '/scratch/mjpete11/human_monkey_brain/mashr/output/keep_genes.csv')
+write.csv(mat, KEEP_GENES)
 
 # How many genes are significant in n regions
 nregion <- table(apply(mash_lfsr, 1, function(x) sum(x < fsr_cutoff)))
 nregion <- as.data.frame(nregion)
 colnames(nregion) <- c('regions', 'sig_genes')
-write.csv(nregion, '/scratch/mjpete11/human_monkey_brain/mashr/output/sig_n_regions.csv', row.names=FALSE)
+write.csv(nregion, NREGION, row.names=FALSE)
 
 # Genes that are significant in just one region
 lonely_sig <- apply(mash_lfsr[apply(mash_lfsr, 1, function(x) sum(x < fsr_cutoff)) == 1,], 2, function(x) sum(x < fsr_cutoff))
 lonely_sig <- setNames(stack(lonely_sig)[2:1], c('region', 'sig_genes'))
-write.csv(lonely_sig, '/scratch/mjpete11/human_monkey_brain/mashr/output/sig_1_region.csv')
+write.csv(lonely_sig, LONELY_SIG)
 
 # How many genes are in the union?
 sum(as.numeric(lapply(keep_genes, function(x) length(x)))) # 11,598
 
-# Is there more bias in one sex compared to the other?
-# Is the proportion of sex biased genes the same across regions or is it
-# region specific?
+#_____________________________________________________________________________ 
+# Summary of direction of sDEGs 
+#_____________________________________________________________________________ 
 # Code upregulated genes as 1 and downregulated genes as -1 
 tissues <- colnames(mash_lfsr)
 genes <- rownames(mash_lfsr)
@@ -71,7 +77,22 @@ out <- do.call(cbind, lapply(tissues, function(i) {
 		0
 }
 }))
-data.frame(genes = genes, i = tmp_tissue)
+data.frame(i = tmp_tissue)
 }))
+rownames(out) <- genes
+colnames(out) <- tissues
 
+# Is the proportion of sex biased genes the same across regions or is it
+# region specific?
+# Count the number of 1s and -1s
+res <- as.data.frame(t(apply(out, 2, table)))
+res <- cbind(rownames(res), res)
+rownames(res) <- NULL
+colnames(res) <- c('region', 'female_upreg', 'no_diff', 'male_upreg')
+write.csv(res, BIAS)
 
+# Is there more bias in one sex compared to the other?
+res1 <- apply(res[, 2:ncol(res)], 2, sum) 
+names(res1) <- c('female_upreg', 'no_diff', 'male_upreg')
+res1 <- as.data.frame(res1)
+write.csv(res1, TOTAL_BIAS, row.names = FALSE)
