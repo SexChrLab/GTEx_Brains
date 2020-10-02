@@ -1,7 +1,6 @@
 #!/usr/bin/Rscript
 
 # Purpose: Summarize mashr results
-
 library(mashr)
 
 # Input
@@ -12,9 +11,10 @@ mash_sbet = get_pm(mash_results) / get_psd(mash_results)
 mash_lfsr = get_lfsr(mash_results)
 
 # Output
+TABLE1 <- '/scratch/mjpete11/human_monkey_brain/mashr/output/total_sig_0.05.csv'
 KEEP_GENES <- '/scratch/mjpete11/human_monkey_brain/mashr/output/keep_genes.csv'
 NREGION <- '/scratch/mjpete11/human_monkey_brain/mashr/output/sig_n_regions.csv'
-LONLEY_SIG <- '/scratch/mjpete11/human_monkey_brain/mashr/output/sig_1_region.csv'
+LONELY_SIG <- '/scratch/mjpete11/human_monkey_brain/mashr/output/sig_1_region.csv'
 BIAS <- '/scratch/mjpete11/human_monkey_brain/mashr/output/bias_per_region.csv'
 TOTAL_BIAS <- '/scratch/mjpete11/human_monkey_brain/mashr/output/total_bias.csv'
 
@@ -22,10 +22,13 @@ TOTAL_BIAS <- '/scratch/mjpete11/human_monkey_brain/mashr/output/total_bias.csv'
 # Summary of absolute number of sDEGs
 #_____________________________________________________________________________ 
 # Significance threshold 
-fsr_cutoff <- 0.2
+fsr_cutoff <- 0.05
 
-# Table: total number of significant genes in each region
-apply(mash_lfsr, 2, function(x) sum(x < fsr_cutoff))
+# Table: total number of significant genes in each region at fsr 0.05
+tab1 <- apply(mash_lfsr, 2, function(x) sum(x < fsr_cutoff))
+tab1 <- stack(tab1)[,2:1]
+colnames(tab1) <- c('region', 'number_of_sig_genes')
+write.csv(tab1, TABLE1)
 
 # Table: genes that passed filtering in each region
 res <- apply(mash_lfsr, 2, function(x) x < fsr_cutoff)
@@ -59,7 +62,9 @@ lonely_sig <- setNames(stack(lonely_sig)[2:1], c('region', 'sig_genes'))
 write.csv(lonely_sig, LONELY_SIG)
 
 # How many genes are in the union?
-sum(as.numeric(lapply(keep_genes, function(x) length(x)))) # 11,598
+# Combine list of lists  into one list and count the number of unique genes
+lst <- unlist(keep_genes, recursive = FALSE)
+length(unique(lst)) # 1,224
 
 #_____________________________________________________________________________ 
 # Summary of direction of sDEGs 
@@ -69,9 +74,9 @@ tissues <- colnames(mash_lfsr)
 genes <- rownames(mash_lfsr)
 out <- do.call(cbind, lapply(tissues, function(i) {
 	tmp_tissue <- do.call("c", lapply(genes, function(j) {
-		if (mash_lfsr[j, i] < 0.02 & mash_beta[j, i] > 0) {
+		if (mash_lfsr[j, i] < fsr_cutoff & mash_beta[j, i] > 0) {
 			1
-		} else if (mash_lfsr[j, i] < 0.02 & mash_beta[j, i] < 0) {
+		} else if (mash_lfsr[j, i] < fsr_cutoff & mash_beta[j, i] < 0) {
 			-1
 		} else {
 		0
@@ -92,7 +97,19 @@ colnames(res) <- c('region', 'female_upreg', 'no_diff', 'male_upreg')
 write.csv(res, BIAS)
 
 # Is there more bias in one sex compared to the other?
-res1 <- apply(res[, 2:ncol(res)], 2, sum) 
-names(res1) <- c('female_upreg', 'no_diff', 'male_upreg')
-res1 <- as.data.frame(res1)
-write.csv(res1, TOTAL_BIAS, row.names = FALSE)
+# Which genes are female biased across all genes?
+which(apply(out, 1, function(x) sum(x < 0) == 11))
+
+# Which genes are male biased across all genes?
+which(apply(out, 1, function(x) sum(x > 0) == 11))
+
+# Number of genes upregulated in females across n regions
+fem <- as.numeric(table(apply(out, 1, function(x) sum(x < 0))))
+
+# Number of genes upregulated in males across n regions
+male <- as.numeric(table(apply(out, 1, function(x) sum(x > 0))))
+
+# Combine into one df
+total_bias <- data.frame(n_tissues = 0:11, female_upreg = fem, male_upreg = male)
+total_bias
+write.csv(total_bias, TOTAL_BIAS, row.names = FALSE)
