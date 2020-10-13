@@ -122,10 +122,10 @@ write.csv(res, BIAS)
 # region specific?
 prop <- res %>%
 		rowwise() %>%
-		mutate(fem_prop = female_upreg/(no_diff + male_upreg)) %>%
-		mutate(male_prop = male_upreg/(no_diff + female_upreg)) %>%
-		mutate(fem_ratio = female_upreg/(female_upreg + male_upreg)) %>%
-		mutate(male_ratio = male_upreg/(female_upreg + male_upreg)) %>%
+		mutate(fem_prop = female_upreg/(female_upreg + no_diff + male_upreg)) %>%
+		mutate(male_prop = male_upreg/(female_upreg + no_diff + male_upreg)) %>%
+		mutate(fem_ratio = female_upreg/male_upreg) %>%
+		mutate(male_ratio = male_upreg/female_upreg) %>%
 		mutate_if(is.numeric, ~round(., 3))
 write.csv(prop, REGION_PROP)
 
@@ -148,7 +148,7 @@ total_bias <- total_bias %>%
 		rowwise() %>%
 		mutate(fem_prop = female_upreg/nrow(mash_lfsr)) %>% # total genes tested
 		mutate(male_prop = male_upreg/nrow(mash_lfsr)) %>% # 13,468
-		mutate(fem_ratio = female_upreg/(female_upreg + male_upreg)) %>%
-		mutate(male_ratio = male_upreg/(female_upreg + male_upreg)) %>%
+		mutate(fem_ratio = female_upreg/male_upreg) %>%
+		mutate(male_ratio = male_upreg/female_upreg) %>%
 		mutate_if(is.numeric, ~round(., 3))
 write.csv(total_bias, TOTAL_BIAS, row.names = FALSE)
