@@ -45,7 +45,6 @@ colnames(tab3) <- c('region', 'sig_genes_0.01')
 # combine into one table
 tab0 <- merge(tab2, tab1, by = 'region')
 tab0 <- merge(tab0, tab3, by = 'region')
-write.csv(tab0, TABLE1)
 
 # Are the total number of sDEGs at a couple thresholds subsets of each other?
 tmp1 <- which(apply(mash_lfsr, 2, function(x) x < 0.1))
@@ -73,18 +72,15 @@ seq_max <- seq_len(max(n_obs))
 mat <- sapply(keep_genes, "[", i=seq_max)
 dim(mat)
 mat[1:5,1:5]
-write.csv(mat, KEEP_GENES)
 
 # How many genes are significant in n regions
 nregion <- table(apply(mash_lfsr, 1, function(x) sum(x < fsr_cutoff)))
 nregion <- as.data.frame(nregion)
 colnames(nregion) <- c('regions', 'sig_genes')
-write.csv(nregion, NREGION, row.names=FALSE)
 
 # Genes that are significant in just one region
 lonely_sig <- apply(mash_lfsr[apply(mash_lfsr, 1, function(x) sum(x < fsr_cutoff)) == 1,], 2, function(x) sum(x < fsr_cutoff))
 lonely_sig <- setNames(stack(lonely_sig)[2:1], c('region', 'sig_genes'))
-write.csv(lonely_sig, LONELY_SIG)
 
 # How many genes are in the union?
 # Combine list of lists  into one list and count the number of unique genes
@@ -118,7 +114,6 @@ res <- as.data.frame(t(apply(out, 2, table)))
 res <- cbind(rownames(res), res)
 rownames(res) <- NULL
 colnames(res) <- c('region', 'female_upreg', 'no_diff', 'male_upreg')
-write.csv(res, BIAS)
 
 # Is the proportion of sex biased genes the same across regions or is it
 # region specific?
@@ -128,17 +123,27 @@ prop <- res %>%
 		mutate(male_prop = male_upreg/(female_upreg + no_diff + male_upreg)) %>%
 		mutate(fem_ratio = female_upreg/male_upreg) %>%
 		mutate(male_ratio = male_upreg/female_upreg) %>%
-		mutate_if(is.numeric, ~round(., 3))
-write.csv(prop, REGION_PROP)
+		mutate_if(is.numeric, ~round(., 3)) %>% 
+		# Binomial test to add confidence intervals
+		mutate(total_DEG = female_upreg + male_upreg) %>% 
+		mutate(p_value = binom.test(female_upreg, total_DEG)$p.value) %>%
+		mutate(upper_bound = total_DEG * binom.test(female_upreg, total_DEG)$conf.int[[2]]) %>%
+		mutate(lower_bound = total_DEG * binom.test(female_upreg, total_DEG)$conf.int[[1]]) %>%
+		mutate(upper_ratio = upper_bound / (total_DEG - upper_bound)) %>%
+		mutate(lower_ratio = lower_bound / (total_DEG - lower_bound)) %>%
+		mutate(log_upper = log2(abs(upper_ratio))) %>% 
+		mutate(log_lower = log2(abs(lower_ratio)))
 
 # log2 ratio histogram
 prop <- prop %>% mutate(log_ratio = log2(fem_ratio)) %>%
-  	    mutate(color = ifelse(log_ratio < 0, "negative", "positive"))
+  	    mutate(color = ifelse(log_ratio < 0, "male_upregulated", "female_upregulated"))
+
 p <- prop %>% ggplot(aes(x = reorder(region, -fem_ratio), y = log2(fem_ratio), fill = color)) +
 		geom_bar(stat = "identity") +
-		scale_fill_manual(values = c(positive = "blue", negative = "darkgreen")) +
+		scale_fill_manual(values = c(female_upregulated = "blue", male_upregulated = "darkgreen")) +
 		coord_flip() +
-		xlab("brain region")
+		geom_errorbar(aes(ymin = log_lower, ymax = log_upper)) +
+		xlab("brain region") 
 pdf(PLOT)
 p
 dev.off()
@@ -165,4 +170,13 @@ total_bias <- total_bias %>%
 		mutate(fem_ratio = female_upreg/male_upreg) %>%
 		mutate(male_ratio = male_upreg/female_upreg) %>%
 		mutate_if(is.numeric, ~round(., 3))
+
+
+# Write results
+write.csv(tab0, TABLE1)
+write.csv(mat, KEEP_GENES)
+write.csv(nregion, NREGION, row.names=FALSE)
+write.csv(lonely_sig, LONELY_SIG)
+write.csv(res, BIAS)
+write.csv(prop, REGION_PROP)
 write.csv(total_bias, TOTAL_BIAS, row.names = FALSE)
