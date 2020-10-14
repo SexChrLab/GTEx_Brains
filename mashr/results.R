@@ -3,6 +3,7 @@
 # Purpose: Summarize mashr results
 library(mashr)
 library(dplyr)
+library(tidyverse)
 
 # Input
 source('/scratch/mjpete11/human_monkey_brain/mashr/kennys_example/_include_options.R')
@@ -19,6 +20,7 @@ LONELY_SIG <- '/scratch/mjpete11/human_monkey_brain/mashr/output/sig_1_region.cs
 BIAS <- '/scratch/mjpete11/human_monkey_brain/mashr/output/bias_per_region.csv'
 TOTAL_BIAS <- '/scratch/mjpete11/human_monkey_brain/mashr/output/total_bias.csv'
 REGION_PROP <- '/scratch/mjpete11/human_monkey_brain/mashr/output/region_prop.csv'
+PLOT <- '/scratch/mjpete11/human_monkey_brain/mashr/output/log_ratio_plot.pdf'
 
 #_____________________________________________________________________________ 
 # Summary of absolute number of sDEGs
@@ -128,6 +130,18 @@ prop <- res %>%
 		mutate(male_ratio = male_upreg/female_upreg) %>%
 		mutate_if(is.numeric, ~round(., 3))
 write.csv(prop, REGION_PROP)
+
+# log2 ratio histogram
+prop <- prop %>% mutate(log_ratio = log2(fem_ratio)) %>%
+  	    mutate(color = ifelse(log_ratio < 0, "negative", "positive"))
+p <- prop %>% ggplot(aes(x = reorder(region, -fem_ratio), y = log2(fem_ratio), fill = color)) +
+		geom_bar(stat = "identity") +
+		scale_fill_manual(values = c(positive = "blue", negative = "darkgreen")) +
+		coord_flip() +
+		xlab("brain region")
+pdf(PLOT)
+p
+dev.off()
 
 # Is there more bias in one sex compared to the other?
 # Which genes are female biased across all genes?
