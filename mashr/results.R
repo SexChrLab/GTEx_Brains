@@ -4,6 +4,7 @@
 library(mashr)
 library(dplyr)
 library(tidyverse)
+library(corrgram)
 
 # Input
 source('/scratch/mjpete11/human_monkey_brain/mashr/kennys_example/_include_options.R')
@@ -21,6 +22,7 @@ BIAS <- '/scratch/mjpete11/human_monkey_brain/mashr/output/bias_per_region.csv'
 TOTAL_BIAS <- '/scratch/mjpete11/human_monkey_brain/mashr/output/total_bias.csv'
 REGION_PROP <- '/scratch/mjpete11/human_monkey_brain/mashr/output/region_prop.csv'
 PLOT <- '/scratch/mjpete11/human_monkey_brain/mashr/output/log_ratio_plot.pdf'
+UPPER <- "/scratch/mjpete11/human_monkey_brain/mashr/output/beta_correlation_matrix.csv"
 
 #_____________________________________________________________________________ 
 # Summary of absolute number of sDEGs
@@ -54,7 +56,9 @@ length(tmp1); length(tmp2); length(tmp3) # 8544, 6480, 3628
 length(intersect(tmp1, tmp2)) # 6,480
 length(intersect(tmp2, tmp3)) # 3,628
 
+#_____________________________________________________________________________ 
 # Table: genes that passed filtering in each region
+#_____________________________________________________________________________ 
 res <- apply(mash_lfsr, 2, function(x) x < fsr_cutoff)
 str(res)
 tmp <- split(res, rep(1:ncol(res), each = nrow(res)))
@@ -65,7 +69,9 @@ keep_genes <- lapply(tmp,function(i){row.names(mash_lfsr[i,])})
 names(keep_genes) <- colnames(mash_lfsr)
 str(keep_genes)
 
+#_____________________________________________________________________________ 
 # Write to file list of genes that past filtering in each region
+#_____________________________________________________________________________ 
 # First, reshape object (list of vectors of different lengths) into df
 n_obs <- sapply(keep_genes, length)
 seq_max <- seq_len(max(n_obs))
@@ -73,12 +79,16 @@ mat <- sapply(keep_genes, "[", i=seq_max)
 dim(mat)
 mat[1:5,1:5]
 
+#_____________________________________________________________________________ 
 # How many genes are significant in n regions
+#_____________________________________________________________________________ 
 nregion <- table(apply(mash_lfsr, 1, function(x) sum(x < fsr_cutoff)))
 nregion <- as.data.frame(nregion)
 colnames(nregion) <- c('regions', 'sig_genes')
 
+#_____________________________________________________________________________ 
 # Genes that are significant in just one region
+#_____________________________________________________________________________ 
 lonely_sig <- apply(mash_lfsr[apply(mash_lfsr, 1, function(x) sum(x < fsr_cutoff)) == 1,], 2, function(x) sum(x < fsr_cutoff))
 lonely_sig <- setNames(stack(lonely_sig)[2:1], c('region', 'sig_genes'))
 
@@ -115,6 +125,9 @@ res <- cbind(rownames(res), res)
 rownames(res) <- NULL
 colnames(res) <- c('region', 'female_upreg', 'no_diff', 'male_upreg')
 
+#_____________________________________________________________________________ 
+# log2 ratio histogram
+#_____________________________________________________________________________ 
 # Is the proportion of sex biased genes the same across regions or is it
 # region specific?
 prop <- res %>%
@@ -148,6 +161,9 @@ pdf(PLOT)
 p
 dev.off()
 
+#_____________________________________________________________________________ 
+# Genes biased in n regions
+#_____________________________________________________________________________ 
 # Is there more bias in one sex compared to the other?
 # Which genes are female biased across all genes?
 which(apply(out, 1, function(x) sum(x < 0) == 11))
@@ -170,9 +186,30 @@ total_bias <- total_bias %>%
 		mutate(fem_ratio = female_upreg/male_upreg) %>%
 		mutate(male_ratio = male_upreg/female_upreg) %>%
 		mutate_if(is.numeric, ~round(., 3))
+#_____________________________________________________________________________ 
+# Correlation histogram
+#_____________________________________________________________________________ 
+# Write correlation values to table; just the lower part
+lcor <- round(cor(mash_beta),2)
+upper <- lcor
+upper[upper.tri(lcor)] <- ""
+upper <- as.data.frame(upper)
 
+# Make correlation matrix
+regions  <- c('Amygdala', 'Anterior Cortex', 'Caudate', 'Cerebellar', 
+			'Frontal Cortex', 'Hippocampus', 'Hypothalamus',
+			'Nucleus Accumbens', 'Putamen', 'Spinal Cord', 'Substantia Nigra')
+colnames(lcor) <- regions 
+rownames(lcor) <- regions
 
+# Heatmap
+pdf(file = "/scratch/mjpete11/human_monkey_brain/mashr/output/heatmap1.pdf")
+corrplot(lcor, method="color", type="lower", tl.col="black", tl.cex=0.9)
+dev.off()
+
+#_____________________________________________________________________________ 
 # Write results
+#_____________________________________________________________________________ 
 write.csv(tab0, TABLE1)
 write.csv(mat, KEEP_GENES)
 write.csv(nregion, NREGION, row.names=FALSE)
@@ -180,3 +217,4 @@ write.csv(lonely_sig, LONELY_SIG)
 write.csv(res, BIAS)
 write.csv(prop, REGION_PROP)
 write.csv(total_bias, TOTAL_BIAS, row.names = FALSE)
+write.csv(upper, UPPERR)
