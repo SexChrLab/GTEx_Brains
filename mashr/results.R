@@ -5,6 +5,7 @@ library(mashr)
 library(dplyr)
 library(tidyverse)
 library(corrgram)
+library(reshape2)
 
 # Input
 source('/scratch/mjpete11/human_monkey_brain/mashr/kennys_example/_include_options.R')
@@ -22,6 +23,7 @@ BIAS <- '/scratch/mjpete11/human_monkey_brain/mashr/output/bias_per_region.csv'
 TOTAL_BIAS <- '/scratch/mjpete11/human_monkey_brain/mashr/output/total_bias.csv'
 REGION_PROP <- '/scratch/mjpete11/human_monkey_brain/mashr/output/region_prop.csv'
 PLOT <- '/scratch/mjpete11/human_monkey_brain/mashr/output/log_ratio_plot.pdf'
+BAR_PLOT <- '/scratch/mjpete11/human_monkey_brain/mashr/output/bar_plot.pdf'
 UPPER <- "/scratch/mjpete11/human_monkey_brain/mashr/output/beta_correlation_matrix.csv"
 
 #_____________________________________________________________________________ 
@@ -151,13 +153,32 @@ prop <- res %>%
 prop <- prop %>% mutate(log_ratio = log2(fem_ratio)) %>%
   	    mutate(color = ifelse(log_ratio < 0, "male_upregulated", "female_upregulated"))
 
+# plot
 p <- prop %>% ggplot(aes(x = reorder(region, -fem_ratio), y = log2(fem_ratio), fill = color)) +
 		geom_bar(stat = "identity") +
 		scale_fill_manual(values = c(female_upregulated = "blue", male_upregulated = "darkgreen")) +
 		coord_flip() +
 		geom_errorbar(aes(ymin = log_lower, ymax = log_upper)) +
-		xlab("brain region") 
+		xlab("brain region")  +
+		geom_text(aes(label = total_DEG), position = position_dodge(width = 0.9),
+                  hjust = ifelse(log2(prop$fem_ratio) >= 0, -0.8, 1.5)) +
+		scale_y_continuous(limits = c(-6, 6))
 pdf(PLOT)
+p
+dev.off()
+
+#_____________________________________________________________________________ 
+# Stacked bar plot 
+#_____________________________________________________________________________ 
+m.prop <- melt(data = prop[, c("region", "female_upreg", "male_upreg")], id.vars = "region", measure.vars = c("female_upreg", "male_upreg"))
+
+p <- m.prop %>% ggplot(data = m.prop, mapping = aes(x = region, y = value, fill = variable)) +
+		geom_bar(aes(fill = variable), stat = "identity", color = "black", position = "dodge") +
+		scale_fill_manual(values = c("blue", "darkgreen")) +
+		theme(axis.text.x = element_text(angle = 50, vjust = 1, hjust=1)) +
+		ylab("Number of sex-biased genes") +
+		xlab("Region")
+pdf(BAR_PLOT, width = 9)
 p
 dev.off()
 
@@ -207,6 +228,7 @@ pdf(file = "/scratch/mjpete11/human_monkey_brain/mashr/output/heatmap1.pdf")
 corrplot(lcor, method="color", type="lower", tl.col="black", tl.cex=0.9)
 dev.off()
 
+
 #_____________________________________________________________________________ 
 # Write results
 #_____________________________________________________________________________ 
@@ -217,4 +239,4 @@ write.csv(lonely_sig, LONELY_SIG)
 write.csv(res, BIAS)
 write.csv(prop, REGION_PROP)
 write.csv(total_bias, TOTAL_BIAS, row.names = FALSE)
-write.csv(upper, UPPERR)
+write.csv(upper, UPPER)
