@@ -20,8 +20,10 @@ REGION <- file.path(BASE, "data/expression_matrices/output/union_region_filtered
 # SEX <- file.path(BASE, "data/expression_matrices/output/filtered_by_sex.csv")
 
 # Output
-TABLE1 <- file.path(BASE, "data/expression_matrices/output/processed_counts_with_sex_chr.csv")
-TABLE2 <- file.path(BASE, "data/expression_matrices/output/processed_counts_no_sex_chr.csv")
+TABLE1 <- file.path(BASE, "data/expression_matrices/output/filtered_counts_with_sex_chr.csv")
+TABLE2 <- file.path(BASE, "data/expression_matrices/output/filtered_counts_with_sex_chr.csv")
+TABLE3 <- file.path(BASE, "data/expression_matrices/output/processed_counts_no_sex_chr.csv")
+TABLE4 <- file.path(BASE, "data/expression_matrices/output/processed_counts_no_sex_chr.csv")
 
 # Read in data
 xchr <- read.table(CHRX, sep = "")
@@ -85,6 +87,15 @@ ncol(counts_no_sex) - 2 # 2,146
 identical(colnames(gene_counts)[-c(1,2)], rownames(meta)) # TRUE
 identical(colnames(counts_no_sex)[-c(1,2)], rownames(meta)) # TRUE
 
+# Function to check for negative values
+# Somehow they are getting inserted....
+check_neg <- function(x){
+		res <- apply(x[ ,3:ncol(x)], 1, function(x) any(x < 0))
+		return(which(res))
+}
+check_neg(gene_counts)
+check_neg(counts_no_sex)
+
 #_______________________________________________________________________________
 # Filter genes by expression in each sex and voom normalize
 #_______________________________________________________________________________
@@ -108,6 +119,29 @@ nrow(counts_no_sex) # 53,325
 gene_counts <- gene_counts[which(gene_counts$Name %in% region$gene_id), ]
 counts_no_sex <- counts_no_sex[which(counts_no_sex$Name %in% region$gene_id), ]
 
+# Write to file before voom normalizing so I can start limma
+write.csv(gene_counts, TABLE1, row.names = FALSE)
+write.csv(counts_no_sex, TABLE2, row.names = FALSE)
+
+# No negative vals
+check_neg(gene_counts)
+check_neg(counts_no_sex)
+
+# Are any counts: 0 < x < 1?
+check_between <- function(d){
+	res <- apply(d[, 3:ncol(d)], 1, function(x) any(x > 0 & x < 1))
+	return(which(res))
+}
+check_between(gene_counts) # no decimals
+check_between(counts_no_sex)
+
+# Any counts not integers?
+check_integer <- function(d){
+	res <- apply(d[, 3:ncol(d)], 1, function(x) any(x == 0))
+	return(which(res))
+}
+check_integer(gene_counts) # yes, there are zeros.
+
 # How many genes are left after filtering?
 nrow(gene_counts) # 13,955
 nrow(counts_no_sex) # 13,468
@@ -116,7 +150,11 @@ nrow(counts_no_sex) # 13,468
 gene_counts <- voom(gene_counts[3:ncol(gene_counts)], design = sex_design)
 counts_no_sex <- voom(counts_no_sex[3:ncol(counts_no_sex)], design = no_sex_design)
 
+# Now there are neg values because voom takes the log and there are counts < 0 and > 1.
+check_neg(gene_counts$E)
+check_neg(counts_no_sex$E)
+
 # Write to file
-write.csv(gene_counts$E, TABLE1, row.names = FALSE)
-write.csv(counts_no_sex$E, TABLE2, row.names = FALSE)
+write.csv(gene_counts$E, TABLE3, row.names = FALSE)
+write.csv(counts_no_sex$E, TABLE4, row.names = FALSE)
 
