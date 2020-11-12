@@ -1,0 +1,55 @@
+name: salmon_environment
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - r
+dependencies:
+  - asn1crypto=0.24.0=py35_3
+  - bcrypt=3.1.4=py35h14c3975_0
+  - bzip2=1.0.6=h470a237_2
+  - ca-certificates=2018.8.24=ha4d7672_0
+  - certifi=2018.8.24=py35_1001
+  - cffi=1.11.5=py35h5e8e0c9_1
+  - chardet=3.0.4=py35_3
+  - cryptography=2.3.1=py35hdffb7b8_0
+  - cryptography-vectors=2.3.1=py35_0
+  - docutils=0.14=py35_1
+  - dropbox=9.0.0=py_0
+  - filechunkio=1.8=py_2
+  - ftputil=3.4=py_0
+  - icu=58.2=hfc679d8_0
+  - idna=2.7=py35_2
+  - jemalloc=5.1.0=hfc679d8_0
+  - libboost=1.65.1=habcd387_4
+  - libffi=3.2.1=hfc679d8_5
+  - libgcc-ng=8.2.0=hdf63c60_1
+  - libstdcxx-ng=8.2.0=hdf63c60_1
+  - ncurses=5.9=10
+  - openssl=1.0.2p=h470a237_0
+  - paramiko=2.4.1=py35_0
+  - pip=18.0=py35_1
+  - pyasn1=0.4.4=py_0
+  - pycparser=2.19=py_0
+  - pynacl=1.1.2=py35_0
+  - pyopenssl=18.0.0=py35_0
+  - pysftp=0.2.9=py_1
+  - pysocks=1.6.8=py35_2
+  - python=3.5.1=1
+  - pyyaml=3.11=py35_0
+  - readline=6.2=0
+  - requests=2.19.1=py35_1
+  - salmon=0.11.3=h86b0361_2
+  - setuptools=40.4.0=py35_1000
+  - six=1.11.0=py35_1
+  - snakemake=3.11.0=py35_1
+  - sqlite=3.9.2=0
+  - tbb=2019.0=h2d50403_0
+  - tk=8.5.19=2
+  - urllib3=1.23=py35_1
+  - wheel=0.31.1=py35_1001
+  - wrapt=1.10.11=py35h470a237_1
+  - xz=5.0.5=1
+  - yaml=0.1.7=h470a237_1
+  - zlib=1.2.11=h470a237_3
+prefix: /home/mjpete11/miniconda3/envs/salmon_environment

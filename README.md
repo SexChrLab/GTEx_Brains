@@ -1,1 +1,2 @@
-Comparison of human vs non-human primate RNA seq brain data
+# GTEx Brains v8
+Sex differential expression across 11 regions in adult brain

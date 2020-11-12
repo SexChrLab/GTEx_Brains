@@ -1,0 +1,50 @@
+Files removed from analysis based on MultiQC reports.
+
+Removed due to abnormal GC content:
+
+Individuals:
+All samples from individual X4EP were removed. This individual's samples had abnormally high GC content throughout,
+indicative of sample degredation.
+
+Substantia Nigra:
+GTEX-13NYB-0011-R2a-SM-5MR3C was removed since the GC content average was ~49% and all other samples averages ~45%.
+This was the sample with the highest GC content.
+
+Removed because average read length was significantly greater/less than 75 bp:
+
+Cerebellar:
+GTEX-T6MN-0011-R11A-SM-5S2TH had read avg ~181/190bp.
+GTEX-T5JC-0011-R11A-SM-5S2RX had read avg ~180/190bp.
+GTEX-XLM4-0011-R11A-SM-5S2SY had read avg ~189/169bp.
+
+Cerebellum:
+N7M3 had 6 samples for this tissue.
+
+GTEX-N7MS-2526-SM-26GMA had read avg ~91/92 bp.
+GTEX-N7MS-2526-SM-26GMR had read avg ~91/92 bp.
+GTEX-N7MS-2526-SM-2D7W3 had read avg ~91/92 bp.
+GTEX-N7MT-1226-SM-26GMC had read avg ~91/92 bp.
+GTEX-N7MT-1226-SM-26GMT had read avg ~91/92 bp.
+GTEX-N7MT-1226-SM-2D7W4 had read avg ~91/92 bp.
+
+NPJ8 had 3 samples for this tissue.
+
+GTEX-NPJ8-2626-SM-26GMI had read avg ~91/94bp.
+GTEX-NPJ8-2626-SM-26GMZ had read avg ~91/94bp.
+GTEX-NPJ8-2626-SM-2D7W2 had read avg ~91/94bp.
+
+Cortex:
+N7MS had 2 samples for this tissue.
+NPJ8 had 3 samples for this tissue.
+
+GTEX-N7MS-2425-SM-26GMD had read avg ~91/95 bp.
+GTEX-N7MS-2425-SM-26GMU had read avg ~91/95 bp.
+
+GTEX-NPJ8-1526-SM-26GMH had read avg ~91/95 bp.
+GTEX-NPJ8-1526-SM-26GMY had read avg ~91/95 bp.
+GTEX-NPJ8-1526-SM-2D7VU had read avg ~91/95 bp.
+
+Frontal Cortex:
+GTEX-T5JC-0011-R10A-SM-5S2TK had read avg ~180/187bp.
+GTEX-T6MN-0011-R10A-SM-5S2SB had read avg ~182/190bp.
+GTEX-XLM4-0011-R10A-SM-5S2TN had read avg ~180/186bp.

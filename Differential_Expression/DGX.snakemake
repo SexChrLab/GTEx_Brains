@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#SBATCH -p phi
+#SBATCH --job-name=DGX_snakefile
+#SBATCH -o slurm.%j.out                
+#SBATCH -e slurm.%j.err                
+#SBATCH --mail-type=END,FAIL           
+#SBATCH --mail-user=mjpete11@asu.edu 
+#SBATCH -t 10:0:00
+
+# Export functions so they will be available in subshells
+source ~/miniconda3/etc/profile.d/conda.sh
+
+conda activate Differential_Expression
+
+snakemake --snakefile DGX.snakefile -j 20 --keep-target-files --rerun-incomplete 
